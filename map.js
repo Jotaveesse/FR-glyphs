@@ -26,14 +26,135 @@ var tempData = [
 
 window.onload = function () {
     map = L.map('map').setView([51.505, -0.05], 12); // London
-    L.control.scale().addTo(map);
+
     L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.{ext}', {
         ext: 'png'
     }).addTo(map);
 
+    L.control.scale().addTo(map);
+
+    L.Control.Slider = L.Control.extend({
+
+        initialize: function (options) {
+            L.Control.prototype.initialize.call(this, options);
+            this.options=options;
+            this.minSupp = options.rangeInit; //suporte inicial
+        },
+
+
+        onAdd: function (map) {
+            const div = L.DomUtil.create('div', 'leaflet-control slider-control');
+
+            div.innerHTML = `
+                <label for="supp-slider" class="slider-label">${this.options.labelText}</label>
+                <div class="slider-container">
+                    <div id="tooltip" class="tooltip">${this.minSupp}</div>
+                    <input type="range" id="supp-slider"
+                    min="${this.options.rangeMin}"
+                    max="${this.options.rangeMax}"
+                    step="${this.options.rangeStep}"
+                    value="${this.minSupp}">
+                </div>
+            `;
+
+            //impede que o clique se propague para outros elementos
+            L.DomEvent.disableClickPropagation(div);
+
+            this.slider = div.querySelector("#supp-slider");
+            this.tooltip = div.querySelector(".tooltip");
+
+            // atualiza inicialmente
+            this.updateTooltip(this.slider.value);
+
+            L.DomEvent.on(this.slider, 'input', this.handleSliderInput.bind(this));
+            L.DomEvent.on(this.slider, 'change', this.update.bind(this));
+
+            return div;
+        },
+
+        onRemove: function (map) {
+        },
+
+
+        handleSliderInput: function (e) {
+            this.minSupp = parseFloat(this.slider.value);
+            this.updateTooltip();
+        },
+
+        updateTooltip: function () {
+            this.tooltip.textContent = this.minSupp;
+            const percentage = (this.minSupp - this.slider.min) / (this.slider.max - this.slider.min);
+            const offset = percentage * (this.slider.offsetWidth - 30);
+            this.tooltip.style.left = `${offset}px`;
+        },
+
+        update: function () {
+            this.options.onChange(this.minSupp);
+        },
+    });
+
+    var supportSlider = new L.Control.Slider({
+        position: 'topright',
+        labelText : 'Suporte Mínimo',
+        rangeMin : 0.0,
+        rangeMax : 1,
+        rangeStep : 0.05,
+        rangeInit : 0.5,
+        onChange:  function (value) {
+            for (const key in glyphsOnMap) {
+                const glyph = glyphsOnMap[key];
+                glyph.minSupport = value;
+                glyph.updateAll();
+            }
+        }
+    });
+    supportSlider.addTo(map);
+    supportSlider.updateTooltip(map);
+
+    var confidenceSlider = new L.Control.Slider({
+        position: 'topright',
+        labelText : 'Confiança Mínima',
+        rangeMin : 0.0,
+        rangeMax : 1,
+        rangeStep : 0.05,
+        rangeInit : 0.5,
+        onChange:  function (value) {
+            for (const key in glyphsOnMap) {
+                const glyph = glyphsOnMap[key];
+                glyph.minConfidence = value;
+                glyph.updateAll();
+            }
+        }
+    });
+    confidenceSlider.addTo(map);
+    confidenceSlider.updateTooltip(map);
+
+    
+    var liftSlider = new L.Control.Slider({
+        position: 'topright',
+        labelText : 'Lift Mínimo',
+        rangeMin : 1,
+        rangeMax : 2,
+        rangeStep : 0.1,
+        rangeInit : 1.5,
+        onChange:  function (value) {
+            for (const key in glyphsOnMap) {
+                const glyph = glyphsOnMap[key];
+                glyph.minLift = value;
+                glyph.updateAll();
+            }
+        }
+    });
+    liftSlider.addTo(map);
+    liftSlider.updateTooltip(map);
+
 
     // createGlyphs(tempData);
+
 };
+
+
+
 function getDistance(point1, point2) {
     const dx = point1.x - point2.x;
     const dy = point1.y - point2.y;
@@ -41,7 +162,7 @@ function getDistance(point1, point2) {
 }
 
 function findSmallestDistance(glyphPos) {
-    let minDistance = Infinity; 
+    let minDistance = Infinity;
     let closestPair = { glyph1: 0, glyph2: 0, distance: 1 };
 
     for (let i = 0; i < glyphPos.length; i++) {
@@ -55,7 +176,7 @@ function findSmallestDistance(glyphPos) {
         }
     }
 
-    return closestPair; 
+    return closestPair;
 }
 
 function projectPoint(map, lat, lon) {

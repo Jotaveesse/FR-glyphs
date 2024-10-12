@@ -5,14 +5,69 @@ class GlyphData {
         this.origData = data;
         this.surpriseModels = [];
         this.maxRules = 5;
+        this.minSupport = 0.5;
+        this.minConfidence = 0.6;
+        this.minLift = 1.3;
     }
 
-    groupByColumn(segmentColumn) {
+    updateAll() {
+        this.groupByColumn();
+        this.addCoords();
+        this.filterCategories();
+        this.getFrequencies();
+        this.addSurpriseModel(getPopulModel);
+        this.getSurprise();
+        this.getAssocRules();
+        this.buildMapData();
+        this.filterMapCategories();
+        createGlyphs(this.filteredMapData);
+    }
+
+    setDisplayCategs(method) {
+        this.displayMethod = method;
+    }
+
+    setProcCategs(categsChosen) {
+        this.procCategs = categsChosen;
+    }
+
+    setMaxRulesDisplayed(maxRules) {
+        this.maxRules = maxRules;
+    }
+
+    setGroupColumn(groupColumn) {
+        this.groupColumn = groupColumn;
+    }
+
+    setAssocThresh(minSupport, minConfidence, minLift) {
+        this.minSupport = minSupport;
+        this.minConfidence = minConfidence;
+        this.minLift = minLift;
+    }
+
+    setCoordsColumns(latColumn, lonColumn, coordFunct = this.defaultCoords) {
+        this.latColumn = latColumn;
+        this.lonColumn = lonColumn;
+        this.coordFunct = coordFunct
+    }
+
+    addCoords() {
+        for (const groupKey in this.groupedData) {
+            const group = this.groupedData[groupKey];
+
+            for (let i = 0; i < group.length; i++) {
+                const entry = group[i];
+                [entry.lat, entry.lon] = this.coordFunct(entry[this.latColumn], entry[this.lonColumn]);
+            }
+        }
+    }
+
+    groupByColumn() {
         this.groupedData = {};
 
         //divide os dados em provincias e cria as colunas de coordenadas
         this.origData.forEach(entry => {
-            var segment = entry[segmentColumn];
+            var segment = entry[this.groupColumn];
 
             if (this.groupedData[segment] == undefined) {
                 this.groupedData[segment] = []
@@ -26,18 +81,7 @@ class GlyphData {
         return [parseFloat(lat), parseFloat(lon)];
     }
 
-    setCoords(latColumn, lonColumn, coordFunct = this.defaultCoords) {
-        for (const groupKey in this.groupedData) {
-            const group = this.groupedData[groupKey];
-
-            for (let i = 0; i < group.length; i++) {
-                const entry = group[i];
-                [entry.lat, entry.lon] = coordFunct(entry[latColumn], entry[lonColumn]);
-            }
-        }
-    }
-
-    filterCategories(categsToKeep) {
+    filterCategories() {
         this.filteredData = {};
 
         for (const groupKey in this.groupedData) {
@@ -49,7 +93,7 @@ class GlyphData {
                 this.filteredData[groupKey][i] = {};
 
                 for (const category in entry) {
-                    if (categsToKeep.includes(category)) {
+                    if (this.procCategs.includes(category)) {
                         const value = entry[category];
 
                         this.filteredData[groupKey][i][category] = value;
@@ -119,7 +163,7 @@ class GlyphData {
         }
     }
 
-    getAssocRules(minSupport, minConfidence, minLift) {
+    getAssocRules() {
         this.#transTables = {};
 
         //transforma os objetos de arrays de cada grupo em arrays de array
@@ -142,10 +186,9 @@ class GlyphData {
         //calcula as regras de associação
         this.assocRules = {};
         this.assocFreqItems = {};
-        [this.assocRules, this.assocFreqItems] = getAssociations(this.#transTables, minSupport, minConfidence, minLift);
+        [this.assocRules, this.assocFreqItems] = getAssociations(this.#transTables, this.minSupport, this.minConfidence, this.minLift);
         console.log(this.#transTables)
     }
-
 
     getAverageCoords() {
         var positions = {};
@@ -188,17 +231,27 @@ class GlyphData {
         }
     }
 
-    setDisplayCategs(categsChosen) {
-        this.displayCategs = categsChosen;
-    }
-
-    setMaxRulesDisplayed(maxRules) {
-        this.maxRules = maxRules;
+    processDisplayCategs(){
+        this.displayCategs = {};
+        switch (this.displayMethod) {
+            case 0:
+                for (const groupKey in this.groupedData) {
+                    this.displayCategs[groupKey] = this.assocFreqItems[groupKey].filter(item => item.length == 1 && item[0] != ""
+                    ).slice(0, 10).map(item => item[0]);
+                }
+                break;
+        
+            default:
+                break;
+        }
     }
 
     filterMapCategories() {
+        this.processDisplayCategs();
+
         this.filteredMapData = [];
         var index = 0;
+       
         for (const group of this.mapData) {
             const groupKey = group.name;
 
@@ -221,6 +274,4 @@ class GlyphData {
         }
 
     }
-
-
 }
