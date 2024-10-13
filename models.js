@@ -13,6 +13,7 @@ const provincesPopulation = {
     Utrecht: 1387643,
     Zeeland: 391124
 };
+
 const citiesPopulation = {
     "RECIFE": 1587707,
     "JABOATAO DOS GUARARAPES": 683285,
@@ -219,7 +220,7 @@ function getPopulModel(data) {
         }
     }
     // console.log(averages)
-
+provincesPopulation
     //divide as somas pela população de cada provincia
     for (const key in data) {
         model[key] = {};

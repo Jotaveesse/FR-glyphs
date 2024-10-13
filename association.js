@@ -182,12 +182,6 @@ function getAssociations(transTables, minSupport, minConfidence, minLift) {
         freqItemsets[tableKey] = apriori(table, minSupport);
         tablesRules[tableKey] = generateAssociationRules(freqItemsets[tableKey] , table, minConfidence, minLift);
     }
-    // console.log("Frequent Itemsets:", frequentItemsets);
-    // console.log("Association Rules with Confidence, Lift, and Support:");
-    // rules.forEach(rule => {
-    //     console.log(`Rule: ${rule.antecedent} => ${rule.consequent} | ` +
-    //         `Confidence: ${rule.confidence.toFixed(2)} | Lift: ${rule.lift.toFixed(2)} | ` +
-    //         `Antecedent Support: ${rule.antecedentSupport.toFixed(2)} | Consequent Support: ${rule.consequentSupport.toFixed(2)}`);
-    // });
+  
     return [tablesRules, freqItemsets];
 }

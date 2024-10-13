@@ -5,39 +5,47 @@ function RDToCoords(x, y) {
     return [lat, lon];
 }
 
+const initThreshVal = {
+    support: 0.5,
+    confidence: 0.5,
+    lift: 1.5
+}
 
+window.onload = function () {
+    loadMap();
 
-fetch('crimes.csv')
-    .then(response => response.text())
-    .then(csvData => {
-        Papa.parse(csvData, {
-            header: true,
-            complete: function (results) {
-                const dataObj = results.data.slice(0, 1000);
-                addGlyph(dataObj, "crimes");
-
-            }
+    fetch('crimes.csv')
+        .then(response => response.text())
+        .then(csvData => {
+            Papa.parse(csvData, {
+                header: true,
+                complete: function (results) {
+                    const dataObj = results.data.slice(0, 1000);
+                    addGlyph(dataObj, "crimes");                    
+                }
+            })
         })
-    })
-    .catch(error => console.error('Error fetching the CSV file:', error));
-
-const glyphsOnMap = {};
+        .catch(error => console.error('Error fetching the CSV file:', error));
+}
+const glyphGroups = {};
 
 function addGlyph(data, name) {
     var glyphData = new GlyphData(data);
     glyphData.setGroupColumn('city');
     glyphData.setCoordsColumns('latitude', 'longitude');
     const columnsToKeep = ['main_reason', 'situation', 'personType', 'ageGroup'];
-    // glyphData.groupByColumn('province')
-    // glyphData.setCoords('x', 'y', RDToCoords);
+    // glyphData.setGroupColumn('province')
+    // glyphData.setCoordsColumns('x', 'y', RDToCoords);
     // const columnsToKeep = ['road_situation', 'road_surface', 'maximun_speed', 'type_of_accident'];
     glyphData.setProcCategs(columnsToKeep);
-    glyphData.setAssocThresh(0.2, 0.4, 1.0);
+    glyphData.setAssocThresh(initThreshVal.support, initThreshVal.confidence, initThreshVal.lift);
 
     glyphData.setDisplayCategs(0);
     glyphData.updateAll();
 
     console.log("glyph", glyphData)
 
-    glyphsOnMap[name] = glyphData;
+    glyphGroups[name] = glyphData;
+
+    map.setView([glyphGroups.crimes.glyphs[0].data.lat, glyphGroups.crimes.glyphs[0].data.lon]);
 }
