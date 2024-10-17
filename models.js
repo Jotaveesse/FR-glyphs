@@ -220,7 +220,7 @@ function getPopulModel(data) {
         }
     }
     // console.log(averages)
-provincesPopulation
+
     //divide as somas pela população de cada provincia
     for (const key in data) {
         model[key] = {};
@@ -234,3 +234,113 @@ provincesPopulation
 
     return model;
 }
+
+function getAverageModel(data) {
+    const groupCount = Object.keys(data).length;
+    const averages = {};
+    const model = {};
+
+    //calcula as somas de cada categoria
+    for (const groupKey in data) {
+        for (const category in data[groupKey]) {
+            const attrLength = data[groupKey][category].length
+            
+            if (averages[key2] == undefined)
+                averages[key2] = Array(attrLength).fill(0);
+
+            for (let i = 0; i < attrLength; i++) {
+                averages[category][i] += data[groupKey][category][i];
+            }
+        }
+    }
+    // console.log(averages)
+
+    //divide pela uantidade de provincias
+    for (const key in data) {
+        model[key] = {};
+        for (const key2 in data[key]) {
+            model[key][key2] = [];
+            for (let i = 0; i < attrLength; i++) {
+                model[key][key2].push(averages[key2][i] / groupCount);
+            }
+        }
+    }
+
+    return model;
+}
+
+function getItemsByFrequency(data) {
+    const frequencyMap = {};
+
+    // Iterate over each municipality in the dataset
+    for (const municipality in data) {
+        const rules = data[municipality];
+
+        // Process each rule
+        for (const rule of rules) {
+            // Count antecedents
+            for (const antecedent of rule.antecedents) {
+                if (!frequencyMap[antecedent]) {
+                    frequencyMap[antecedent] = 0;
+                }
+                frequencyMap[antecedent]++;
+            }
+
+            // Count consequents
+            for (const consequent of rule.consequents) {
+                if (!frequencyMap[consequent]) {
+                    frequencyMap[consequent] = 0;
+                }
+                frequencyMap[consequent]++;
+            }
+        }
+    }
+
+    // Convert the frequency map to an array and sort from most common to least common
+    const sortedItems = Object.keys(frequencyMap).sort((a, b) => frequencyMap[b] - frequencyMap[a]);
+
+    return sortedItems;
+}
+
+function getOrderedAbsoluteValuesPerCity(data) {
+    let result = {};
+  
+    // Loop through each city in the input object
+    for (let city in data) {
+      // Sort the entries by the absolute value in descending order
+      let sortedEntries = data[city].sort((a, b) => b.value - a.value);
+  
+      // Extract the sorted names from the entries
+      let sortedNames = sortedEntries.map(entry => entry.name);
+  
+      // Add the sorted names to the result for the city
+      result[city] = sortedNames;
+    }
+  
+    return result;
+  }
+
+  function getHighestAbsoluteValuesOverall(data) {
+    let summedValues = {};
+  
+    // Loop through each city in the input object
+    for (let city in data) {
+      // Loop through each entry in the city
+      for (let entry of data[city]) {
+        let absValue = Math.abs(entry.value);
+  
+        // If the name already exists in the summedValues, add the value
+        if (summedValues[entry.name]) {
+          summedValues[entry.name] += absValue;
+        } else {
+          // Otherwise, initialize it with the absolute value
+          summedValues[entry.name] = absValue;
+        }
+      }
+    }
+  
+    // Convert the summedValues object to an array and sort by summed value
+    let sortedNames = Object.keys(summedValues).sort((a, b) => summedValues[b] - summedValues[a]);
+  
+    return sortedNames;
+  }

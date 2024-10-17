@@ -88,6 +88,25 @@ function loadMap() {
     supportSlider.addTo(map);
     supportSlider.updateTooltip(map);
 
+    //criação dos slider de suporte
+    var maxsupportSlider = new L.Control.Slider({
+        position: 'topright',
+        labelText: 'Suporte Máximo',
+        rangeMin: 0.0,
+        rangeMax: 1,
+        rangeStep: 0.05,
+        rangeInit: 1,
+        onChange: function (value) {
+            for (const key in glyphGroups) {
+                const glyph = glyphGroups[key];
+                glyph.setMaxSupport(value);
+                glyph.update();
+            }
+        }
+    });
+    maxsupportSlider.addTo(map);
+    maxsupportSlider.updateTooltip(map);
+
     //criação dos slider de confiança
     var confidenceSlider = new L.Control.Slider({
         position: 'topright',
@@ -113,7 +132,7 @@ function loadMap() {
         labelText: 'Lift Mínimo',
         rangeMin: 1,
         rangeMax: 2,
-        rangeStep: 0.1,
+        rangeStep: 0.05,
         rangeInit:  initThreshVal.lift,
         onChange: function (value) {
             for (const key in glyphGroups) {
@@ -127,23 +146,17 @@ function loadMap() {
     liftSlider.updateTooltip(map);
 
     //atualiza a posição quando move e da zoom
-    map.on('moveend', function () {
+    map.on('zoomend', function () {
         for (const key in glyphGroups) {
             const glyphGroup = glyphGroups[key];
 
-            var newSize = glyphGroup.getMaxSize();
-
             //diminui o tamanho dos glifos quando o nivel de zoom é baixo
-            for (const key in glyphGroup.glyphs) {
-                const glyph = glyphGroup.glyphs[key];
-
-                glyph.setSize(newSize);
-                glyph.updatePosition();
+            for (const key in glyphGroup.newGlyphs) {
+                const glyph = glyphGroup.newGlyphs[key];
+                glyph.updateSize();
             };
         }
     });
-    // createGlyphs(tempData);
-
 };
 
 function projectPoint(map, lat, lon) {

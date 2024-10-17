@@ -20,7 +20,7 @@ window.onload = function () {
             Papa.parse(csvData, {
                 header: true,
                 complete: function (results) {
-                    const dataObj = results.data.slice(0, 1000);
+                    const dataObj = results.data.slice(0, 100);
                     addGlyph(dataObj, "crimes");                    
                 }
             })
@@ -31,9 +31,10 @@ const glyphGroups = {};
 
 function addGlyph(data, name) {
     var glyphData = new GlyphData(data);
+    
     glyphData.setGroupColumn('city');
     glyphData.setCoordsColumns('latitude', 'longitude');
-    const columnsToKeep = ['main_reason', 'situation', 'personType', 'ageGroup'];
+    const columnsToKeep = ['main_reason', 'situation', 'personType', 'ageGroup','genre','place',];
     // glyphData.setGroupColumn('province')
     // glyphData.setCoordsColumns('x', 'y', RDToCoords);
     // const columnsToKeep = ['road_situation', 'road_surface', 'maximun_speed', 'type_of_accident'];
@@ -46,6 +47,7 @@ function addGlyph(data, name) {
     console.log("glyph", glyphData)
 
     glyphGroups[name] = glyphData;
-
-    map.setView([glyphGroups.crimes.glyphs[0].data.lat, glyphGroups.crimes.glyphs[0].data.lon]);
+    const firstKey = Object.keys(glyphGroups.crimes.newGlyphs)[0];
+    firstGlyph = glyphGroups.crimes.newGlyphs[firstKey];
+    map.panTo([firstGlyph.lat, firstGlyph.lon]);
 }

@@ -8,8 +8,10 @@ class GlyphData {
     constructor(data) {
         this.origData = data;
         this.surpriseModels = [];
-        this.maxRules = 5;
+        this.maxRules = 4;
+        this.maxCategories = 8;
         this.minSupport = 0.5;
+        this.maxSupport = 1;
         this.minConfidence = 0.6;
         this.minLift = 1.3;
         this.#lowestSupport = Infinity;
@@ -30,6 +32,15 @@ class GlyphData {
         this.addCoords();
         t1 = performance.now();
         console.log(`addCoords: ${(t1 - t0).toFixed(2)} ms`);
+
+        //cria os glifos
+        this.newGlyphs = {};
+        for (const groupKey in this.groupedData) {
+            const glyph = new GlyphSymbol(this, this.groupedData[groupKey]);
+
+            glyph.name = groupKey;
+            this.newGlyphs[groupKey] = glyph;
+        }
 
         t0 = performance.now();
         this.filterCategories();
@@ -57,16 +68,6 @@ class GlyphData {
         this.updateAssociations();
         t1 = performance.now();
         console.log(`getAssocRules: ${(t1 - t0).toFixed(2)} ms`);
-
-        t0 = performance.now();
-        this.buildMapData();
-        t1 = performance.now();
-        console.log(`buildMapData: ${(t1 - t0).toFixed(2)} ms`);
-
-        t0 = performance.now();
-        this.filterMapCategories();
-        t1 = performance.now();
-        console.log(`filterMapCategories: ${(t1 - t0).toFixed(2)} ms`);
 
         t0 = performance.now();
         this.createGlyphs(this.filteredMapData);
@@ -143,16 +144,6 @@ class GlyphData {
 
             t1 = performance.now();
             console.log(`getAssocRules: ${(t1 - t0).toFixed(2)} ms`);
-
-            t0 = performance.now();
-            this.buildMapData();
-            t1 = performance.now();
-            console.log(`buildMapData: ${(t1 - t0).toFixed(2)} ms`);
-
-            t0 = performance.now();
-            this.filterMapCategories();
-            t1 = performance.now();
-            console.log(`filterMapCategories: ${(t1 - t0).toFixed(2)} ms`);
         }
 
         t0 = performance.now();
@@ -179,6 +170,12 @@ class GlyphData {
 
     setGroupColumn(groupColumn) {
         this.groupColumn = groupColumn;
+    }
+
+    setMaxSupport(maxSupport) {
+        this.maxSupport = maxSupport;
+        this.#updatedThresh = true;
+
     }
 
     setAssocThresh(minSupport = null, minConfidence = null, minLift = null) {
@@ -257,7 +254,9 @@ class GlyphData {
 
     getFrequencies() {
         this.freqData = {};
+        this.uniqueValues = [];
 
+        //acha todos os valores distintos
         for (const groupKey in this.filteredData) {
             const group = this.filteredData[groupKey];
             this.freqData[groupKey] = {};
@@ -268,12 +267,31 @@ class GlyphData {
                 for (const category in entry) {
                     const value = entry[category];
 
+                    if (value != "") {
+                        if (!this.uniqueValues.includes(value))
+                            this.uniqueValues.push(value)
+                    }
+                }
+            }
+        }
+
+        for (const groupKey in this.filteredData) {
+            const group = this.filteredData[groupKey];
+            this.freqData[groupKey] = {};
+
+            for (let i = 0; i < this.uniqueValues.length; i++) {
+                this.freqData[groupKey][this.uniqueValues[i]] = [0];
+            }
+
+            for (let i = 0; i < group.length; i++) {
+                const entry = group[i];
+
+                for (const category in entry) {
+                    const value = entry[category];
+
                     //incrementa a quantidade para esse valor, cria uma array de frequencias
                     //caso tenham dados de varias anos
                     if (value != "") {
-                        if (this.freqData[groupKey][value] == undefined)
-                            this.freqData[groupKey][value] = [0];
-
                         this.freqData[groupKey][value][0] += 1;
                     }
                 }
@@ -342,9 +360,7 @@ class GlyphData {
         this.updateAssociations();
     }
 
-
-
-    filterAssocRules() {
+    filterAssocRules() {    //filtra as regras que estao dentro dos limites dos limiares
         this.filteredAssocRules = {};
 
         for (const groupKey in this.filteredData) {
@@ -356,6 +372,8 @@ class GlyphData {
 
                 if (rule.antecedentSupport >= this.minSupport &&
                     rule.consequentSupport >= this.minSupport &&
+                    rule.antecedentSupport <= this.maxSupport &&
+                    rule.consequentSupport <= this.maxSupport &&
                     rule.confidence >= this.minConfidence &&
                     rule.lift >= this.minLift) {
                     this.filteredAssocRules[groupKey].push(rule);
@@ -376,61 +394,59 @@ class GlyphData {
     updateAssociations() {
         this.assocRules = {};
         this.filteredAssocRules = {};
-        for (const tableKey in this.transTables) {
-            const table = this.transTables[tableKey];
-            this.assocRules[tableKey] = generateAssociationRules(this.assocFreqItems[tableKey], table, this.minConfidence, this.minLift);
-            this.filteredAssocRules[tableKey] = structuredClone(this.assocRules[tableKey]);
-        }
-    }
 
-    getAverageCoords() {
-        var positions = {};
-        for (const groupKey in this.groupedData) {
-            const group = this.groupedData[groupKey];
+        for (const groupKey in this.transTables) {
+            const table = this.transTables[groupKey];
+            this.assocRules[groupKey] = generateAssociationRules(this.assocFreqItems[groupKey], table, this.minConfidence, this.minLift);
 
-            var avrgLat = 0;
-            var avrgLon = 0;
-
-            for (let index = 0; index < group.length; index++) {
-                avrgLat += group[index].lat;
-                avrgLon += group[index].lon;
-            }
-            avrgLat /= group.length;
-            avrgLon /= group.length;
-
-            positions[groupKey] = {};
-            positions[groupKey].lat = avrgLat;
-            positions[groupKey].lon = avrgLon;
-        }
-        return positions;
-    }
-
-    buildMapData() {
-        this.mapData = [];
-        var mapCoords = this.getAverageCoords();
-
-        var index = 0;
-
-        for (const groupKey in this.groupedData) {
-            this.mapData[index] = {};
-
-            this.mapData[index].name = groupKey;
-            this.mapData[index].lat = mapCoords[groupKey].lat;
-            this.mapData[index].lon = mapCoords[groupKey].lon;
-            this.mapData[index].rules = this.filteredAssocRules[groupKey];
-            this.mapData[index].dataPoints = this.surpriseData[groupKey];
-
-            index++;
+            this.filteredAssocRules[groupKey] = structuredClone(this.assocRules[groupKey]);
         }
     }
 
     processDisplayCategs() {
         this.displayCategs = {};
+        console.log("updating")
+
         switch (this.displayMethod) {
+            //escolhe as categorias com mais regras
             case 0:
+                var freqRules = getItemsByFrequency(this.filteredAssocRules);
+                freqRules = [...new Set([...freqRules, ...this.uniqueValues])].slice(0, this.maxCategories);
+
+                for (const groupKey in this.groupedData) {
+                    this.displayCategs[groupKey] = freqRules;
+                }
+                break;
+
+            //escolhe qualquer categoria
+            case 1:
+                for (const groupKey in this.groupedData) {
+                    this.displayCategs[groupKey] = Object.keys(this.freqData[groupKey]).slice(0, this.maxCategories);
+                }
+                break;
+            //escolhe as categorias mais frequentes
+            case 2:
                 for (const groupKey in this.groupedData) {
                     this.displayCategs[groupKey] = this.assocFreqItems[groupKey].filter(item => item.length == 1 && item[0] != ""
-                    ).slice(0, 10).map(item => item[0]);
+                    ).slice(0, this.maxCategories).map(item => item[0]);
+                }
+                break;
+
+            //escolhe as maiores surpresas de cada grupo
+            case 3:
+                var freqRules = getOrderedAbsoluteValuesPerCity(this.surpriseData);
+
+                for (const groupKey in this.groupedData) {
+                    this.displayCategs[groupKey] = freqRules[groupKey].slice(0, this.maxCategories);
+                }
+                break;
+
+            //escolhe as maiores surpresas gerais
+            case 4:
+                var freqRules = getHighestAbsoluteValuesOverall(this.surpriseData).slice(0, this.maxCategories);
+
+                for (const groupKey in this.groupedData) {
+                    this.displayCategs[groupKey] = freqRules;
                 }
                 break;
 
@@ -439,53 +455,29 @@ class GlyphData {
         }
     }
 
-    filterMapCategories() {
-        this.processDisplayCategs();
-
-        this.filteredMapData = [];
-        var index = 0;
-
-        for (const group of this.mapData) {
-            const groupKey = group.name;
-
-            if (this.filteredMapData[index] == undefined)
-                this.filteredMapData[index] = { name: group.name, lat: group.lat, lon: group.lon };
-
-            this.filteredMapData[index].dataPoints = this.mapData[index].dataPoints.filter(point =>
-                this.displayCategs[groupKey].includes(point.name));
-
-            //filtra somente as regras que possuem todos os seus antecessores
-            //e cosequentes nas categorias escolhidas
-            this.filteredMapData[index].rules = this.mapData[index].rules.filter(rule => {
-                var isAnte = rule.antecedents.every(name => this.displayCategs[groupKey].includes(name));
-                var isConse = rule.consequents.every(name => this.displayCategs[groupKey].includes(name));
-
-                return isAnte && isConse;
-            }).slice(0, this.maxRules);
-
-            index++;
-        }
-
-    }
-
-    findSmallestDistance() {
+    findClosestPair() {
         let minDistance = Infinity;
-        let closestPair = { glyph1: 0, glyph2: 0 };
+        let closestPair = { glyph1: null, glyph2: null, dist: Infinity };
 
-        for (let i = 0; i < this.glyphs.length; i++) {
-            for (let j = i + 1; j < this.glyphs.length; j++) {
-                const lat1 = this.glyphs[i].data.lat;
-                const lon1 = this.glyphs[i].data.lon;
-                const lat2 = this.glyphs[j].data.lat;
-                const lon2 = this.glyphs[j].data.lon;
+        const glyphNames = Object.keys(this.newGlyphs);
+
+        for (let i = 0; i < glyphNames.length; i++) {
+            for (let j = i + 1; j < glyphNames.length; j++) {
+                const glyph1 = this.newGlyphs[glyphNames[i]];
+                const glyph2 = this.newGlyphs[glyphNames[j]];
+
+                const lat1 = glyph1.lat;
+                const lon1 = glyph1.lon;
+                const lat2 = glyph2.lat;
+                const lon2 = glyph2.lon;
 
                 const dLat = lat2 - lat1;
                 const dLon = lon2 - lon1;
-                const distance = dLat * dLat + dLon * dLon;
+                const distance = Math.sqrt(dLat * dLat + dLon * dLon);
 
                 if (distance < minDistance) {
                     minDistance = distance;
-                    closestPair = { glyph1: this.glyphs[i], glyph2: this.glyphs[j] };
+                    closestPair = { glyph1, glyph2, dist: distance };
                 }
             }
         }
@@ -493,37 +485,35 @@ class GlyphData {
         return closestPair;
     }
 
-    getMaxSize() {
-        const glyph1 = this.closestPair.glyph1;
-        const glyph2 = this.closestPair.glyph2;
 
-        const smallestDist = glyph1.distanceTo(glyph2)
-        const newSize = Math.min(smallestDist * 0.8, 420);
+    getMaxSize() {
+        const newSize = Math.min(Math.max(this.closestPair.dist, 0.02), 1)
 
         return newSize;
     }
 
     createGlyphs() {
-        this.glyphs.forEach(glyph => {
-            glyph.remove();
-        });
+        this.processDisplayCategs();
 
-        this.glyphs = [];
+        for (const groupKey in this.groupedData) {
+            const glyph = this.newGlyphs[groupKey];
 
-        for (const groupKey in this.filteredMapData) {
-            const groupData = this.filteredMapData[groupKey];
-            const glyph = new GlyphSymbol(groupData);
+            glyph.surprises = this.surpriseData[groupKey];
+            glyph.rules = this.filteredAssocRules[groupKey];
 
-            this.glyphs.push(glyph);
-        }
+            glyph.setData(this.surpriseData[groupKey], this.filteredAssocRules[groupKey], this.displayCategs[groupKey]);
+    
+            glyph.draw();
+        };
 
-        this.closestPair = this.findSmallestDistance();
+        this.closestPair = this.findClosestPair();
 
         const newSize = this.getMaxSize();
 
-        this.glyphs.forEach(glyph => {
-            glyph.drawGlyph();
-            glyph.setSize(newSize);
-        });
+        for (const groupKey in this.groupedData) {
+            const glyph = this.newGlyphs[groupKey];
+            glyph.setMaxCoordSize(newSize);
+            glyph.updateSize();
+        };
     }
 }
