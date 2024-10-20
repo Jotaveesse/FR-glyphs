@@ -6,12 +6,12 @@ function RDToCoords(x, y) {
 }
 
 const initThreshVal = {
-    supportMin: 0.4,
-    supportMax: 0.6,
-    confidenceMin: 0.4,
-    confidenceMax: 0.6,
-    liftMin: 1.3,
-    liftMax: 1.7
+    supportMin: 0,
+    supportMax: 1,
+    confidenceMin: 0,
+    confidenceMax: 1,
+    liftMin: 1,
+    liftMax: 2.5
 }
 
 window.onload = function () {
@@ -23,7 +23,7 @@ window.onload = function () {
             Papa.parse(csvData, {
                 header: true,
                 complete: function (results) {
-                    const dataObj = results.data.slice(0, 1000);
+                    const dataObj = results.data.slice(0, 2000);
                     addGlyph(dataObj, "crimes");
                 }
             })
@@ -47,7 +47,7 @@ function addGlyph(data, name) {
     glyphData.setConfidence(initThreshVal.confidenceMin, initThreshVal.confidenceMax);
     glyphData.setLift(initThreshVal.liftMin, initThreshVal.liftMax);
 
-    glyphData.setDisplayCategs(3);
+    glyphData.setDisplayCategs(0);
     glyphData.updateAll();
 
     console.log("glyph", glyphData)

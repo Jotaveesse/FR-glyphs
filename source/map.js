@@ -14,8 +14,8 @@ function loadMap() {
     const supportSlider = new L.Control.Slider({
         position: 'topright',
         labelText: 'Suporte',
-        rangeMin: 0.0,
-        rangeMax: 1,
+        rangeMin:  initThreshVal.supportMin,
+        rangeMax:  initThreshVal.supportMax,
         rangeStep: 0.05,
         rangeInitMin: initThreshVal.supportMin,
         rangeInitMax: initThreshVal.supportMax,
@@ -34,8 +34,8 @@ function loadMap() {
     const confidenceSlider = new L.Control.Slider({
         position: 'topright',
         labelText: 'Confiança',
-        rangeMin: 0.0,
-        rangeMax: 1,
+        rangeMin:  initThreshVal.confidenceMin,
+        rangeMax:  initThreshVal.confidenceMax,
         rangeStep: 0.05,
         rangeInitMin: initThreshVal.confidenceMin,
         rangeInitMax: initThreshVal.confidenceMax,
@@ -54,8 +54,8 @@ function loadMap() {
     const liftSlider = new L.Control.Slider({
         position: 'topright',
         labelText: 'Lift',
-        rangeMin: 1,
-        rangeMax: 2,
+        rangeMin: initThreshVal.liftMin,
+        rangeMax: initThreshVal.liftMax,
         rangeStep: 0.05,
         rangeInitMin: initThreshVal.liftMin,
         rangeInitMax: initThreshVal.liftMax,
@@ -70,18 +70,18 @@ function loadMap() {
     liftSlider.addTo(map);
     liftSlider.addSlider();
 
-    //atualiza a posição quando move e da zoom
-    map.on('zoomend', function () {
-        for (const key in glyphGroups) {
-            const glyphGroup = glyphGroups[key];
+    // //atualiza a posição quando move e da zoom
+    // map.on('zoomend', function () {
+    //     for (const key in glyphGroups) {
+    //         const glyphGroup = glyphGroups[key];
 
-            //diminui o tamanho dos glifos quando o nivel de zoom é baixo
-            for (const key in glyphGroup.newGlyphs) {
-                const glyph = glyphGroup.newGlyphs[key];
-                // glyph.updateSize();
-            };
-        }
-    });
+    //         //diminui o tamanho dos glifos quando o nivel de zoom é baixo
+    //         for (const key in glyphGroup.newGlyphs) {
+    //             const glyph = glyphGroup.newGlyphs[key];
+    //             // glyph.updateSize();
+    //         };
+    //     }
+    // });
 };
 
 function projectPoint(map, lat, lon) {

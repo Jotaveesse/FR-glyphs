@@ -16,7 +16,10 @@ function generateInitialItemsets(transactions) {
     const items = new Set();
 
     transactions.forEach(transaction => {
-        transaction.forEach(item => items.add(item));
+        transaction.forEach(item => {
+            if (item!="")
+                items.add(item);
+        });
     });
 
     items.forEach(item => {
@@ -29,8 +32,6 @@ function generateInitialItemsets(transactions) {
 function filterFrequentItemsets(itemsets, transactionSets, minSupport) {
     const itemsetCounts = new Map();
     const totalTransactions = transactionSets.length;
-
-    // Create a Set for each transaction for fast lookup
 
     transactionSets.forEach(transactionSet => {
         itemsets.forEach(itemset => {

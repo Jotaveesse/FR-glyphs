@@ -6,11 +6,12 @@ class GlyphData {
         this.origData = data;
         this.surpriseModels = [];
         this.maxRules = 4;
+        this.maxArrows = 2;
         this.maxCategories = 8;
         this.minSupport = 0;
         this.maxSupport = 1;
         this.minConfidence = 0;
-        this.mmaxConfidence = 0;
+        this.maxConfidence = 0;
         this.minLift = 0;
         this.maxLift = 3;
         this.glyphs = [];
@@ -280,6 +281,20 @@ class GlyphData {
         }
     }
 
+    getScore(rule){
+        const base = rule.confidence + rule.antecedentSupport + rule.consequentSupport - (rule.antecedents.length + rule.consequents.length)*2;
+        return base * rule.lift* rule.lift;
+    }
+
+    sortRulesByScore() {
+        for (const groupKey in this.groupedData) {
+            this.assocRules[groupKey] = this.assocRules[groupKey].sort((a, b) => {
+
+                return this.getScore(b) - this.getScore(a); 
+            });
+        }
+    }
+
     updateTransTables() {
         this.transTables = {};
 
@@ -328,7 +343,8 @@ class GlyphData {
                     rule.confidence >= this.minConfidence &&
                     rule.confidence <= this.maxConfidence &&
                     rule.lift >= this.minLift &&
-                    rule.lift <= this.maxLift) {
+                    rule.lift <= this.maxLift &&
+                    rule.antecedents.length + rule.consequents.length >= this.maxArrows) {
                     this.filteredAssocRules[groupKey].push(rule);
                 }
 
