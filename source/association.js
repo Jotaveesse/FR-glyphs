@@ -5,7 +5,6 @@ function apriori(transactions, minSupport) {
     while (itemsets.length > 0) {
         let frequent = filterFrequentItemsets(itemsets, transactions, minSupport);
         frequentItemsets = frequentItemsets.concat(frequent);
-
         itemsets = generateNextItemsets(frequent);
     }
 
@@ -13,8 +12,8 @@ function apriori(transactions, minSupport) {
 }
 
 function generateInitialItemsets(transactions) {
-    let itemsets = [];
-    let items = new Set();
+    const itemsets = [];
+    const items = new Set();
 
     transactions.forEach(transaction => {
         transaction.forEach(item => items.add(item));
@@ -27,20 +26,24 @@ function generateInitialItemsets(transactions) {
     return itemsets;
 }
 
-function filterFrequentItemsets(itemsets, transactions, minSupport) {
-    let itemsetCounts = new Map();
-    transactions.forEach(transaction => {
+function filterFrequentItemsets(itemsets, transactionSets, minSupport) {
+    const itemsetCounts = new Map();
+    const totalTransactions = transactionSets.length;
+
+    // Create a Set for each transaction for fast lookup
+
+    transactionSets.forEach(transactionSet => {
         itemsets.forEach(itemset => {
-            if (itemset.every(item => transaction.includes(item))) {
+            if (itemset.every(item => transactionSet.has(item))) {
                 const key = itemset.join(',');
                 itemsetCounts.set(key, (itemsetCounts.get(key) || 0) + 1);
             }
         });
     });
 
-    let frequentItemsets = [];
-    for (let [key, count] of itemsetCounts) {
-        if (count / transactions.length >= minSupport) {
+    const frequentItemsets = [];
+    for (const [key, count] of itemsetCounts) {
+        if (count / totalTransactions >= minSupport) {
             frequentItemsets.push(key.split(','));
         }
     }
@@ -49,15 +52,15 @@ function filterFrequentItemsets(itemsets, transactions, minSupport) {
 }
 
 function generateNextItemsets(frequentItemsets) {
-    let nextItemsets = [];
-    let len = frequentItemsets.length;
+    const nextItemsets = [];
+    const len = frequentItemsets.length;
 
     for (let i = 0; i < len; i++) {
         for (let j = i + 1; j < len; j++) {
-            let first = frequentItemsets[i];
-            let second = frequentItemsets[j];
+            const first = frequentItemsets[i];
+            const second = frequentItemsets[j];
 
-            //checa se os rimeiros (k-1) itens sao iguais
+            // Check if the first k-1 items are the same
             if (first.slice(0, -1).toString() === second.slice(0, -1).toString()) {
                 nextItemsets.push([...first, second[second.length - 1]]);
             }
@@ -67,7 +70,14 @@ function generateNextItemsets(frequentItemsets) {
     return nextItemsets;
 }
 
-function generateAssociationRules(frequentItemsets, transactions, minConfidence, minLift) {
+function generateAssociationRules(frequentItemsets, transactionSets, minConfidence, minLift) {
+    const supports = {}; // Store supports for all itemsets
+
+    // Precompute support for all frequent itemsets
+    frequentItemsets.forEach(itemset => {
+        supports[itemset.join(',')] = calculateSupport(itemset, transactionSets);
+    });
+
     let rules = [];
 
     frequentItemsets.forEach(itemset => {
@@ -77,11 +87,12 @@ function generateAssociationRules(frequentItemsets, transactions, minConfidence,
             subsets.forEach(subset => {
                 let remaining = itemset.filter(item => !subset.includes(item));
                 if (remaining.length > 0) {
-                    let confidence = calculateConfidence(subset, remaining, transactions);
+                    let confidence = calculateConfidence(subset, remaining, transactionSets, supports);
                     if (confidence >= minConfidence) {
-                        let lift = calculateLift(subset, remaining, transactions);
-                        let antecedentSupport = calculateSupport(subset, transactions);
-                        let consequentSupport = calculateSupport(remaining, transactions);
+                        let lift = calculateLift(subset, remaining, transactionSets, supports);
+                        let antecedentSupport = supports[subset.join(',')];
+                        let consequentSupport = supports[remaining.join(',')];
+
                         if (lift >= minLift) {
                             rules.push({
                                 antecedents: subset,
@@ -105,7 +116,7 @@ function calculateSupport(itemset, transactions) {
     let supportCount = 0;
 
     transactions.forEach(transaction => {
-        if (itemset.every(item => transaction.includes(item))) {
+        if (itemset.every(item => transaction.has(item))) {
             supportCount++;
         }
     });
@@ -113,56 +124,45 @@ function calculateSupport(itemset, transactions) {
     return supportCount / transactions.length;
 }
 
-function calculateConfidence(antecedents, consequents, transactions) {
-    let antecedentSupport = 0;
+function calculateConfidence(antecedents, consequents, transactions, supports) {
+    const antecedentSupport = supports[antecedents.join(',')];
     let bothSupport = 0;
 
     transactions.forEach(transaction => {
-        if (antecedents.every(item => transaction.includes(item))) {
-            antecedentSupport++;
-            if (consequents.every(item => transaction.includes(item))) {
-                bothSupport++;
-            }
-        }
-    });
-
-    return bothSupport / antecedentSupport;
-}
-
-// calcula o lift de uma regra
-function calculateLift(antecedents, consequents, transactions) {
-    let antecedentSupport = 0;
-    let consequentSupport = 0;
-    let bothSupport = 0;
-
-    transactions.forEach(transaction => {
-        if (antecedents.every(item => transaction.includes(item))) {
-            antecedentSupport++;
-        }
-        if (consequents.every(item => transaction.includes(item))) {
-            consequentSupport++;
-        }
-        if (antecedents.every(item => transaction.includes(item)) &&
-        consequents.every(item => transaction.includes(item))) {
+        if (antecedents.every(item => transaction.has(item)) && 
+            consequents.every(item => transaction.has(item))) {
             bothSupport++;
         }
     });
 
-    let totalTransactions = transactions.length;
-    let supportA = antecedentSupport / totalTransactions;
-    let supportB = consequentSupport / totalTransactions;
-    let supportAB = bothSupport / totalTransactions;
+    return bothSupport / transactions.length / antecedentSupport;
+}
+
+function calculateLift(antecedents, consequents, transactions, supports) {
+    const antecedentSupport = supports[antecedents.join(',')];
+    const consequentSupport = supports[consequents.join(',')];
+    let bothSupport = 0;
+
+    transactions.forEach(transaction => {
+        if (antecedents.every(item => transaction.has(item)) && 
+            consequents.every(item => transaction.has(item))) {
+            bothSupport++;
+        }
+    });
+
+    let supportA = antecedentSupport;
+    let supportB = consequentSupport;
+    let supportAB = bothSupport / transactions.length;
 
     return supportAB / (supportA * supportB);
 }
 
-// gera todos os subconjuntos de um conjunto de itens
 function getSubsets(array) {
-    let subsets = [];
-    let len = array.length;
+    const subsets = [];
+    const len = array.length;
 
     for (let i = 1; i < (1 << len); i++) {
-        let subset = [];
+        const subset = [];
         for (let j = 0; j < len; j++) {
             if (i & (1 << j)) {
                 subset.push(array[j]);
@@ -173,6 +173,7 @@ function getSubsets(array) {
 
     return subsets;
 }
+
 
 function getAssociations(transTables, minSupport, minConfidence, minLift) {
     var tablesRules = {};

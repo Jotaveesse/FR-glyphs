@@ -298,7 +298,11 @@ class GlyphData {
                     this.transTables[groupKey][i].push(value);
                 }
             }
+
+            this.transTables[groupKey] = this.transTables[groupKey].map(t => new Set(t));
         }
+
+
     }
 
     getAssocRules() {
