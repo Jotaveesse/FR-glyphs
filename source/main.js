@@ -53,7 +53,7 @@ function addGlyph(data, name) {
     console.log("glyph", glyphData)
 
     glyphGroups[name] = glyphData;
-    const firstKey = Object.keys(glyphGroups.crimes.newGlyphs)[0];
-    firstGlyph = glyphGroups.crimes.newGlyphs[firstKey];
+    const firstKey = Object.keys(glyphGroups.crimes.glyphs)[0];
+    firstGlyph = glyphGroups.crimes.glyphs[firstKey];
     map.panTo([firstGlyph.lat, firstGlyph.lon]);
 }

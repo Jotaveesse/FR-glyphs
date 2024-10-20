@@ -14,6 +14,27 @@ class GlyphData {
         this.minLift = 0;
         this.maxLift = 3;
         this.glyphs = [];
+        this.glyphSize = 200;
+
+        this.markers = new L.markerClusterGroup({
+            maxClusterRadius: this.glyphSize,
+            spiderfyOnMaxZoom:true,
+            iconCreateFunction: (cluster) => {
+                console.log(cluster)
+                const childCount = cluster.getChildCount();
+                
+                const size = this.glyphSize*0.8; 
+                const color = childCount > 10 ? 'red' : childCount > 5 ? 'orange' : 'green'; // Change color based on count
+        
+                return L.divIcon({
+                    html: `<div class="cluster-icon" style="background-color: ${color}; width: ${size}px; height: ${size}px;
+                    text-align: center; line-height: ${size}px; color: white; font-size: ${size/3}px;">${childCount}</div>`,
+                    className: 'custom-cluster-icon',
+                    iconSize: L.point(size, size),
+                    iconAnchor: L.point(size / 2, size / 2)
+                });
+            }
+        });
     }
 
     updateAll() {
@@ -26,11 +47,11 @@ class GlyphData {
 
         const tGlyphsStart = performance.now();
         //cria os glifos
-        this.newGlyphs = {};
+        this.glyphs = {};
         for (const groupKey in this.groupedData) {
-            const glyph = new GlyphSymbol(this, this.groupedData[groupKey]);
+            const glyph = new GlyphSymbol(this, this.groupedData[groupKey], this.glyphSize);
             glyph.name = groupKey;
-            this.newGlyphs[groupKey] = glyph;
+            this.glyphs[groupKey] = glyph;
         }
         const tGlyphsEnd = performance.now();
         console.log(`createGlyphs for groups: ${(tGlyphsEnd - tGlyphsStart).toFixed(2)} ms`);
@@ -48,7 +69,7 @@ class GlyphData {
         this.logExecutionTime(() => this.updateFreqItemSets(), 'updateFreqItems');
 
         this.logExecutionTime(() => this.updateAssociations(), 'updateAssoc');
-        
+
         this.logExecutionTime(() => this.filterAssocRules(), 'filterAssoc');
 
         this.logExecutionTime(() => this.createGlyphs(this.filteredMapData), 'createGlyphs');
@@ -71,7 +92,7 @@ class GlyphData {
 
         const endTime = performance.now();
         console.log(`updateAll total time: ${(endTime - startTime).toFixed(2)} ms`);
-        
+
         console.log("===== Finished Update =====")
     }
 
@@ -321,7 +342,7 @@ class GlyphData {
 
         for (const groupKey in this.transTables) {
             const table = this.transTables[groupKey];
-            this.assocRules[groupKey] = generateAssociationRules(this.assocFreqItems[groupKey], table, 0,0);
+            this.assocRules[groupKey] = generateAssociationRules(this.assocFreqItems[groupKey], table, 0, 0);
 
             this.filteredAssocRules[groupKey] = structuredClone(this.assocRules[groupKey]);
         }
@@ -378,65 +399,19 @@ class GlyphData {
         }
     }
 
-    findClosestPair() {
-        let minDistance = Infinity;
-        let closestPair = { glyph1: null, glyph2: null, dist: Infinity };
-
-        const glyphNames = Object.keys(this.newGlyphs);
-
-        for (let i = 0; i < glyphNames.length; i++) {
-            for (let j = i + 1; j < glyphNames.length; j++) {
-                const glyph1 = this.newGlyphs[glyphNames[i]];
-                const glyph2 = this.newGlyphs[glyphNames[j]];
-
-                const lat1 = glyph1.lat;
-                const lon1 = glyph1.lon;
-                const lat2 = glyph2.lat;
-                const lon2 = glyph2.lon;
-
-                const dLat = lat2 - lat1;
-                const dLon = lon2 - lon1;
-                const distance = Math.sqrt(dLat * dLat + dLon * dLon);
-
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closestPair = { glyph1, glyph2, dist: distance };
-                }
-            }
-        }
-
-        return closestPair;
-    }
-
-
-    getMaxSize() {
-        const newSize = Math.min(Math.max(this.closestPair.dist, 0.02), 1)
-
-        return newSize;
-    }
-
     createGlyphs() {
         this.processDisplayCategs();
 
         for (const groupKey in this.groupedData) {
-            const glyph = this.newGlyphs[groupKey];
+            const glyph = this.glyphs[groupKey];
 
-            glyph.surprises = this.surpriseData[groupKey];
-            glyph.rules = this.filteredAssocRules[groupKey];
-
+            //adiciona os dados
             glyph.setData(this.surpriseData[groupKey], this.filteredAssocRules[groupKey], this.displayCategs[groupKey]);
+            const marker = glyph.getMarker();
 
-            glyph.draw();
+            this.markers.addLayer(marker);
         };
 
-        this.closestPair = this.findClosestPair();
-
-        const newSize = this.getMaxSize();
-
-        for (const groupKey in this.groupedData) {
-            const glyph = this.newGlyphs[groupKey];
-            glyph.setMaxCoordSize(newSize);
-            glyph.updateSize();
-        };
+        map.addLayer(this.markers);
     }
 }

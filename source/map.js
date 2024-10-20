@@ -78,7 +78,7 @@ function loadMap() {
             //diminui o tamanho dos glifos quando o nivel de zoom é baixo
             for (const key in glyphGroup.newGlyphs) {
                 const glyph = glyphGroup.newGlyphs[key];
-                glyph.updateSize();
+                // glyph.updateSize();
             };
         }
     });
