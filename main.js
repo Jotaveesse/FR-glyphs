@@ -6,9 +6,12 @@ function RDToCoords(x, y) {
 }
 
 const initThreshVal = {
-    support: 0.5,
-    confidence: 0.5,
-    lift: 1.5
+    supportMin: 0.4,
+    supportMax: 0.6,
+    confidenceMin: 0.4,
+    confidenceMax: 0.6,
+    liftMin: 1.3,
+    liftMax: 1.7
 }
 
 window.onload = function () {
@@ -21,7 +24,7 @@ window.onload = function () {
                 header: true,
                 complete: function (results) {
                     const dataObj = results.data.slice(0, 100);
-                    addGlyph(dataObj, "crimes");                    
+                    addGlyph(dataObj, "crimes");
                 }
             })
         })
@@ -31,15 +34,18 @@ const glyphGroups = {};
 
 function addGlyph(data, name) {
     var glyphData = new GlyphData(data);
-    
+
     glyphData.setGroupColumn('city');
     glyphData.setCoordsColumns('latitude', 'longitude');
-    const columnsToKeep = ['main_reason', 'situation', 'personType', 'ageGroup','genre','place',];
+    const columnsToKeep = ['main_reason', 'situation', 'personType', 'ageGroup', 'genre', 'place',];
     // glyphData.setGroupColumn('province')
     // glyphData.setCoordsColumns('x', 'y', RDToCoords);
     // const columnsToKeep = ['road_situation', 'road_surface', 'maximun_speed', 'type_of_accident'];
     glyphData.setProcCategs(columnsToKeep);
-    glyphData.setAssocThresh(initThreshVal.support, initThreshVal.confidence, initThreshVal.lift);
+    // glyphData.setAssocThresh(initThreshVal.support, initThreshVal.confidence, initThreshVal.lift);
+    glyphData.setSupport(initThreshVal.supportMin, initThreshVal.supportMax);
+    glyphData.setConfidence(initThreshVal.confidenceMin, initThreshVal.confidenceMax);
+    glyphData.setLift(initThreshVal.liftMin, initThreshVal.liftMax);
 
     glyphData.setDisplayCategs(0);
     glyphData.updateAll();

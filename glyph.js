@@ -496,7 +496,7 @@ class GlyphSymbol {
 
         this.mainText
             .select("tspan")
-            .text(this.data.name);
+            .text(this.name);
 
     }
 

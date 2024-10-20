@@ -10,150 +10,79 @@ class GlyphData {
         this.surpriseModels = [];
         this.maxRules = 4;
         this.maxCategories = 8;
-        this.minSupport = 0.5;
+        this.minSupport = 0;
         this.maxSupport = 1;
-        this.minConfidence = 0.6;
-        this.minLift = 1.3;
-        this.#lowestSupport = Infinity;
-        this.#lowestConfidence = Infinity;
-        this.#lowestLift = Infinity;
+        this.minConfidence = 0;
+        this.mmaxConfidence = 0;
+        this.minLift = 0;
+        this.maxLift = 3;
         this.glyphs = [];
     }
 
     updateAll() {
+        console.log("===== Starting Update =====")
         const startTime = performance.now();
 
-        let t0 = performance.now();
-        this.groupByColumn();
-        let t1 = performance.now();
-        console.log(`groupByColumn: ${(t1 - t0).toFixed(2)} ms`);
+        this.logExecutionTime(() => this.groupByColumn(), 'groupByColumn');
 
-        t0 = performance.now();
-        this.addCoords();
-        t1 = performance.now();
-        console.log(`addCoords: ${(t1 - t0).toFixed(2)} ms`);
+        this.logExecutionTime(() => this.addCoords(), 'addCoords');
 
+        const tGlyphsStart = performance.now();
         //cria os glifos
         this.newGlyphs = {};
         for (const groupKey in this.groupedData) {
             const glyph = new GlyphSymbol(this, this.groupedData[groupKey]);
-
             glyph.name = groupKey;
             this.newGlyphs[groupKey] = glyph;
         }
+        const tGlyphsEnd = performance.now();
+        console.log(`createGlyphs for groups: ${(tGlyphsEnd - tGlyphsStart).toFixed(2)} ms`);
 
-        t0 = performance.now();
-        this.filterCategories();
-        t1 = performance.now();
-        console.log(`filterCategories: ${(t1 - t0).toFixed(2)} ms`);
+        this.logExecutionTime(() => this.filterCategories(), 'filterCategories');
 
-        t0 = performance.now();
-        this.getFrequencies();
-        t1 = performance.now();
-        console.log(`getFrequencies: ${(t1 - t0).toFixed(2)} ms`);
+        this.logExecutionTime(() => this.getFrequencies(), 'getFrequencies');
 
-        t0 = performance.now();
-        this.addSurpriseModel(getPopulModel);
-        t1 = performance.now();
-        console.log(`addSurpriseModel: ${(t1 - t0).toFixed(2)} ms`);
+        this.logExecutionTime(() => this.addSurpriseModel(getPopulModel), 'addSurpriseModel');
 
-        t0 = performance.now();
-        this.getSurprise();
-        t1 = performance.now();
-        console.log(`getSurprise: ${(t1 - t0).toFixed(2)} ms`);
+        this.logExecutionTime(() => this.getSurprise(), 'getSurprise');
 
-        t0 = performance.now();
-        this.updateTransTables();
-        this.updateFreqItemSets();
-        this.updateAssociations();
-        t1 = performance.now();
-        console.log(`getAssocRules: ${(t1 - t0).toFixed(2)} ms`);
+        this.logExecutionTime(() => this.updateTransTables(), 'updateTrans');
 
-        t0 = performance.now();
-        this.createGlyphs(this.filteredMapData);
-        t1 = performance.now();
-        console.log(`createGlyphs: ${(t1 - t0).toFixed(2)} ms`);
+        this.logExecutionTime(() => this.updateFreqItemSets(), 'updateFreqItems');
+
+        this.logExecutionTime(() => this.updateAssociations(), 'updateAssoc');
+        
+        this.logExecutionTime(() => this.filterAssocRules(), 'filterAssoc');
+
+        this.logExecutionTime(() => this.createGlyphs(this.filteredMapData), 'createGlyphs');
 
         const endTime = performance.now();
         console.log(`updateAll total time: ${(endTime - startTime).toFixed(2)} ms`);
-
-        this.#lowestSupport = Math.min(this.minSupport, this.#lowestSupport);
-        this.#lowestConfidence = Math.min(this.minConfidence, this.#lowestConfidence);
-        this.#lowestLift = Math.min(this.minLift, this.#lowestLift);
+        console.log("===== Finished Update =====")
     }
 
     update() {
-        let t0, t1;
+        console.log("===== Starting Update =====")
+
         const startTime = performance.now();
 
-        // let t0 = performance.now();
-        // this.groupByColumn();
-        // let t1 = performance.now();
-        // console.log(`groupByColumn: ${(t1 - t0).toFixed(2)} ms`);
-
-        // t0 = performance.now();
-        // this.addCoords();
-        // t1 = performance.now();
-        // console.log(`addCoords: ${(t1 - t0).toFixed(2)} ms`);
-
-        // t0 = performance.now();
-        // this.filterCategories();
-        // t1 = performance.now();
-        // console.log(`filterCategories: ${(t1 - t0).toFixed(2)} ms`);
-
-        // t0 = performance.now();
-        // this.getFrequencies();
-        // t1 = performance.now();
-        // console.log(`getFrequencies: ${(t1 - t0).toFixed(2)} ms`);
-
-        // t0 = performance.now();
-        // this.addSurpriseModel(getPopulModel);
-        // t1 = performance.now();
-        // console.log(`addSurpriseModel: ${(t1 - t0).toFixed(2)} ms`);
-
-        // t0 = performance.now();
-        // this.getSurprise();
-        // t1 = performance.now();
-        // console.log(`getSurprise: ${(t1 - t0).toFixed(2)} ms`);
-        // this.updateTransTables();
-
         if (this.#updatedThresh) {
-
-            t0 = performance.now();
-
-            this.updateFreqItemSets();
-
-            if (this.minSupport < this.#lowestSupport) {
-                this.updateFreqItemSets();
-                this.updateAssociations();
-                this.#lowestConfidence = this.minConfidence;
-                this.#lowestLift = this.minLift;
-            }
-            else if (this.minConfidence < this.#lowestConfidence || this.minLift < this.#lowestLift) {
-                this.filterAssocRules();    //tem que filtrar caso o suporte tenha mudado
-                this.updateAssociations();
-            }
-            else {
-                this.filterAssocRules();
-            }
-
-
-            this.#lowestSupport = Math.min(this.minSupport, this.#lowestSupport);
-            this.#lowestConfidence = Math.min(this.minConfidence, this.#lowestConfidence);
-            this.#lowestLift = Math.min(this.minLift, this.#lowestLift);
-
-            t1 = performance.now();
-            console.log(`getAssocRules: ${(t1 - t0).toFixed(2)} ms`);
+            this.logExecutionTime(() => this.filterAssocRules(this.filteredMapData), 'filterAssoc');
         }
 
-        t0 = performance.now();
-        this.createGlyphs(this.filteredMapData);
-        t1 = performance.now();
-        console.log(`createGlyphs: ${(t1 - t0).toFixed(2)} ms`);
-
+        this.logExecutionTime(() => this.createGlyphs(this.filteredMapData), 'createGlyphs');
 
         const endTime = performance.now();
         console.log(`updateAll total time: ${(endTime - startTime).toFixed(2)} ms`);
+        
+        console.log("===== Finished Update =====")
+    }
+
+    logExecutionTime(fn, label) {
+        const t0 = performance.now();
+        fn();
+        const t1 = performance.now();
+        console.log(`${label}: ${(t1 - t0).toFixed(2)} ms`);
     }
 
     setDisplayCategs(method) {
@@ -172,25 +101,21 @@ class GlyphData {
         this.groupColumn = groupColumn;
     }
 
-    setMaxSupport(maxSupport) {
+    setSupport(minSupport, maxSupport = Infinity) {
+        this.minSupport = minSupport;
         this.maxSupport = maxSupport;
         this.#updatedThresh = true;
-
     }
 
-    setAssocThresh(minSupport = null, minConfidence = null, minLift = null) {
-        if (minSupport != null) {
-            this.minSupport = minSupport;
-        }
+    setConfidence(minConfidence, maxConfidence = Infinity) {
+        this.minConfidence = minConfidence;
+        this.maxConfidence = maxConfidence;
+        this.#updatedThresh = true;
+    }
 
-        if (minConfidence != null) {
-            this.minConfidence = minConfidence;
-        }
-
-        if (minLift != null) {
-            this.minLift = minLift;
-        }
-
+    setLift(minLift, maxLift = Infinity) {
+        this.minLift = minLift;
+        this.maxLift = maxLift;
         this.#updatedThresh = true;
     }
 
@@ -375,7 +300,9 @@ class GlyphData {
                     rule.antecedentSupport <= this.maxSupport &&
                     rule.consequentSupport <= this.maxSupport &&
                     rule.confidence >= this.minConfidence &&
-                    rule.lift >= this.minLift) {
+                    rule.confidence <= this.maxConfidence &&
+                    rule.lift >= this.minLift &&
+                    rule.lift <= this.maxLift) {
                     this.filteredAssocRules[groupKey].push(rule);
                 }
 
@@ -387,7 +314,7 @@ class GlyphData {
         this.assocFreqItems = {};
         for (const tableKey in this.transTables) {
             const table = this.transTables[tableKey];
-            this.assocFreqItems[tableKey] = apriori(table, this.minSupport);
+            this.assocFreqItems[tableKey] = apriori(table, 0);
         }
     }
 
@@ -397,7 +324,7 @@ class GlyphData {
 
         for (const groupKey in this.transTables) {
             const table = this.transTables[groupKey];
-            this.assocRules[groupKey] = generateAssociationRules(this.assocFreqItems[groupKey], table, this.minConfidence, this.minLift);
+            this.assocRules[groupKey] = generateAssociationRules(this.assocFreqItems[groupKey], table, 0,0);
 
             this.filteredAssocRules[groupKey] = structuredClone(this.assocRules[groupKey]);
         }
@@ -405,7 +332,6 @@ class GlyphData {
 
     processDisplayCategs() {
         this.displayCategs = {};
-        console.log("updating")
 
         switch (this.displayMethod) {
             //escolhe as categorias com mais regras
@@ -502,7 +428,7 @@ class GlyphData {
             glyph.rules = this.filteredAssocRules[groupKey];
 
             glyph.setData(this.surpriseData[groupKey], this.filteredAssocRules[groupKey], this.displayCategs[groupKey]);
-    
+
             glyph.draw();
         };
 

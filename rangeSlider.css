@@ -1,0 +1,89 @@
+.leaflet-control.slider-control {
+    background-color: white;
+    padding: 6px 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: initial;
+    margin-bottom: 20px;
+}
+
+.range-label {
+    display: block;
+    text-align: center;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.range-tooltip {
+    display: block;
+    text-align: center;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.slider-container {
+    background-color: #eee;
+    width: 100px;
+    height: 12px;
+    position: relative;
+    border-radius: 12px;
+}
+
+.range-label {
+    width: 100px;
+}
+
+.slider {
+    position: absolute;
+    background: #BCE;
+    height: 100%;
+    width: 58px;
+    top: 0px;
+    cursor: move;
+}
+
+.slider .handle {
+    position: absolute;
+    height: 16px;
+    width: 16px;
+    top: -2px;
+    background: rgb(255, 255, 255);
+    border-width: 1px;
+    border: solid;
+    border-color: #BCE;
+
+
+    /* Support for bootstrap */
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.slider .EE {
+    right: -10px;
+    cursor: e-resize;
+    border-radius: 0 100% 100% 0;
+    border-radius: 100%
+}
+
+.slider .WW {
+    cursor: w-resize;
+    left: -10px;
+    border-radius: 100% 0 0 100%;
+    border-radius: 100%
+}
+
+.play-container .button {
+    fill-opacity: 0.0;
+    stroke: #AAB;
+    stroke-width: 1.6;
+}
+
+.play-container .play,
+.play-container .stop {
+    fill: #BCE;
+    stroke: #AAB;
+    stroke-width: 1;
+}
