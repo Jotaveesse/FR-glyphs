@@ -14,27 +14,31 @@ class GlyphData {
         this.minLift = 0;
         this.maxLift = 3;
         this.glyphs = [];
-        this.glyphSize = 200;
+        this.glyphSize = 150;
+        this.glyphHoverSize = 450;
 
         this.markers = new L.markerClusterGroup({
             maxClusterRadius: this.glyphSize,
-            spiderfyOnMaxZoom:true,
+            spiderfyOnMaxZoom: true,
             iconCreateFunction: (cluster) => {
-                console.log(cluster)
                 const childCount = cluster.getChildCount();
-                
-                const size = this.glyphSize*0.8; 
+
+                const size = this.glyphSize * 0.8;
                 const color = childCount > 10 ? 'red' : childCount > 5 ? 'orange' : 'green'; // Change color based on count
-        
+
                 return L.divIcon({
                     html: `<div class="cluster-icon" style="background-color: ${color}; width: ${size}px; height: ${size}px;
-                    text-align: center; line-height: ${size}px; color: white; font-size: ${size/3}px;">${childCount}</div>`,
+                    text-align: center; line-height: ${size}px; color: white; font-size: ${size / 3}px;">${childCount}</div>`,
                     className: 'custom-cluster-icon',
                     iconSize: L.point(size, size),
                     iconAnchor: L.point(size / 2, size / 2)
                 });
             }
         });
+    }
+
+    setClusterSize() {
+
     }
 
     updateAll() {
@@ -49,7 +53,7 @@ class GlyphData {
         //cria os glifos
         this.glyphs = {};
         for (const groupKey in this.groupedData) {
-            const glyph = new GlyphSymbol(this, this.groupedData[groupKey], this.glyphSize);
+            const glyph = new GlyphSymbol(this, this.groupedData[groupKey], this.glyphSize, this.glyphHoverSize);
             glyph.name = groupKey;
             this.glyphs[groupKey] = glyph;
         }
@@ -72,7 +76,7 @@ class GlyphData {
 
         this.logExecutionTime(() => this.filterAssocRules(), 'filterAssoc');
 
-        this.logExecutionTime(() => this.createGlyphs(this.filteredMapData), 'createGlyphs');
+        this.logExecutionTime(() => this.drawGlyphs(this.filteredMapData), 'createGlyphs');
 
         const endTime = performance.now();
         console.log(`updateAll total time: ${(endTime - startTime).toFixed(2)} ms`);
@@ -88,7 +92,7 @@ class GlyphData {
             this.logExecutionTime(() => this.filterAssocRules(this.filteredMapData), 'filterAssoc');
         }
 
-        this.logExecutionTime(() => this.createGlyphs(this.filteredMapData), 'createGlyphs');
+        this.logExecutionTime(() => this.drawGlyphs(this.filteredMapData), 'createGlyphs');
 
         const endTime = performance.now();
         console.log(`updateAll total time: ${(endTime - startTime).toFixed(2)} ms`);
@@ -399,7 +403,7 @@ class GlyphData {
         }
     }
 
-    createGlyphs() {
+    drawGlyphs() {
         this.processDisplayCategs();
 
         for (const groupKey in this.groupedData) {

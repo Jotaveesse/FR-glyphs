@@ -1,10 +1,10 @@
 class GlyphSymbol {
 
-    constructor(group = null, data = null, maxPixelSize = 400, maxCoordSize = 0.1) {
+    constructor(group = null, data = null, size = 200, hoverSize = 400) {
         this.data = data;
         this.group = group;
-        this.maxCoordSize = maxCoordSize;
-        this.maxPixelSize = maxPixelSize;
+        this.size = size;
+        this.hoverSize = hoverSize;
 
         this.isDrawn = false;
         this.surprises = null;
@@ -77,17 +77,20 @@ class GlyphSymbol {
         this.point = projectPoint(map, this.lat, this.lon);
     }
 
-    setMaxCoordSize(size) {
-        this.maxCoordSize = size;
+    setSize(size) {
+        this.size = size;
+        this.changeIconSize(this.size);
     }
 
-    setMaxPixelSize(size) {
-        this.maxPixelSize = size;
+    setHoverSize(size) {
+        this.hoverSize = size;
+    }
 
+    changeIconSize(size) {
         if (this.marker) {
             const icon = this.marker.options.icon;
-            icon.options.iconSize = [this.maxPixelSize * 2, this.maxPixelSize * 2];
-            icon.options.iconAnchor = [this.maxPixelSize, this.maxPixelSize];
+            icon.options.iconSize = [size * 2, size * 2];
+            icon.options.iconAnchor = [size, size];
             this.marker.setIcon(icon);
         }
     }
@@ -97,27 +100,9 @@ class GlyphSymbol {
         this.isDrawn = false;
     }
 
-    getBounds() {
-        const point1 = projectPoint(map, this.lat + this.maxCoordSize, this.lon + this.maxCoordSize);
-        const point2 = projectPoint(map, this.lat, this.lon);
-
-        var coordOffset = this.maxCoordSize / 2;
-
-        if (point1.x - point2.x > this.maxPixelSize) {
-            const coords1 = map.layerPointToLatLng([0, 0]);
-            const coords2 = map.layerPointToLatLng([this.maxPixelSize, 0]);
-            coordOffset = (coords1.lng - coords2.lng) / 2;
-        }
-
-        const svgBounds = [[this.lat + 2 * coordOffset, this.lon + 2 * coordOffset],
-        [this.lat - 2 * coordOffset, this.lon - 2 * coordOffset]];
-
-        return svgBounds;
-    }
-
     updateProportions() {
         this.startAngle = 0;
-        this.width = this.maxPixelSize;
+        this.width = this.size;
         this.textSize = this.width / 25;
 
         this.barWidth = this.width / 20;
@@ -253,10 +238,18 @@ class GlyphSymbol {
 
         this.svg = d3.create("svg");
 
-        this.svg.attr('viewBox', `${-this.maxPixelSize}, ${-this.maxPixelSize}, ${this.maxPixelSize * 2}, ${this.maxPixelSize * 2}`);
+        this.svg.attr('viewBox', `${-this.size}, ${-this.size}, ${this.size * 2}, ${this.size * 2}`)
 
         this.svgGroup = this.svg.append('g')
             .attr("class", "svg-group");
+
+        this.background = this.svgGroup.append("circle")
+        .attr("r", this.width / 2)
+        .style("pointer-events", "auto")
+        .style("fill", "rgba(255, 255, 255)")
+        .attr("stroke", "black")
+        .attr("stroke-width", "1px")
+        .style("opacity", 0);
 
         //criação das outlines das setas
         this.arrowOutlines = this.svgGroup.append("g")
@@ -387,7 +380,7 @@ class GlyphSymbol {
             .attr("class", "glyph-title")
             .attr("fill", "black")
             .attr("font-family", "Trebuchet MS, monospace")
-            .attr("font-size", Math.max(this.width / 12, 16))
+            .attr("font-size", this.width / 12)
             .attr("text-anchor", "middle")                      //centraliza horizontalmente
             .attr("dominant-baseline", "middle")            //centraliza verticalmente
             .attr("visibility", "");
@@ -405,9 +398,7 @@ class GlyphSymbol {
             .attr("r", this.width / 2)
             .style("pointer-events", "auto")
             .style("fill", "rgba(0, 0, 0, 0.0)")
-            //mostra o texto quando o mouse está em cima
             .on("mouseover", this.hoverBegin.bind(this))
-            //esconde o texto quando o mouse nao está em cima
             .on("mouseout", this.hoverEnd.bind(this));
 
         const svgIcon = this.svg.node();
@@ -415,12 +406,12 @@ class GlyphSymbol {
         const customIcon = L.divIcon({
             className: 'custom-icon',
             html: svgIcon,
-            iconSize: [this.maxPixelSize * 2, this.maxPixelSize * 2],
-            iconAnchor: [this.maxPixelSize, this.maxPixelSize],
+            iconSize: [this.size * 2, this.size * 2],
+            iconAnchor: [this.size, this.size],
             popupAnchor: [0, 0]
         });
 
-        this.marker = L.marker([this.lat, this.lon], { icon: customIcon });
+        this.marker = L.marker([this.lat, this.lon], { icon: customIcon, zIndexOffset: 1000 });
 
         return this.marker;
 
@@ -498,17 +489,22 @@ class GlyphSymbol {
                 .join("tspan")
                 .attr("y", (d, i) => i === 0 ? -this.textSize / 2 : this.textSize / 2)
                 .text(d => d));
+
+        this.mainText.select('tspan').text(this.name)
     }
 
     hoverBegin() {
         this.mainText.attr("visibility", "hidden");
-        this.setMaxPixelSize(this.maxPixelSize * 2)
+        this.changeIconSize(this.hoverSize);
+        this.background.style("opacity", 0.3);
+        this.svg.node().parentElement.style.zIndex=9000;
     }
 
     hoverEnd() {
         this.mainText.attr("visibility", "");
-        this.setMaxPixelSize(this.maxPixelSize / 2)
+        this.changeIconSize(this.size);
+        this.background.style("opacity", 0);
+        this.svg.node().parentElement.style.zIndex=1000;
     }
 
 }
-
