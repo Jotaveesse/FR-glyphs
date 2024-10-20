@@ -1,11 +1,11 @@
 class GlyphSymbol {
-    
+
     constructor(group = null, data = null, maxPixelSize = 400, maxCoordSize = 0.1) {
         this.data = data;
         this.group = group;
         this.maxCoordSize = maxCoordSize;
         this.maxPixelSize = maxPixelSize;
-        
+
         this.isDrawn = false;
         this.surprises = null;
         this.displaySurprises = null;
@@ -410,7 +410,7 @@ class GlyphSymbol {
             //mostra o texto quando o mouse está em cima
             .on("mouseover", function (event, d) {
                 d3.select(d3.select(this).node().parentNode).selectAll(".glyph-title")
-                .attr("visibility", "")
+                    .attr("visibility", "")
             })
             //esconde o texto quando o mouse nao está em cima
             .on("mouseout", function (event, d) {
@@ -497,6 +497,14 @@ class GlyphSymbol {
         this.mainText
             .select("tspan")
             .text(this.name);
+
+        const tspanElement = 
+        this.mainText
+            .select("tspan")
+            .text(this.name).node().parentNode.parentNode;
+
+        // readiciona elemento pra ficar na ultima posição
+        tspanElement.parentNode.appendChild(tspanElement);
 
     }
 

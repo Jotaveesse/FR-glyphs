@@ -1,9 +1,6 @@
 class GlyphData {
     transTables = {};
     #updatedThresh = false;
-    #lowestSupport;
-    #lowestConfidence;
-    #lowestLift;
 
     constructor(data) {
         this.origData = data;

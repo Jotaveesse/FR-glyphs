@@ -17,7 +17,7 @@ const initThreshVal = {
 window.onload = function () {
     loadMap();
 
-    fetch('crimes.csv')
+    fetch('data/crimes.csv')
         .then(response => response.text())
         .then(csvData => {
             Papa.parse(csvData, {
