@@ -31,7 +31,7 @@ function loadMap() {
     comboboxControl.addTo(map);
 
     //criação dos slider de suporte
-    const supportSlider = new L.Control.Slider({
+    const supportSlider = new L.Control.RangeSlider({
         position: 'topright',
         labelText: 'Suporte',
         rangeMin:  initThreshVal.supportMin,
@@ -51,7 +51,7 @@ function loadMap() {
     supportSlider.addSlider();;
 
     //criação dos slider de confiança
-    const confidenceSlider = new L.Control.Slider({
+    const confidenceSlider = new L.Control.RangeSlider({
         position: 'topright',
         labelText: 'Confiança',
         rangeMin:  initThreshVal.confidenceMin,
@@ -71,7 +71,7 @@ function loadMap() {
     confidenceSlider.addSlider();
 
     //criação dos slider de lift
-    const liftSlider = new L.Control.Slider({
+    const liftSlider = new L.Control.RangeSlider({
         position: 'topright',
         labelText: 'Lift',
         rangeMin: initThreshVal.liftMin,
@@ -90,6 +90,24 @@ function loadMap() {
     liftSlider.addTo(map);
     liftSlider.addSlider();
 
+    const categSlider = new L.Control.Slider({
+        position: 'topright',
+        labelText: 'Número de categorias',
+        rangeMin: 1,
+        rangeMax: 8,
+        rangeStep: 1,
+        rangeInit: 8,
+        onChange: function (value) {
+            for (const key in glyphGroups) {
+                const glyph = glyphGroups[key];
+                glyph.setMaxCategories(value);
+                // glyph.update();
+            }
+        }
+    });
+
+    categSlider.addTo(map);
+    categSlider.updateTooltip(map);
 
     // //atualiza a posição quando move e da zoom
     // map.on('zoomend', function () {

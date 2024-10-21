@@ -11,6 +11,7 @@ class GlyphSymbol {
         this.displaySurprises = null;
         this.rules = null;
         this.displayRules = null;
+        this.maxCategories = 1;
 
         this.displayCategs = [];
 
@@ -31,31 +32,47 @@ class GlyphSymbol {
         this.getPosition();
     }
 
+    setMaxCategories(maxCategories) {
+        this.maxCategories = maxCategories;
+        this.filterRules();
+        this.updateScales();
+        this.update();
+    }
+
     setDisplayCategories(categsChosen = null) {
         this.displayCategs = categsChosen;
+        this.filterRules();
+        this.updateScales();
+        this.update();
+    }
 
-        if (this.displayCategs == null) {
-            this.displaySurprises = this.surprises;
-            this.displayRules = this.rules;
-        }
+    filterRules() {
+        const slicedCategs = this.displayCategs.slice(0, this.maxCategories);
 
         this.displaySurprises = this.surprises.filter(surp =>
-            this.displayCategs.includes(surp.name));
+            slicedCategs.includes(surp.name));
 
         //filtra somente as regras que possuem todos os seus antecessores
         //e consequentes nas categorias escolhidas
         this.displayRules = this.rules.filter(rule => {
-            var isAnte = rule.antecedents.every(name => this.displayCategs.includes(name));
-            var isConse = rule.consequents.every(name => this.displayCategs.includes(name));
+            var isAnte = rule.antecedents.every(name => slicedCategs.includes(name));
+            var isConse = rule.consequents.every(name => slicedCategs.includes(name));
 
             return isAnte && isConse;
         }).slice(0, this.group.maxRules);
     }
 
-    setData(surprises, rules, displayCategs = null) {
+    setData(surprises, rules, displayCategs = null, maxCategs = null) {
         this.surprises = surprises;
         this.rules = rules;
-        this.setDisplayCategories(displayCategs);
+
+        if (displayCategs != null)
+            this.maxCategories = maxCategs;
+
+        if (maxCategs != null)
+            this.displayCategs = displayCategs;
+
+        this.filterRules();
 
         this.updateScales();
     }
@@ -234,6 +251,7 @@ class GlyphSymbol {
             this.update();
             return this.marker;
         }
+
         this.isDrawn = true;
 
         this.svg = d3.create("svg");
@@ -244,83 +262,34 @@ class GlyphSymbol {
             .attr("class", "svg-group");
 
         this.background = this.svgGroup.append("circle")
-        .attr("r", this.width / 2)
-        .style("pointer-events", "auto")
-        .style("fill", "rgba(255, 255, 255)")
-        .attr("stroke", "black")
-        .attr("stroke-width", "1px")
-        .style("opacity", 0);
+            .attr("r", this.width / 2)
+            .style("pointer-events", "auto")
+            .style("fill", "rgba(255, 255, 255)")
+            .attr("stroke", "black")
+            .attr("stroke-width", "1px")
+            .style("opacity", 0);
 
         //criação das outlines das setas
         this.arrowOutlines = this.svgGroup.append("g")
-            .selectAll("path")
-            .data(this.arrowData)
-            .enter().append("g")
-            .append("path")
-            .attr("d", (d, i) => this.radialLine([d.ante, d.center, d.cons]))
-            .attr("fill", "none")
-            .attr("stroke", this.outlineColor)
-            .attr("stroke-width", (this.outlineWidth ? this.arrowWidth : 0) + this.outlineWidth * 2);
+            .attr("class", "glyph-arrow-outlines");
 
         //criação das outlines das barras
         this.barOutlines = this.svgGroup.append("g")
-            .selectAll("rect")
-            .data(this.pieData)
-            .enter("path")
-            .append("rect")
-            .attr("x", (d, i) => -(this.barWidth + this.outlineWidth * 2) / 2)
-            .attr("y", this.innerRadius)
-            .attr("width", this.barWidth + this.outlineWidth * 2)
-            .attr("height", d => this.linScale(Math.abs(d.data.value)) + this.outlineWidth)
-            .attr("fill", this.outlineColor)
-            .attr("transform", (d, i) => `rotate(${d.middleAngle * RADIANS + 180}, 0, 0)`);
+            .attr("class", "glyph-bar-outlines");
+
 
         //criação da borda circular
         this.circleBorder = this.svgGroup.append("g")
-            .selectAll("path")
-            .data(this.pieData)
-            .enter()
-            .append("path")
-            .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
-            .attr("stroke", this.outlineColor)
-            .attr("stroke-width", this.outlineWidth)
-            .attr("d", this.borderArc);
+            .attr("class", "glyph-border");
+
 
         //grupo que contem as linhas e cabeça das setas
         this.arrows = this.svgGroup.append("g")
-            .selectAll("path")
-            .data(this.arrowData)
-            .enter().append("g");
-
-        //criação dos triangulos das setas
-        this.arrowTriangles = this.arrows.append("polygon")
-            .attr("points", `0,-${this.arrowPointSize} ${this.arrowPointSize},${this.arrowPointSize} -${this.arrowPointSize},${this.arrowPointSize}`)
-            .attr("transform", d =>
-                `translate(0,${-this.innerRadius + this.arrowPointSize + this.outlineWidth + this.circleBorderWidth / 2}) 
-            rotate(${d.cons[0] * RADIANS}, 0, ${this.innerRadius - this.arrowPointSize - this.outlineWidth - this.circleBorderWidth / 2})`)
-            .attr("fill", d => this.colorScale(d.rule))
-            .attr("stroke", this.outlineColor)
-            .attr("stroke-width", this.outlineWidth);
-
-        //criação das linhas das setas
-        this.arrowLines = this.arrows.append("path")
-            .attr("d", (d, i) => this.radialLine([d.ante, d.center, d.cons]))
-            .attr("fill", "none")
-            .attr("stroke", d => this.colorScale(d.rule))
-            .attr("stroke-width", this.arrowWidth);
+            .attr("class", "glyph-arrows");
 
         //criação das barras
         this.bars = this.svgGroup.append("g")
-            .selectAll("rect")
-            .data(this.pieData)
-            .enter("path")
-            .append("rect")
-            .attr("x", (d, i) => -this.barWidth / 2)
-            .attr("y", x => this.innerRadius)
-            .attr("width", this.barWidth)
-            .attr("height", d => this.linScale(Math.abs(d.data.value)))
-            .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
-            .attr("transform", (d, i) => `rotate(${d.middleAngle * RADIANS + 180}, 0, 0)`);
+            .attr("class", "glyph-bars");
 
         //cria o caminho em que o texto vai curvar sobre
         this.circleTextPath = d3.path();
@@ -331,7 +300,7 @@ class GlyphSymbol {
         this.circleTextPath.arc(0, 0, this.textRadius, -0.5 * Math.PI, 1.5 * Math.PI);
 
         this.textPath = this.svgGroup.append("path")
-            .attr("id", `text-circle-${this.data.name}`)
+            .attr("id", `text-circle-${this.name}`)
             .attr("d", this.circleTextPath.toString())
             .attr("fill", "none")
             .attr("stroke", "none")
@@ -342,38 +311,7 @@ class GlyphSymbol {
             .attr("font-family", "Trebuchet MS, monospace")
             .attr("font-size", this.textSize)
             .attr("text-anchor", "middle")                      //centraliza horizontalmente
-            .attr("dominant-baseline", "middle")            //centraliza verticalmente
-            .selectAll()
-            .data(this.pieData)
-            .join("text")
-            // .attr("transform", d => `translate(${textArc.centroid(d)})
-            //     rotate(${(d.middleAngle * RADIANS + 90) % 180 - 90}, 0, 0)`)
-            .append("textPath")
-            .attr('side', d => {
-                const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
-                return isUpsideDown ? 'right' : 'left';
-            })
-            .attr("startOffset", (d, i) => {
-                const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
-                var startOffset;
-
-                if (isUpsideDown)
-                    startOffset = (1 - d.middleAngle / (Math.PI * 2));
-                else
-                    startOffset = d.middleAngle / (Math.PI * 2);
-
-                return `${100 / 3 + startOffset * 100 / 3}%`;   //texto é colocado na 2° volta pra evitar cortes
-            })
-            .attr("xlink:href", (d, i) => `#text-circle-${this.data.name}`)
-            .call(text => text.append("tspan")
-                .attr("y", -this.textSize / 2)
-                .attr("font-weight", 900)
-                .text(d => d.data.name))
-            .call(text => text.append("tspan")
-                .attr("x", 0)
-                .attr("y", this.textSize / 2)
-                .attr("font-weight", 200)
-                .text(d => d.data.value.toLocaleString("pt-BR")));
+            .attr("dominant-baseline", "middle");           //centraliza verticalmente
 
         //texto principal
         this.mainText = this.svgGroup.append("g")
@@ -385,14 +323,6 @@ class GlyphSymbol {
             .attr("dominant-baseline", "middle")            //centraliza verticalmente
             .attr("visibility", "");
 
-        this.mainText.append("text")
-            .call(text => text.append("tspan")
-                .attr("font-weight", 900)
-                .text(this.name))
-            .attr("stroke", "white")
-            .attr("stroke-width", 2)
-            .attr("paint-order", "stroke")
-
         //hitbox do svg para detectar hover
         this.hitbox = this.svgGroup.append("circle")
             .attr("r", this.width / 2)
@@ -400,6 +330,8 @@ class GlyphSymbol {
             .style("fill", "rgba(0, 0, 0, 0.0)")
             .on("mouseover", this.hoverBegin.bind(this))
             .on("mouseout", this.hoverEnd.bind(this));
+
+        this.update();
 
         const svgIcon = this.svg.node();
 
@@ -414,97 +346,199 @@ class GlyphSymbol {
         this.marker = L.marker([this.lat, this.lon], { icon: customIcon, zIndexOffset: 1000 });
 
         return this.marker;
-
     }
 
     update() {
         this.arrowOutlines
+            .selectAll("g")
             .data(this.arrowData)
-            .attr("d", (d, i) => this.radialLine([d.ante, d.center, d.cons]))
-            .attr("stroke-width", (this.outlineWidth ? this.arrowWidth : 0) + this.outlineWidth * 2);
+            .join(
+                enter => enter.append("g")
+                    .append("path")
+                    .attr("d", (d, i) => this.radialLine([d.ante, d.center, d.cons]))
+                    .attr("fill", "none")
+                    .attr("stroke", this.outlineColor)
+                    .attr("stroke-width", (this.outlineWidth ? this.arrowWidth : 0) + this.outlineWidth * 2),
+                update => update
+                    .select("path")
+                    .attr("d", (d, i) => this.radialLine([d.ante, d.center, d.cons]))
+                    .attr("stroke-width", (this.outlineWidth ? this.arrowWidth : 0) + this.outlineWidth * 2),
+                exit => exit.remove()
+            );
 
         this.barOutlines
+            .selectAll("rect")
             .data(this.pieData)
-            .attr("height", d => this.linScale(Math.abs(d.data.value)) + this.outlineWidth)
-            .attr("transform", (d, i) => `rotate(${d.middleAngle * RADIANS + 180}, 0, 0)`);
+            .join(
+                enter => enter.append("rect")
+                    .attr("x", (d, i) => -(this.barWidth + this.outlineWidth * 2) / 2)
+                    .attr("y", this.innerRadius)
+                    .attr("width", this.barWidth + this.outlineWidth * 2)
+                    .attr("height", d => this.linScale(Math.abs(d.data.value)) + this.outlineWidth)
+                    .attr("fill", this.outlineColor)
+                    .attr("transform", (d, i) => `rotate(${d.middleAngle * RADIANS + 180}, 0, 0)`),
+                update => update
+                    .attr("height", d => this.linScale(Math.abs(d.data.value)) + this.outlineWidth)
+                    .attr("transform", (d, i) => `rotate(${d.middleAngle * RADIANS + 180}, 0, 0)`),
+                exit => exit.remove()
+            );
 
         this.circleBorder
+            .selectAll("path")
             .data(this.pieData)
-            .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
-            .attr("d", this.borderArc);
+            .join(
+                enter => enter.append("path")
+                    .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
+                    .attr("stroke", this.outlineColor)
+                    .attr("stroke-width", this.outlineWidth)
+                    .attr("d", this.borderArc),
+                update => update
+                    .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
+                    .attr("d", this.borderArc),
+                exit => exit.remove()
+            );
 
-        this.arrowOutlines.remove();
-        this.arrows.remove();
+        this.arrows
+            .selectAll("g")
+            .data(this.arrowData, d => d.id)
+            .join(
+                enter => {
+                    const arrowGroup = enter.append("g");
+                    //criação dos triangulos
+                    arrowGroup.append("polygon")
+                        .attr("points", `0,-${this.arrowPointSize} ${this.arrowPointSize},${this.arrowPointSize} -${this.arrowPointSize},${this.arrowPointSize}`)
+                        .attr("transform", d => `translate(0,${-this.innerRadius + this.arrowPointSize + this.outlineWidth + this.circleBorderWidth / 2}) rotate(${d.cons[0] * RADIANS}, 0, ${this.innerRadius - this.arrowPointSize - this.outlineWidth - this.circleBorderWidth / 2})`)
+                        .attr("fill", d => this.colorScale(d.rule))
+                        .attr("stroke", this.outlineColor)
+                        .attr("stroke-width", this.outlineWidth);
 
-        this.arrowOutlines = this.svgGroup.insert("g", '.glyph-title')
-            .selectAll("path")
-            .data(this.arrowData)
-            .enter().append("g")
-            .append("path")
-            .attr("d", (d, i) => this.radialLine([d.ante, d.center, d.cons]))
-            .attr("fill", "none")
-            .attr("stroke", this.outlineColor)
-            .attr("stroke-width", (this.outlineWidth ? this.arrowWidth : 0) + this.outlineWidth * 2);
+                    //criação das linhas
+                    arrowGroup.append("path")
+                        .attr("d", (d) => this.radialLine([d.ante, d.center, d.cons]))
+                        .attr("fill", "none")
+                        .attr("stroke", d => this.colorScale(d.rule))
+                        .attr("stroke-width", this.arrowWidth);
 
-        this.arrowTriangles
-            .data(this.arrowData)
-            .attr("transform", d =>
-                `translate(0,${-this.innerRadius + this.arrowPointSize + this.outlineWidth + this.circleBorderWidth / 2}) 
-                rotate(${d.cons[0] * RADIANS}, 0, ${this.innerRadius - this.arrowPointSize - this.outlineWidth - this.circleBorderWidth / 2})`)
-            .attr("fill", d => this.colorScale(d.rule));
-
-        this.arrows = this.svgGroup.insert("g", '.glyph-title')
-            .selectAll("path")
-            .data(this.arrowData)
-            .enter().append("g");
-
-        //criação dos triangulos das setas
-        this.arrowTriangles = this.arrows.append("polygon")
-            .attr("points", `0,-${this.arrowPointSize} ${this.arrowPointSize},${this.arrowPointSize} -${this.arrowPointSize},${this.arrowPointSize}`)
-            .attr("transform", d =>
-                `translate(0,${-this.innerRadius + this.arrowPointSize + this.outlineWidth + this.circleBorderWidth / 2}) 
-            rotate(${d.cons[0] * RADIANS}, 0, ${this.innerRadius - this.arrowPointSize - this.outlineWidth - this.circleBorderWidth / 2})`)
-            .attr("fill", d => this.colorScale(d.rule))
-            .attr("stroke", this.outlineColor)
-            .attr("stroke-width", this.outlineWidth);
-
-        //criação das linhas das setas
-        this.arrowLines = this.arrows.append("path")
-            .attr("d", (d, i) => this.radialLine([d.ante, d.center, d.cons]))
-            .attr("fill", "none")
-            .attr("stroke", d => this.colorScale(d.rule))
-            .attr("stroke-width", this.arrowWidth);
+                    return arrowGroup;
+                },
+                update => {
+                    //atualização dos triangulos
+                    update.select("polygon")
+                        .attr("transform", d => `translate(0,${-this.innerRadius + this.arrowPointSize + this.outlineWidth + this.circleBorderWidth / 2}) rotate(${d.cons[0] * RADIANS}, 0, ${this.innerRadius - this.arrowPointSize - this.outlineWidth - this.circleBorderWidth / 2})`)
+                        .attr("fill", d => this.colorScale(d.rule));
+                    //atualização das linhas
+                    update.select("path")
+                        .attr("d", (d) => this.radialLine([d.ante, d.center, d.cons]))
+                        .attr("stroke", d => this.colorScale(d.rule))
+                        .attr("stroke-width", this.arrowWidth);
+                },
+                exit => exit.remove()
+            );
 
         this.bars
+            .selectAll("rect")
             .data(this.pieData)
-            .attr("height", d => this.linScale(Math.abs(d.data.value)))
-            .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
-            .attr("transform", (d, i) => `rotate(${d.middleAngle * RADIANS + 180}, 0, 0)`);
+            .join(
+                enter => enter.append("rect")
+                    .attr("x", (d, i) => -this.barWidth / 2)
+                    .attr("y", d => this.innerRadius)
+                    .attr("width", this.barWidth)
+                    .attr("height", d => this.linScale(Math.abs(d.data.value)))
+                    .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
+                    .attr("transform", (d, i) => `rotate(${d.middleAngle * RADIANS + 180}, 0, 0)`),
+                update => update
+                    .attr("height", d => this.linScale(Math.abs(d.data.value)))
+                    .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
+                    .attr("transform", (d, i) => `rotate(${d.middleAngle * RADIANS + 180}, 0, 0)`),
+                exit => exit.remove()
+            );
 
         this.barTexts
+            .selectAll("text")
             .data(this.pieData)
-            .attr("xlink:href", (d, i) => `#text-circle-${this.data.name}`)
-            .call(text => text.selectAll("tspan")
-                .data(d => [d.data.name, d.data.value.toLocaleString("pt-BR")])
-                .join("tspan")
-                .attr("y", (d, i) => i === 0 ? -this.textSize / 2 : this.textSize / 2)
-                .text(d => d));
+            .join(
+                enter => enter.append("text").append("textPath")
+                    .attr('side', d => {
+                        const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
+                        return isUpsideDown ? 'right' : 'left';
+                    })
+                    .attr("startOffset", (d, i) => {
+                        const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
+                        var startOffset;
 
-        this.mainText.select('tspan').text(this.name)
+                        if (isUpsideDown)
+                            startOffset = (1 - d.middleAngle / (Math.PI * 2));
+                        else
+                            startOffset = d.middleAngle / (Math.PI * 2);
+
+                        return `${100 / 3 + startOffset * 100 / 3}%`;   //texto é colocado na 2° volta pra evitar cortes
+                    })
+                    .attr("xlink:href", `#${this.textPath.node().id}`)
+                    .call(text => text.append("tspan")
+                        .attr("y", -this.textSize / 2)
+                        .attr("font-weight", 900)
+                        .text(d => d.data.name))
+                    .call(text => text.append("tspan")
+                        .attr("x", 0)
+                        .attr("y", this.textSize / 2)
+                        .attr("font-weight", 200)
+                        .text(d => d.data.value.toLocaleString("pt-BR"))),
+                update => update
+                    .select("textPath").attr("xlink:href", (d, i) => `#${this.textPath.node().id}`)
+                    .attr('side', d => {
+                        const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
+                        return isUpsideDown ? 'right' : 'left';
+                    })
+                    .attr("startOffset", (d, i) => {
+                        const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
+                        var startOffset;
+
+                        if (isUpsideDown)
+                            startOffset = (1 - d.middleAngle / (Math.PI * 2));
+                        else
+                            startOffset = d.middleAngle / (Math.PI * 2);
+
+                        return `${100 / 3 + startOffset * 100 / 3}%`;   //texto é colocado na 2° volta pra evitar cortes
+                    })
+                    .call(text => text.selectAll("tspan")
+                        .data(d => [d.data.name, d.data.value.toLocaleString("pt-BR")])
+                        .join("tspan")
+                        .attr("y", (d, i) => i === 0 ? -this.textSize / 2 : this.textSize / 2)
+                        .text(d => d)),
+                exit => exit.remove()
+            );
+
+        this.mainText
+            .selectAll("text")
+            .data([this.name])
+            .join(
+                enter => enter.append("text")
+                    .call(text => text.append("tspan")
+                        .attr("font-weight", 900)
+                        .text(this.name))
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 2)
+                    .attr("paint-order", "stroke"),
+                update => update
+                    .select('tspan').text(this.name),
+                exit => exit.remove()
+            );
+
+        return this.marker;
     }
 
     hoverBegin() {
         this.mainText.attr("visibility", "hidden");
         this.changeIconSize(this.hoverSize);
         this.background.style("opacity", 0.3);
-        this.svg.node().parentElement.style.zIndex=9000;
+        this.svg.node().parentElement.style.zIndex = 9000;
     }
 
     hoverEnd() {
         this.mainText.attr("visibility", "");
         this.changeIconSize(this.size);
         this.background.style("opacity", 0);
-        this.svg.node().parentElement.style.zIndex=1000;
+        this.svg.node().parentElement.style.zIndex = 1000;
     }
 
 }

@@ -41,7 +41,7 @@ function addGlyph(data, name) {
     // glyphData.setGroupColumn('province')
     // glyphData.setCoordsColumns('x', 'y', RDToCoords);
     // const columnsToKeep = ['road_situation', 'road_surface', 'maximun_speed', 'type_of_accident'];
-    glyphData.setProcCategs(columnsToKeep);
+    glyphData.setChosenColumns(columnsToKeep);
     // glyphData.setAssocThresh(initThreshVal.support, initThreshVal.confidence, initThreshVal.lift);
     glyphData.setSupport(initThreshVal.supportMin, initThreshVal.supportMax);
     glyphData.setConfidence(initThreshVal.confidenceMin, initThreshVal.confidenceMax);

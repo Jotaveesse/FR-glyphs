@@ -40,13 +40,13 @@ function createD3RangeSlider(rangeMin, rangeMax, rangeStep, container, playButto
         .style("position", "relative")
         // .style("height", containerHeight + "px")
         .style("min-width", (minWidth * 2) + "px")
-        .classed("slider-container", true);
+        .classed("range-container", true);
 
 
     //Create elements in container
     var slider = sliderBox
         .append("div")
-        .attr("class", "slider");
+        .attr("class", "range-slider");
     var handleW = slider.append("div").attr("class", "handle WW");
     var handleE = slider.append("div").attr("class", "handle EE");
 

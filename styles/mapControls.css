@@ -1,6 +1,8 @@
-.leaflet-control.slider-control, .leaflet-control.combobox-control{
+.leaflet-control.slider-control,
+.leaflet-control.range-control,
+.leaflet-control.combobox-control {
     background-color: white;
-    padding: 6px 16px;
+    padding: 6px 12px;
     border-radius: 12px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     z-index: initial;
@@ -8,12 +10,85 @@
     text-align: center;
     font-size: 12px;
     font-weight: bold;
+    min-width: 130px;
+}
+
+.slider-container {
+    position: relative;
+    width: 130px;
+    height: min-content;
+    display: flex;
+    margin: auto;
+}
+
+.slider-control input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 12px;
+    background: #ddd;
+    outline: none;
+    border-radius: 12px;
+    margin: 0px;
+    overflow: hidden;
+}
+
+.slider-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 30px;
+    height: 20px;
+    background: #7AC;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+}
+
+.slider-control input[type="range"]::-moz-range-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 30px;
+    height: 20px;
+    background: #7AC;
+    border-radius: 50% 50% 0 0;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+}
+
+.tooltip {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    left: 50%;
+    box-sizing: border-box;
+    transform: translate(calc(-50% + 15px), calc(50% - 8px));
+    background: #7AC;
+    color: white;
+    padding: 2px 5px;
+    border-radius: 0px 0px 8px 8px;
+    text-align: center;
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+    align-items: end;
+    display: flex;
+    justify-content: center;
+    z-index: -1;
+}
+
+.slider-label {
+    display: block;
+    text-align: center;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: bold;
 }
 
 .range-label {
     display: block;
+    text-align: center;
     margin-bottom: 4px;
-    width: 100px;
 }
 
 .range-tooltip {
@@ -24,15 +99,16 @@
     font-weight: bold;
 }
 
-.slider-container {
+.range-container {
     background-color: #eee;
-    width: 100px;
+    width: 120px;
     height: 12px;
+    margin:auto;
     position: relative;
     border-radius: 12px;
 }
 
-.slider {
+.range-slider {
     position: absolute;
     background: #7AC;
     height: 100%;
@@ -41,7 +117,7 @@
     cursor: move;
 }
 
-.slider .handle {
+.range-slider .handle {
     position: absolute;
     height: 16px;
     width: 16px;
@@ -58,14 +134,14 @@
     -webkit-box-sizing: border-box;
 }
 
-.slider .EE {
+.range-slider .EE {
     right: -10px;
     cursor: e-resize;
     border-radius: 0 100% 100% 0;
     border-radius: 100%
 }
 
-.slider .WW {
+.range-slider .WW {
     cursor: w-resize;
     left: -10px;
     border-radius: 100% 0 0 100%;
@@ -85,17 +161,18 @@
     stroke-width: 1;
 }
 
-.combobox-container{
-    background:#7AC;
-    border:none;
-    border-radius:4px;
-    padding:4px 8px;
-    color:white;
-    font-weight:900;
+.combobox-container {
+    text-align: center;
+    background: #7AC;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: white;
+    font-weight: 900;
 }
 
 select.combobox-container option {
     background-color: #ffffff;
-    color: #000;   
-    transform: translate(10px, 0)
+    color: #000;
+    transform: translate(10px, 0);
 }

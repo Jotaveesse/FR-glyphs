@@ -113,12 +113,21 @@ class GlyphData {
         this.drawGlyphs();
     }
 
-    setProcCategs(categsChosen) {
-        this.procCategs = categsChosen;
+    setChosenColumns(categsChosen) {
+        this.chosenColumns = categsChosen;
     }
 
     setMaxRulesDisplayed(maxRules) {
         this.maxRules = maxRules;
+    }
+
+    setMaxCategories(maxCategs) {
+        this.maxCategories = maxCategs;
+        for (const groupKey in this.groupedData) {
+            const glyph = this.glyphs[groupKey];
+
+            glyph.setMaxCategories(this.maxCategories);
+        }
     }
 
     setGroupColumn(groupColumn) {
@@ -191,7 +200,7 @@ class GlyphData {
                 this.filteredData[groupKey][i] = {};
 
                 for (const category in entry) {
-                    if (this.procCategs.includes(category)) {
+                    if (this.chosenColumns.includes(category)) {
                         const value = entry[category];
 
                         this.filteredData[groupKey][i][category] = value;
@@ -383,7 +392,7 @@ class GlyphData {
                 sortedItems = getItemsByFrequencyGrouped(this.filteredAssocRules);
 
                 for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = sortedItems[groupKey].slice(0, this.maxCategories);
+                    this.displayCategs[groupKey] = sortedItems[groupKey];
                 }
                 break;
 
@@ -401,13 +410,13 @@ class GlyphData {
                 sortedItems = getItemsBySurpriseGrouped(this.surpriseData);
 
                 for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = sortedItems[groupKey].slice(0, this.maxCategories);
+                    this.displayCategs[groupKey] = sortedItems[groupKey];
                 }
                 break;
 
             //escolhe categorias com as maiores surpresas gerais
             case 3:
-                sortedItems = getItemsBySurpriseGlobal(this.surpriseData).slice(0, this.maxCategories);
+                sortedItems = getItemsBySurpriseGlobal(this.surpriseData);
 
                 for (const groupKey in this.groupedData) {
                     this.displayCategs[groupKey] = sortedItems;
@@ -417,14 +426,14 @@ class GlyphData {
             default:
                 //escolhe qualquer categoria
                 for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = this.uniqueValues.slice(0, this.maxCategories);
+                    this.displayCategs[groupKey] = this.uniqueValues;
                 }
                 break;
         }
 
         //adiciona categorias  caso não tenha a quantidade necessaria
         for (const groupKey in this.groupedData) {
-            this.displayCategs[groupKey] = [...new Set([...this.displayCategs[groupKey], ...this.uniqueValues])].slice(0, this.maxCategories);
+            this.displayCategs[groupKey] = [...new Set([...this.displayCategs[groupKey], ...this.uniqueValues])];
         }
 
     }
@@ -436,7 +445,7 @@ class GlyphData {
             const glyph = this.glyphs[groupKey];
 
             //adiciona os dados
-            glyph.setData(this.surpriseData[groupKey], this.filteredAssocRules[groupKey], this.displayCategs[groupKey]);
+            glyph.setData(this.surpriseData[groupKey], this.filteredAssocRules[groupKey], this.displayCategs[groupKey], this.maxCategories);
             const marker = glyph.getMarker();
 
             this.markers.addLayer(marker);
