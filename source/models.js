@@ -219,7 +219,6 @@ function getPopulModel(data) {
             }
         }
     }
-    // console.log(averages)
 
     //divide as somas pela população de cada provincia
     for (const key in data) {
@@ -253,7 +252,6 @@ function getAverageModel(data) {
             }
         }
     }
-    // console.log(averages)
 
     //divide pela uantidade de provincias
     for (const key in data) {
@@ -269,16 +267,14 @@ function getAverageModel(data) {
     return model;
 }
 
-function getItemsByFrequency(data) {
+function getItemsByFrequencyGlobal(data) {
     const frequencyMap = {};
 
-    // Iterate over each municipality in the dataset
     for (const municipality in data) {
         const rules = data[municipality];
 
-        // Process each rule
         for (const rule of rules) {
-            // Count antecedents
+            // conta os antecedentes
             for (const antecedent of rule.antecedents) {
                 if (!frequencyMap[antecedent]) {
                     frequencyMap[antecedent] = 0;
@@ -286,7 +282,7 @@ function getItemsByFrequency(data) {
                 frequencyMap[antecedent]++;
             }
 
-            // Count consequents
+            // conta os consequentes
             for (const consequent of rule.consequents) {
                 if (!frequencyMap[consequent]) {
                     frequencyMap[consequent] = 0;
@@ -296,50 +292,71 @@ function getItemsByFrequency(data) {
         }
     }
 
-    // Convert the frequency map to an array and sort from most common to least common
+    // converte em uma array e ordena pela valor em ordem decrescente
     const sortedItems = Object.keys(frequencyMap).sort((a, b) => frequencyMap[b] - frequencyMap[a]);
 
     return sortedItems;
 }
 
-function getOrderedAbsoluteValuesPerCity(data) {
+function getItemsByFrequencyGrouped(data) {
+    var sortedItems = {};
+
+    for (const groupKey in data) {
+        const rules = data[groupKey];
+        const frequencyMap = {};
+
+        for (const rule of rules) {
+            // conta os antecedentes
+            for (const antecedent of rule.antecedents) {
+                if (!frequencyMap[antecedent]) {
+                    frequencyMap[antecedent] = 0;
+                }
+                frequencyMap[antecedent]++;
+            }
+
+            // conta os consequente
+            for (const consequent of rule.consequents) {
+                if (!frequencyMap[consequent]) {
+                    frequencyMap[consequent] = 0;
+                }
+                frequencyMap[consequent]++;
+            }
+        }
+
+        sortedItems[groupKey] = Object.keys(frequencyMap).sort((a, b) => frequencyMap[b] - frequencyMap[a]);
+    }
+    return sortedItems;
+}
+
+function getItemsBySurpriseGrouped(data) {
     let result = {};
   
-    // Loop through each city in the input object
-    for (let city in data) {
-      // Sort the entries by the absolute value in descending order
-      let sortedEntries = data[city].sort((a, b) => b.value - a.value);
-  
-      // Extract the sorted names from the entries
+    for (let groupKey in data) {
+      let sortedEntries = data[groupKey].sort((a, b) => b.value - a.value);
+
       let sortedNames = sortedEntries.map(entry => entry.name);
   
-      // Add the sorted names to the result for the city
-      result[city] = sortedNames;
+      result[groupKey] = sortedNames;
     }
   
     return result;
   }
 
-  function getHighestAbsoluteValuesOverall(data) {
+  function getItemsBySurpriseGlobal(data) {
     let summedValues = {};
   
-    // Loop through each city in the input object
     for (let city in data) {
-      // Loop through each entry in the city
       for (let entry of data[city]) {
-        let absValue = Math.abs(entry.value);
   
-        // If the name already exists in the summedValues, add the value
         if (summedValues[entry.name]) {
-          summedValues[entry.name] += absValue;
+          summedValues[entry.name] += entry.value;
         } else {
-          // Otherwise, initialize it with the absolute value
-          summedValues[entry.name] = absValue;
+          summedValues[entry.name] = entry.value;
         }
       }
     }
   
-    // Convert the summedValues object to an array and sort by summed value
+    // converte em uma array e ordena pela valor em ordem decrescente
     let sortedNames = Object.keys(summedValues).sort((a, b) => summedValues[b] - summedValues[a]);
   
     return sortedNames;

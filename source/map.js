@@ -10,6 +10,26 @@ function loadMap() {
 
     L.control.scale().addTo(map);
 
+    const comboboxControl = new L.Control.ComboBox({
+        position: 'topright',
+        labelText: 'Escolha das categorias',
+        initValue:2,
+        optionsList: [
+            { label: 'Mais Regras No Grupo', value: 0 },
+            { label: 'Mais Regras Geral', value: 1 },
+            { label: 'Maior Surpresa No Grupo', value: 2 },
+            { label: 'Maior Surpresa Geral', value: 3 },
+        ],
+        onChange: function (value) {
+            for (const key in glyphGroups) {
+                const glyph = glyphGroups[key];
+                glyph.setDisplayMethod(parseInt(value));
+            }
+        }
+    });
+
+    comboboxControl.addTo(map);
+
     //criação dos slider de suporte
     const supportSlider = new L.Control.Slider({
         position: 'topright',
@@ -69,6 +89,7 @@ function loadMap() {
     });
     liftSlider.addTo(map);
     liftSlider.addSlider();
+
 
     // //atualiza a posição quando move e da zoom
     // map.on('zoomend', function () {

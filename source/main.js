@@ -23,7 +23,7 @@ window.onload = function () {
             Papa.parse(csvData, {
                 header: true,
                 complete: function (results) {
-                    const dataObj = results.data.slice(0, 2000);
+                    const dataObj = results.data.slice(0, 1000);
                     addGlyph(dataObj, "crimes");
                 }
             })
@@ -47,7 +47,7 @@ function addGlyph(data, name) {
     glyphData.setConfidence(initThreshVal.confidenceMin, initThreshVal.confidenceMax);
     glyphData.setLift(initThreshVal.liftMin, initThreshVal.liftMax);
 
-    glyphData.setDisplayCategs(0);
+    glyphData.setDisplayMethod(2);
     glyphData.updateAll();
 
     console.log("glyph", glyphData)

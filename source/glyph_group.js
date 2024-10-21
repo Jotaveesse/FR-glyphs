@@ -108,8 +108,9 @@ class GlyphData {
         console.log(`${label}: ${(t1 - t0).toFixed(2)} ms`);
     }
 
-    setDisplayCategs(method) {
+    setDisplayMethod(method) {
         this.displayMethod = method;
+        this.drawGlyphs();
     }
 
     setProcCategs(categsChosen) {
@@ -281,16 +282,16 @@ class GlyphData {
         }
     }
 
-    getScore(rule){
-        const base = rule.confidence + rule.antecedentSupport + rule.consequentSupport - (rule.antecedents.length + rule.consequents.length)*2;
-        return base * rule.lift* rule.lift;
+    getScore(rule) {
+        const base = rule.confidence + rule.antecedentSupport + rule.consequentSupport - (rule.antecedents.length + rule.consequents.length) * 2;
+        return base * rule.lift * rule.lift;
     }
 
     sortRulesByScore() {
         for (const groupKey in this.groupedData) {
             this.assocRules[groupKey] = this.assocRules[groupKey].sort((a, b) => {
 
-                return this.getScore(b) - this.getScore(a); 
+                return this.getScore(b) - this.getScore(a);
             });
         }
     }
@@ -374,53 +375,58 @@ class GlyphData {
 
     processDisplayCategs() {
         this.displayCategs = {};
+        var sortedItems;
 
         switch (this.displayMethod) {
-            //escolhe as categorias com mais regras
+            //escolhe as categorias com mais regras em cada grupo
             case 0:
-                var freqRules = getItemsByFrequency(this.filteredAssocRules);
-                freqRules = [...new Set([...freqRules, ...this.uniqueValues])].slice(0, this.maxCategories);
+                sortedItems = getItemsByFrequencyGrouped(this.filteredAssocRules);
 
                 for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = freqRules;
+                    this.displayCategs[groupKey] = sortedItems[groupKey].slice(0, this.maxCategories);
                 }
                 break;
 
-            //escolhe qualquer categoria
+            //escolhe as categorias com mais regras globalmente
             case 1:
+                sortedItems = getItemsByFrequencyGlobal(this.filteredAssocRules);
+
                 for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = Object.keys(this.freqData[groupKey]).slice(0, this.maxCategories);
+                    this.displayCategs[groupKey] = sortedItems;
                 }
                 break;
-            //escolhe as categorias mais frequentes
+
+            //escolhe categorias com maiores surpresas de cada grupo
             case 2:
+                sortedItems = getItemsBySurpriseGrouped(this.surpriseData);
+
                 for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = this.assocFreqItems[groupKey].filter(item => item.length == 1 && item[0] != ""
-                    ).slice(0, this.maxCategories).map(item => item[0]);
+                    this.displayCategs[groupKey] = sortedItems[groupKey].slice(0, this.maxCategories);
                 }
                 break;
 
-            //escolhe as maiores surpresas de cada grupo
+            //escolhe categorias com as maiores surpresas gerais
             case 3:
-                var freqRules = getOrderedAbsoluteValuesPerCity(this.surpriseData);
+                sortedItems = getItemsBySurpriseGlobal(this.surpriseData).slice(0, this.maxCategories);
 
                 for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = freqRules[groupKey].slice(0, this.maxCategories);
-                }
-                break;
-
-            //escolhe as maiores surpresas gerais
-            case 4:
-                var freqRules = getHighestAbsoluteValuesOverall(this.surpriseData).slice(0, this.maxCategories);
-
-                for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = freqRules;
+                    this.displayCategs[groupKey] = sortedItems;
                 }
                 break;
 
             default:
+                //escolhe qualquer categoria
+                for (const groupKey in this.groupedData) {
+                    this.displayCategs[groupKey] = this.uniqueValues.slice(0, this.maxCategories);
+                }
                 break;
         }
+
+        //adiciona categorias  caso não tenha a quantidade necessaria
+        for (const groupKey in this.groupedData) {
+            this.displayCategs[groupKey] = [...new Set([...this.displayCategs[groupKey], ...this.uniqueValues])].slice(0, this.maxCategories);
+        }
+
     }
 
     drawGlyphs() {
