@@ -323,11 +323,7 @@ class GlyphData {
                     this.transTables[groupKey][i].push(value);
                 }
             }
-
-            this.transTables[groupKey] = this.transTables[groupKey].map(t => new Set(t));
         }
-
-
     }
 
     getAssocRules() {
@@ -364,9 +360,18 @@ class GlyphData {
 
     updateFreqItemSets() {
         this.assocFreqItems = {};
+        this.assocHeader = {};
+        this.assocTree = {};
+        this.lastAppearance = {};
+
         for (const tableKey in this.transTables) {
             const table = this.transTables[tableKey];
-            this.assocFreqItems[tableKey] = apriori(table, 0);
+            const fpGrowth = new FPGrowth(0);
+            const { patterns, root, header } = fpGrowth.run(table);
+
+            this.assocFreqItems[tableKey] = patterns;
+            this.assocHeader[tableKey] = header;
+            this.assocTree[tableKey] = root;
         }
     }
 
@@ -376,7 +381,9 @@ class GlyphData {
 
         for (const groupKey in this.transTables) {
             const table = this.transTables[groupKey];
-            this.assocRules[groupKey] = generateAssociationRules(this.assocFreqItems[groupKey], table, 0, 0);
+            const header = this.assocHeader[groupKey];
+
+            this.assocRules[groupKey] = generateAssociationRules(this.assocFreqItems[groupKey], header, table.length);
 
             this.filteredAssocRules[groupKey] = structuredClone(this.assocRules[groupKey]);
         }

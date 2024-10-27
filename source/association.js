@@ -1,110 +1,253 @@
-function apriori(transactions, minSupport) {
-    let frequentItemsets = [];
-    let itemsets = generateInitialItemsets(transactions);
 
-    while (itemsets.length > 0) {
-        let frequent = filterFrequentItemsets(itemsets, transactions, minSupport);
-        frequentItemsets = frequentItemsets.concat(frequent);
-        itemsets = generateNextItemsets(frequent);
+// FP-Tree Node Class
+class FPNode {
+    constructor(item, parent = null) {
+        this.item = item;
+        this.count = 1;
+        this.parent = parent;
+        this.children = {};
+        this.link = null;
     }
 
-    return frequentItemsets;
+    increment() {
+        this.count += 1;
+    }
 }
 
-function generateInitialItemsets(transactions) {
-    const itemsets = [];
-    const items = new Set();
+// FP-Growth Algorithm Class
+class FPGrowth {
+    constructor(minSupport) {
+        this.minSupport = minSupport;
+        this.transCount = 1;
+        this.frequentPatterns = [];
+    }
 
-    transactions.forEach(transaction => {
-        transaction.forEach(item => {
-            if (item!="")
-                items.add(item);
+    // Construct FP-Tree
+    buildFPTree(transactions) {
+        const headerTable = this.buildHeaderTable(transactions);
+        const root = new FPNode(null); // Root of the FP-Tree
+
+        transactions.forEach(transaction => {
+            const filteredTransaction = transaction
+                .filter(item => headerTable[item]) // Filter non-frequent items
+                .sort((a, b) => headerTable[b].count - headerTable[a].count); // Sort items by frequency
+
+            this.insertTransaction(root, filteredTransaction, headerTable);
         });
-    });
 
-    items.forEach(item => {
-        itemsets.push([item]);
-    });
+        return { root, headerTable };
+    }
 
-    return itemsets;
-}
+    // Build the header table
+    buildHeaderTable(transactions) {
+        const frequencyMap = {};
 
-function filterFrequentItemsets(itemsets, transactionSets, minSupport) {
-    const itemsetCounts = new Map();
-    const totalTransactions = transactionSets.length;
+        // Count item frequencies
+        transactions.forEach(transaction => {
+            transaction.forEach(item => {
+                if (item == "") return;
+                if (!frequencyMap[item]) {
+                    frequencyMap[item] = 0;
+                }
+                frequencyMap[item]++;
+            });
+        });
 
-    transactionSets.forEach(transactionSet => {
-        itemsets.forEach(itemset => {
-            if (itemset.every(item => transactionSet.has(item))) {
-                const key = itemset.join(',');
-                itemsetCounts.set(key, (itemsetCounts.get(key) || 0) + 1);
+        // Remove items that do not meet the minimum support
+        const headerTable = {};
+        Object.keys(frequencyMap).forEach((item, i) => {
+            if (frequencyMap[item] / this.transCount > this.minSupport) {
+                headerTable[item] = { count: frequencyMap[item], index: i, head: null };
             }
         });
-    });
 
-    const frequentItemsets = [];
-    for (const [key, count] of itemsetCounts) {
-        if (count / totalTransactions >= minSupport) {
-            frequentItemsets.push(key.split(','));
-        }
+        return headerTable;
     }
 
-    return frequentItemsets;
-}
+    // Insert a transaction into the FP-Tree
+    insertTransaction(root, transaction, headerTable) {
+        if (transaction.length === 0) return;
 
-function generateNextItemsets(frequentItemsets) {
-    const nextItemsets = [];
-    const len = frequentItemsets.length;
+        const firstItem = transaction[0];
+        let childNode;
 
-    for (let i = 0; i < len; i++) {
-        for (let j = i + 1; j < len; j++) {
-            const first = frequentItemsets[i];
-            const second = frequentItemsets[j];
+        if (!root.children[firstItem]) {
+            childNode = new FPNode(firstItem, root);
+            root.children[firstItem] = childNode;
 
-            // Check if the first k-1 items are the same
-            if (first.slice(0, -1).toString() === second.slice(0, -1).toString()) {
-                nextItemsets.push([...first, second[second.length - 1]]);
+            // Link the child node in the header table
+            if (!headerTable[firstItem].head) {
+                headerTable[firstItem].head = childNode;
+            } else {
+                let current = headerTable[firstItem].head;
+                while (current.link) {
+                    current = current.link;
+                }
+                current.link = childNode;
             }
+        } else {
+            childNode = root.children[firstItem];
+            childNode.increment();
         }
+
+        const remainingTransaction = transaction.slice(1);
+        this.insertTransaction(childNode, remainingTransaction, headerTable);
     }
 
-    return nextItemsets;
+    // Mine the FP-Tree for frequent patterns
+    mineTree(headerTable, suffix) {
+
+        const items = Object.keys(headerTable).sort(
+            (a, b) => headerTable[a].count - headerTable[b].count
+        );
+
+        items.forEach(item => {
+            if (item == "") return;
+            const newPattern = [item, ...suffix];
+            this.frequentPatterns.push(newPattern);
+
+            const conditionalPatternBase = this.findConditionalPatternBase(
+                headerTable[item].head
+            );
+
+
+            const { root, headerTable: newHeaderTable } = this.buildFPTree(
+                conditionalPatternBase
+            );
+
+            if (Object.keys(newHeaderTable).length > 0) {
+                this.mineTree(newHeaderTable, newPattern);
+            }
+        });
+    }
+
+    // Find conditional pattern base
+    findConditionalPatternBase(node) {
+        const patterns = [];
+
+        while (node) {
+            const path = [];
+            let parent = node.parent;
+            while (parent && parent.item !== null) {
+                path.push(parent.item);
+                parent = parent.parent;
+            }
+
+            for (let i = 0; i < node.count; i++) {
+                if (path.length > 0) patterns.push(path);
+            }
+
+            node = node.link;
+        }
+
+        return patterns;
+    }
+
+    // Run the FP-Growth algorithm
+    run(transactions) {
+        this.transCount = transactions.length;
+        const sets = [];
+        for (let index = 0; index < transactions.length; index++) {
+            const element = transactions[index];
+            sets[index] = [...element];
+        }
+        const { root, headerTable } = this.buildFPTree(sets);
+        this.mineTree(headerTable, []);
+        const patterns = this.frequentPatterns;
+        // console.log(headerTable)
+        // console.log(patterns)
+        return { patterns: patterns, root: root, header: headerTable };
+    }
 }
 
-function generateAssociationRules(frequentItemsets, transactionSets, minConfidence, minLift) {
-    const supports = {}; // Store supports for all itemsets
 
-    // Precompute support for all frequent itemsets
-    frequentItemsets.forEach(itemset => {
-        supports[itemset.join(',')] = calculateSupport(itemset, transactionSets);
-    });
+function getItemsetCount(itemset, header) {
+    // Start by finding the minimum support of the first item in the itemset
+    let supportCount = 0;
+    for (let index = 0; index < itemset.length; index++) {
 
-    let rules = [];
+        let firstItem = itemset[itemset.length - index - 1];
+        let currentNode = header[firstItem].head;
+
+        // Traverse the linked list for the first item to find all occurrences in the FP-tree
+        while (currentNode !== null && currentNode !== undefined) {
+            // Check if the current path in the tree matches the itemset
+            if (isPathContainsItemset(currentNode, itemset)) {
+                // If it does, add the count of this node to the support count
+                supportCount += currentNode.count;
+            }
+            // Move to the next node in the linked list of this item
+            currentNode = currentNode.link;
+        }
+    };
+
+    return supportCount;
+}
+
+
+// Helper function to check if a path from a node contains the itemset in order
+function isPathContainsItemset(node, itemset) {
+    let itemsToFind = new Set(itemset);
+    let currentNode = node;
+
+    // Traverse up the tree from the node and check each item against the itemset
+    while (currentNode !== null && currentNode !== undefined && itemsToFind.size > 0) {
+        if (itemsToFind.has(currentNode.item)) {
+            itemsToFind.delete(currentNode.item);
+        }
+        currentNode = currentNode.parent; // Move up the tree
+    }
+
+    // If itemsToFind is empty, it means we've found all items in the itemset along the path
+    return itemsToFind.size === 0;
+}
+
+function generateAssociationRules(frequentItemsets, header, transactionLength, minConfidence = 0, minLift = 0) {
+    const rules = [];
+    const supportCache = {};
 
     frequentItemsets.forEach(itemset => {
         if (itemset.length > 1) {
-            let subsets = getSubsets(itemset);
 
-            subsets.forEach(subset => {
-                let remaining = itemset.filter(item => !subset.includes(item));
-                if (remaining.length > 0) {
-                    let confidence = calculateConfidence(subset, remaining, transactionSets, supports);
-                    if (confidence >= minConfidence) {
-                        let lift = calculateLift(subset, remaining, transactionSets, supports);
-                        let antecedentSupport = supports[subset.join(',')];
-                        let consequentSupport = supports[remaining.join(',')];
+            //checa se o valor ja esta na cache
+            if (!supportCache[itemset])
+                supportCache[itemset] = getItemsetCount(itemset, header) / transactionLength;
 
-                        if (lift >= minLift) {
-                            rules.push({
-                                antecedents: subset,
-                                consequents: remaining,
-                                confidence: confidence,
-                                lift: lift,
-                                antecedentSupport: antecedentSupport,
-                                consequentSupport: consequentSupport
-                            });
-                        }
+            const itemsetSupport = supportCache[itemset];
+
+            const { subsets: antecedents, remainings: consequents } = getSubsets(itemset);
+
+            antecedents.forEach((ante, i) => {
+                const cons = consequents[i];
+
+                if (!supportCache[ante])
+                    supportCache[ante] = getItemsetCount(ante, header) / transactionLength;
+
+                const antecedentSupport = supportCache[ante];
+
+                const confidence = itemsetSupport / antecedentSupport;
+
+                if (confidence >= minConfidence) {
+                    if (!supportCache[cons])
+                        supportCache[cons] = getItemsetCount(cons, header) / transactionLength;
+
+                    const consequentSupport = supportCache[cons];
+
+                    const lift = confidence / consequentSupport;
+
+                    if (lift >= minLift) {
+
+                        rules.push({
+                            antecedents: ante,
+                            consequents: cons,
+                            confidence: confidence,
+                            lift: lift,
+                            antecedentSupport: antecedentSupport,
+                            consequentSupport: consequentSupport
+                        });
+
                     }
+
                 }
             });
         }
@@ -113,77 +256,26 @@ function generateAssociationRules(frequentItemsets, transactionSets, minConfiden
     return rules;
 }
 
-function calculateSupport(itemset, transactions) {
-    let supportCount = 0;
-
-    transactions.forEach(transaction => {
-        if (itemset.every(item => transaction.has(item))) {
-            supportCount++;
-        }
-    });
-
-    return supportCount / transactions.length;
-}
-
-function calculateConfidence(antecedents, consequents, transactions, supports) {
-    const antecedentSupport = supports[antecedents.join(',')];
-    let bothSupport = 0;
-
-    transactions.forEach(transaction => {
-        if (antecedents.every(item => transaction.has(item)) && 
-            consequents.every(item => transaction.has(item))) {
-            bothSupport++;
-        }
-    });
-
-    return bothSupport / transactions.length / antecedentSupport;
-}
-
-function calculateLift(antecedents, consequents, transactions, supports) {
-    const antecedentSupport = supports[antecedents.join(',')];
-    const consequentSupport = supports[consequents.join(',')];
-    let bothSupport = 0;
-
-    transactions.forEach(transaction => {
-        if (antecedents.every(item => transaction.has(item)) && 
-            consequents.every(item => transaction.has(item))) {
-            bothSupport++;
-        }
-    });
-
-    let supportA = antecedentSupport;
-    let supportB = consequentSupport;
-    let supportAB = bothSupport / transactions.length;
-
-    return supportAB / (supportA * supportB);
-}
-
+// gera todos os subconjuntos de um conjunto de itens
 function getSubsets(array) {
-    const subsets = [];
-    const len = array.length;
+    let subsets = [];
+    let remainings = [];
+    let len = array.length;
 
     for (let i = 1; i < (1 << len); i++) {
-        const subset = [];
+        let subset = [];
+        let remaining = [];
         for (let j = 0; j < len; j++) {
             if (i & (1 << j)) {
                 subset.push(array[j]);
             }
+            else {
+                remaining.push(array[j]);
+            }
         }
         subsets.push(subset);
+        remainings.push(remaining);
     }
 
-    return subsets;
-}
-
-
-function getAssociations(transTables, minSupport, minConfidence, minLift) {
-    var tablesRules = {};
-    var freqItemsets = {};
-    for (const tableKey in transTables) {  
-        const table = transTables[tableKey];      
-        freqItemsets[tableKey] = apriori(table, minSupport);
-        tablesRules[tableKey] = generateAssociationRules(freqItemsets[tableKey] , table, minConfidence, minLift);
-    }
-  
-    return [tablesRules, freqItemsets];
+    return { subsets: subsets, remainings: remainings };
 }
