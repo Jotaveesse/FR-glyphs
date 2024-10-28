@@ -243,7 +243,7 @@ function getAverageModel(data) {
     for (const groupKey in data) {
         for (const category in data[groupKey]) {
             const attrLength = data[groupKey][category].length
-            
+
             if (averages[key2] == undefined)
                 averages[key2] = Array(attrLength).fill(0);
 
@@ -298,66 +298,53 @@ function getItemsByFrequencyGlobal(data) {
     return sortedItems;
 }
 
-function getItemsByFrequencyGrouped(data) {
-    var sortedItems = {};
+function getItemsByFrequencyGrouped(rules) {
+    const frequencyMap = {};
 
-    for (const groupKey in data) {
-        const rules = data[groupKey];
-        const frequencyMap = {};
-
-        for (const rule of rules) {
-            // conta os antecedentes
-            for (const antecedent of rule.antecedents) {
-                if (!frequencyMap[antecedent]) {
-                    frequencyMap[antecedent] = 0;
-                }
-                frequencyMap[antecedent]++;
+    for (const rule of rules) {
+        // conta os antecedentes
+        for (const antecedent of rule.antecedents) {
+            if (!frequencyMap[antecedent]) {
+                frequencyMap[antecedent] = 0;
             }
-
-            // conta os consequente
-            for (const consequent of rule.consequents) {
-                if (!frequencyMap[consequent]) {
-                    frequencyMap[consequent] = 0;
-                }
-                frequencyMap[consequent]++;
-            }
+            frequencyMap[antecedent]++;
         }
 
-        sortedItems[groupKey] = Object.keys(frequencyMap).sort((a, b) => frequencyMap[b] - frequencyMap[a]);
+        // conta os consequente
+        for (const consequent of rule.consequents) {
+            if (!frequencyMap[consequent]) {
+                frequencyMap[consequent] = 0;
+            }
+            frequencyMap[consequent]++;
+        }
+
     }
-    return sortedItems;
+
+    return Object.keys(frequencyMap).sort((a, b) => frequencyMap[b] - frequencyMap[a]);
 }
 
 function getItemsBySurpriseGrouped(data) {
-    let result = {};
-  
-    for (let groupKey in data) {
-      let sortedEntries = data[groupKey].sort((a, b) => b.value - a.value);
+    let sortedEntries = data.sort((a, b) => b.value - a.value);
 
-      let sortedNames = sortedEntries.map(entry => entry.name);
-  
-      result[groupKey] = sortedNames;
-    }
-  
-    return result;
-  }
+    return sortedEntries.map(entry => entry.name);
+}
 
-  function getItemsBySurpriseGlobal(data) {
+function getItemsBySurpriseGlobal(data) {
     let summedValues = {};
-  
+
     for (let city in data) {
-      for (let entry of data[city]) {
-  
-        if (summedValues[entry.name]) {
-          summedValues[entry.name] += entry.value;
-        } else {
-          summedValues[entry.name] = entry.value;
+        for (let entry of data[city]) {
+
+            if (summedValues[entry.name]) {
+                summedValues[entry.name] += entry.value;
+            } else {
+                summedValues[entry.name] = entry.value;
+            }
         }
-      }
     }
-  
+
     // converte em uma array e ordena pela valor em ordem decrescente
     let sortedNames = Object.keys(summedValues).sort((a, b) => summedValues[b] - summedValues[a]);
-  
+
     return sortedNames;
-  }
+}

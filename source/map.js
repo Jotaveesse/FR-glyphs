@@ -13,17 +13,18 @@ function loadMap() {
     const comboboxControl = new L.Control.ComboBox({
         position: 'topright',
         labelText: 'Escolha das categorias',
-        initValue:2,
+        initValue: 0,
         optionsList: [
-            { label: 'Mais Regras No Grupo', value: 0 },
-            { label: 'Mais Regras Geral', value: 1 },
-            { label: 'Maior Surpresa No Grupo', value: 2 },
-            { label: 'Maior Surpresa Geral', value: 3 },
+            { label: 'Maior Surpresa No Grupo', value: 0 },
+            { label: 'Maior Surpresa Geral', value: 1 },
+            { label: 'Mais Regras No Grupo', value: 2 },
+            { label: 'Mais Regras Geral', value: 3 },
         ],
         onChange: function (value) {
             for (const key in glyphGroups) {
                 const glyph = glyphGroups[key];
                 glyph.setDisplayMethod(parseInt(value));
+                glyph.update();
             }
         }
     });
@@ -34,8 +35,8 @@ function loadMap() {
     const supportSlider = new L.Control.RangeSlider({
         position: 'topright',
         labelText: 'Suporte',
-        rangeMin:  initThreshVal.supportMin,
-        rangeMax:  initThreshVal.supportMax,
+        rangeMin: initThreshVal.supportMin,
+        rangeMax: initThreshVal.supportMax,
         rangeStep: 0.05,
         rangeInitMin: initThreshVal.supportMin,
         rangeInitMax: initThreshVal.supportMax,
@@ -54,8 +55,8 @@ function loadMap() {
     const confidenceSlider = new L.Control.RangeSlider({
         position: 'topright',
         labelText: 'Confiança',
-        rangeMin:  initThreshVal.confidenceMin,
-        rangeMax:  initThreshVal.confidenceMax,
+        rangeMin: initThreshVal.confidenceMin,
+        rangeMax: initThreshVal.confidenceMax,
         rangeStep: 0.05,
         rangeInitMin: initThreshVal.confidenceMin,
         rangeInitMax: initThreshVal.confidenceMax,

@@ -227,12 +227,13 @@ function generateAssociationRules(frequentItemsets, header, transactionLength, m
 
                 const confidence = itemsetSupport / antecedentSupport;
 
+                
                 if (confidence >= minConfidence) {
                     if (!supportCache[cons])
                         supportCache[cons] = getItemsetCount(cons, header) / transactionLength;
-
+                    
                     const consequentSupport = supportCache[cons];
-
+                    
                     const lift = confidence / consequentSupport;
 
                     if (lift >= minLift) {
@@ -262,7 +263,7 @@ function getSubsets(array) {
     let remainings = [];
     let len = array.length;
 
-    for (let i = 1; i < (1 << len); i++) {
+    for (let i = 1; i < (1 << len) - 1; i++) {
         let subset = [];
         let remaining = [];
         for (let j = 0; j < len; j++) {

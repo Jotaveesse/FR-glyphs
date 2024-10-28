@@ -1,19 +1,43 @@
-class GlyphSymbol {
-
-    constructor(group = null, data = null, size = 200, hoverSize = 400) {
-        this.data = data;
+class Glyph {
+    constructor(name, group, data, surprises) {
+        this.rawData = data;
         this.group = group;
-        this.size = size;
-        this.hoverSize = hoverSize;
+        this.surprises = surprises;
+        this.name = name;
+
+        this.size = 400;
+        this.hoverSize = 400;
+        this.displaySize = this.size;
+
+        this.minSupport = 0;
+        this.maxSupport = 1;
+        this.minConfidence = 0;
+        this.maxConfidence = 1;
+        this.minLift = 0;
+        this.maxLift = 3;
+
+        this.displayMethod = 0;
+
+        this.maxCategories = 4;
 
         this.isDrawn = false;
-        this.surprises = null;
-        this.displaySurprises = null;
-        this.rules = null;
-        this.displayRules = null;
-        this.maxCategories = 1;
+        this.deferredUpdate = false;
+        this.needsDataUpdate = true;
+        this.needsIconUpdate = true;
+        this.needsFilterUpdate = true;
 
-        this.displayCategs = [];
+        this.chosenData = [];
+        this.transTable = [];
+        this.frequentItemsets = [];
+
+        this.rulesHeader = [];
+        this.rulesTree = [];
+        this.rules = [];
+        this.filteredRules = [];
+
+        this.displayItems = [];
+        this.displayRules = [];
+        this.displaySurprises = [];
 
         this.colorRange = [
             "#8F8F3C", //laranja
@@ -28,33 +52,227 @@ class GlyphSymbol {
         ];
 
 
+        // this.applyDataChanges();
+    }
+
+    applyIconChanges() {
         this.updateProportions();
-        this.getPosition();
+        this.updateScales();
+        this.updateIconSize();
+
+        this.updateSVG();
+    }
+
+    applyFilterChanges() {
+        this.updateFilteredRules();
+        this.updateDisplayItems();
+        this.updateDisplayRules();
+        this.updateScales();
+
+        this.updateSVG();
+    }
+
+    applyDataChanges() {
+        this.updateChosenData();
+        this.updateTransTable();
+        this.updateFreqItems();
+        this.updateRules();
+
+        this.updatePosition();
+        this.updateProportions();
+        this.updateIconSize();
+
+        this.updateFilteredRules();
+        this.updateDisplayItems();
+        this.updateDisplayRules();
+        this.updateScales();
+
+        this.updateSVG();
+    }
+
+    markForUpdate() {
+        if (!this.deferredUpdate) {
+            this.applyUpdates();
+        }
+    }
+
+    deferUpdate() {
+        this.deferredUpdate = true
+    }
+
+    applyUpdates() {
+        if (this.needsDataUpdate) {
+            this.applyDataChanges();
+        }
+        else {
+            if (this.needsIconUpdate) {
+                this.applyIconChanges();
+            }
+            if (this.needsFilterUpdate) {
+                this.applyFilterChanges();
+            }
+        }
+        this.deferredUpdate = false;
+        this.needsDataUpdate = false;
+        this.needsIconUpdate = false;
+        this.needsFilterUpdate = false;
+    }
+
+    setSize(size) {
+        this.size = size;
+        this.displaySize = size;
+        this.needsIconUpdate = true;
+        this.markForUpdate();
+    }
+
+    setHoverSize(size) {
+        this.hoverSize = size;
+    }
+
+    setName(name) {
+        this.name = name;
+        this.needsIconUpdate = true;
+        this.markForUpdate();
+    }
+
+    setPosition(lat, lon) {
+        this.lat = lat;
+        this.lon = lon;
+        this.point = projectPoint(map, this.lat, this.lon);
+
+        this.needsIconUpdate = true;
+        this.markForUpdate();
     }
 
     setMaxCategories(maxCategories) {
         this.maxCategories = maxCategories;
-        this.filterRules();
-        this.updateScales();
-        this.update();
+
+        this.needsFilterUpdate = true
+        this.markForUpdate();
     }
 
     setDisplayCategories(categsChosen = null) {
-        this.displayCategs = categsChosen;
-        this.filterRules();
-        this.updateScales();
-        this.update();
+        this.displayItems = categsChosen;
+
+        this.needsFilterUpdate = true
+        this.markForUpdate();
     }
 
-    filterRules() {
-        const slicedCategs = this.displayCategs.slice(0, this.maxCategories);
+    setSupport(minSupport, maxSupport = Infinity) {
+        this.minSupport = minSupport;
+        this.maxSupport = maxSupport;
+
+        this.needsFilterUpdate = true
+        this.markForUpdate();
+    }
+
+    setConfidence(minConfidence, masConfidence = Infinity) {
+        this.minConfidence = minConfidence;
+        this.maxConfidence = masConfidence;
+
+        this.needsFilterUpdate = true
+        this.markForUpdate();
+    }
+
+    setLift(minLift, maxLift = Infinity) {
+        this.minLift = minLift;
+        this.maxLift = maxLift;
+
+        this.needsFilterUpdate = true
+        this.markForUpdate();
+    }
+
+    setDisplayMethod(method) {
+        this.displayMethod = method;
+
+        this.needsFilterUpdate = true
+        this.markForUpdate();
+    }
+
+    setData(data) {
+        this.rawData = data;
+
+        this.needsDataUpdate = true
+        this.markForUpdate();
+    }
+
+    setSurprise(surprises) {
+        this.surprises = surprises;
+
+        this.needsFilterUpdate = true
+        this.markForUpdate();
+    }
+
+    updateIconSize() {
+        if (this.marker) {
+            const icon = this.marker.options.icon;
+            icon.options.iconSize = [this.displaySize * 2, this.displaySize * 2];
+            icon.options.iconAnchor = [this.displaySize, this.displaySize];
+            this.marker.setIcon(icon);
+        }
+    }
+
+    updateChosenData() {
+        this.chosenData = [];
+
+        for (let i = 0; i < this.rawData.length; i++) {
+            const entry = this.rawData[i];
+            this.chosenData[i] = {};
+
+            for (const category in entry) {
+                if (this.group.chosenColumns.includes(category)) {
+                    const value = entry[category];
+
+                    this.chosenData[i][category] = value;
+                }
+            }
+        }
+    }
+
+    updateTransTable() {
+        //transforma os objetos de arrays de cada grupo em arrays de array
+        this.transTable = [];
+
+        for (let i = 0; i < this.chosenData.length; i++) {
+            const entry = this.chosenData[i];
+            this.transTable[i] = [];
+
+            for (const category in entry) {
+                const value = entry[category];
+
+                this.transTable[i].push(value);
+            }
+        }
+    }
+
+    updateFreqItems() {
+        const fpGrowth = new FPGrowth(0);
+        const { patterns, root, header } = fpGrowth.run(this.transTable);
+
+        this.frequentItemsets = patterns;
+        this.rulesHeader = header;
+        this.rulesTree = root;
+    }
+
+    updateRules() {
+        this.rules = generateAssociationRules(this.frequentItemsets, this.rulesHeader, this.transTable.length);
+        this.filteredRules = structuredClone(this.rules);
+
+        //ordena as regras por maior score
+        this.rules = this.rules.sort((a, b) => {
+            return Glyph.getRuleScore(b) - Glyph.getRuleScore(a);
+        });
+    }
+
+    updateDisplayRules() {
+        const slicedCategs = this.displayItems.slice(0, this.maxCategories);
 
         this.displaySurprises = this.surprises.filter(surp =>
             slicedCategs.includes(surp.name));
 
         //filtra somente as regras que possuem todos os seus antecessores
         //e consequentes nas categorias escolhidas
-        this.displayRules = this.rules.filter(rule => {
+        this.displayRules = this.filteredRules.filter(rule => {
             var isAnte = rule.antecedents.every(name => slicedCategs.includes(name));
             var isConse = rule.consequents.every(name => slicedCategs.includes(name));
 
@@ -62,31 +280,51 @@ class GlyphSymbol {
         }).slice(0, this.group.maxRules);
     }
 
-    setData(surprises, rules, displayCategs = null, maxCategs = null) {
-        this.surprises = surprises;
-        this.rules = rules;
+    updateDisplayItems() {
+        this.displayItems = [];
 
-        if (displayCategs != null)
-            this.maxCategories = maxCategs;
+        switch (this.displayMethod) {
+            //escolhe as categorias com mais regras em cada grupo
+            case 0:
+                console.log(this.group.surpriseData, this.name)
+                this.displayItems = getItemsBySurpriseGrouped(this.group.surpriseData[this.name]);
+                break;
 
-        if (maxCategs != null)
-            this.displayCategs = displayCategs;
+            //escolhe as categorias com mais regras globalmente
+            case 1:
+                this.displayItems = getItemsBySurpriseGlobal(this.group.surpriseData);
+                break;
 
-        this.filterRules();
+            //escolhe categorias com maiores surpresas de cada grupo
+            case 2:
+                this.displayItems = getItemsByFrequencyGrouped(this.filteredRules);
+                break;
 
-        this.updateScales();
+            //escolhe categorias com as maiores surpresas gerais
+            case 3:
+                this.displayItems = getItemsByFrequencyGlobal(this.group.filteredAssocRules);
+                break;
+
+            //escolhe qualquer categoria
+            default:
+                this.displayItems = this.group.uniqueValues;
+
+                break;
+        }
+
+        this.displayItems = [...new Set([...this.displayItems, ...this.group.uniqueValues])];
     }
 
-    getPosition() {
+    updatePosition() {
         var avrgLat = 0;
         var avrgLon = 0;
 
-        for (let index = 0; index < this.data.length; index++) {
-            avrgLat += this.data[index].lat;
-            avrgLon += this.data[index].lon;
+        for (let index = 0; index < this.rawData.length; index++) {
+            avrgLat += this.rawData[index].lat;
+            avrgLon += this.rawData[index].lon;
         }
-        avrgLat /= this.data.length;
-        avrgLon /= this.data.length;
+        avrgLat /= this.rawData.length;
+        avrgLon /= this.rawData.length;
 
         this.lat = avrgLat;
         this.lon = avrgLon;
@@ -94,27 +332,23 @@ class GlyphSymbol {
         this.point = projectPoint(map, this.lat, this.lon);
     }
 
-    setSize(size) {
-        this.size = size;
-        this.changeIconSize(this.size);
-    }
+    updateFilteredRules() {    //filtra as regras que estao dentro dos limites dos limiares
+        this.filteredRules = [];
+        for (let i = 0; i < this.rules.length; i++) {
+            const rule = this.rules[i];
 
-    setHoverSize(size) {
-        this.hoverSize = size;
-    }
-
-    changeIconSize(size) {
-        if (this.marker) {
-            const icon = this.marker.options.icon;
-            icon.options.iconSize = [size * 2, size * 2];
-            icon.options.iconAnchor = [size, size];
-            this.marker.setIcon(icon);
+            if (rule.antecedentSupport >= this.minSupport &&
+                rule.consequentSupport >= this.minSupport &&
+                rule.antecedentSupport <= this.maxSupport &&
+                rule.consequentSupport <= this.maxSupport &&
+                rule.confidence >= this.minConfidence &&
+                rule.confidence <= this.maxConfidence &&
+                rule.lift >= this.minLift &&
+                rule.lift <= this.maxLift &&
+                rule.antecedents.length + rule.consequents.length >= this.group.maxArrows) {
+                this.filteredRules.push(rule);
+            }
         }
-    }
-
-    remove() {
-        this.svgLayer.remove();
-        this.isDrawn = false;
     }
 
     updateProportions() {
@@ -245,10 +479,9 @@ class GlyphSymbol {
         });
     }
 
-    getMarker() {
-
-        if (this.isDrawn) {
-            this.update();
+    initializeMarker() {
+        if (this.marker) {
+            this.updateSVG();
             return this.marker;
         }
 
@@ -281,7 +514,6 @@ class GlyphSymbol {
         //criação da borda circular
         this.circleBorder = this.svgGroup.append("g")
             .attr("class", "glyph-border");
-
 
         //grupo que contem as linhas e cabeça das setas
         this.arrows = this.svgGroup.append("g")
@@ -331,7 +563,7 @@ class GlyphSymbol {
             .on("mouseover", this.hoverBegin.bind(this))
             .on("mouseout", this.hoverEnd.bind(this));
 
-        this.update();
+        // this.updateMarker();
 
         const svgIcon = this.svg.node();
 
@@ -348,7 +580,13 @@ class GlyphSymbol {
         return this.marker;
     }
 
-    update() {
+    updateSVG() {
+        if (!this.marker)
+            this.initializeMarker();
+
+        const newLatLng = new L.LatLng(this.lat, this.lon);
+        this.marker.setLatLng(newLatLng);
+
         this.arrowOutlines
             .selectAll("g")
             .data(this.arrowData)
@@ -529,16 +767,27 @@ class GlyphSymbol {
 
     hoverBegin() {
         this.mainText.attr("visibility", "hidden");
-        this.changeIconSize(this.hoverSize);
+        this.displaySize = this.hoverSize;
+        this.updateIconSize();
         this.background.style("opacity", 0.3);
         this.svg.node().parentElement.style.zIndex = 9000;
     }
 
     hoverEnd() {
         this.mainText.attr("visibility", "");
-        this.changeIconSize(this.size);
+        this.displaySize = this.size;
+        this.updateIconSize();
         this.background.style("opacity", 0);
         this.svg.node().parentElement.style.zIndex = 1000;
     }
 
+    static getRuleScore(rule) {
+        const base = rule.confidence + rule.antecedentSupport + rule.consequentSupport - (rule.antecedents.length + rule.consequents.length) * 2;
+        return base * rule.lift * rule.lift;
+    }
+
+    removeMarker() {
+        this.svgLayer.remove();
+        this.isDrawn = false;
+    }
 }

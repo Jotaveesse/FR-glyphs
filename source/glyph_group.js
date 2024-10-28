@@ -1,6 +1,5 @@
-class GlyphData {
+class GlyphGroup {
     transTables = {};
-    #updatedThresh = false;
 
     constructor(data) {
         this.origData = data;
@@ -17,6 +16,8 @@ class GlyphData {
         this.glyphs = [];
         this.glyphSize = 150;
         this.glyphHoverSize = 450;
+
+        this.groupNames = [];
 
         this.markers = new L.markerClusterGroup({
             maxClusterRadius: this.glyphSize,
@@ -38,28 +39,13 @@ class GlyphData {
         });
     }
 
-    setClusterSize() {
-
-    }
-
     updateAll() {
         console.log("===== Starting Update =====")
         const startTime = performance.now();
 
         this.logExecutionTime(() => this.groupByColumn(), 'groupByColumn');
 
-        this.logExecutionTime(() => this.addCoords(), 'addCoords');
-
-        const tGlyphsStart = performance.now();
-        //cria os glifos
-        this.glyphs = {};
-        for (const groupKey in this.groupedData) {
-            const glyph = new GlyphSymbol(this, this.groupedData[groupKey], this.glyphSize, this.glyphHoverSize);
-            glyph.name = groupKey;
-            this.glyphs[groupKey] = glyph;
-        }
-        const tGlyphsEnd = performance.now();
-        console.log(`createGlyphs for groups: ${(tGlyphsEnd - tGlyphsStart).toFixed(2)} ms`);
+        this.logExecutionTime(() => this.getCoords(), 'addCoords');
 
         this.logExecutionTime(() => this.filterCategories(), 'filterCategories');
 
@@ -69,15 +55,27 @@ class GlyphData {
 
         this.logExecutionTime(() => this.getSurprise(), 'getSurprise');
 
-        this.logExecutionTime(() => this.updateTransTables(), 'updateTrans');
+        const tGlyphsStart = performance.now();
+        //cria os glifos
+        this.glyphs = {};
+        for (const groupKey in this.groupedData) {
+            const glyph = new Glyph(groupKey, this, this.groupedData[groupKey], this.surpriseData[groupKey]);
+            
+            glyph.deferUpdate();
+            glyph.setSize(this.glyphSize);
+            glyph.setHoverSize(this.glyphHoverSize);
+            glyph.setMaxCategories(this.maxCategories);
+            glyph.applyUpdates();
 
-        this.logExecutionTime(() => this.updateFreqItemSets(), 'updateFreqItems');
+            this.glyphs[groupKey] = glyph;
+            this.markers.addLayer(glyph.marker);
+        };
 
-        this.logExecutionTime(() => this.updateAssociations(), 'updateAssoc');
+        map.addLayer(this.markers);
 
-        this.logExecutionTime(() => this.filterAssocRules(), 'filterAssoc');
+        const tGlyphsEnd = performance.now();
+        console.log(`createGlyphs for groups: ${(tGlyphsEnd - tGlyphsStart).toFixed(2)} ms`);
 
-        this.logExecutionTime(() => this.drawGlyphs(this.filteredMapData), 'createGlyphs');
 
         const endTime = performance.now();
         console.log(`updateAll total time: ${(endTime - startTime).toFixed(2)} ms`);
@@ -89,11 +87,10 @@ class GlyphData {
 
         const startTime = performance.now();
 
-        if (this.#updatedThresh) {
-            this.logExecutionTime(() => this.filterAssocRules(this.filteredMapData), 'filterAssoc');
-        }
-
-        this.logExecutionTime(() => this.drawGlyphs(this.filteredMapData), 'createGlyphs');
+        for (const groupKey in this.groupedData) {
+            const glyph = this.glyphs[groupKey]
+            glyph.applyUpdates();
+        };
 
         const endTime = performance.now();
         console.log(`updateAll total time: ${(endTime - startTime).toFixed(2)} ms`);
@@ -110,7 +107,13 @@ class GlyphData {
 
     setDisplayMethod(method) {
         this.displayMethod = method;
-        this.drawGlyphs();
+        // this.drawGlyphs();
+
+        for (const groupKey in this.groupedData) {
+            const glyph = this.glyphs[groupKey];
+
+            glyph.setDisplayMethod(method);
+        };
     }
 
     setChosenColumns(categsChosen) {
@@ -137,19 +140,28 @@ class GlyphData {
     setSupport(minSupport, maxSupport = Infinity) {
         this.minSupport = minSupport;
         this.maxSupport = maxSupport;
-        this.#updatedThresh = true;
+
+        for (const groupName of this.groupNames) {
+            this.glyphs[groupName].setSupport(minSupport, maxSupport);
+        }
     }
 
     setConfidence(minConfidence, maxConfidence = Infinity) {
         this.minConfidence = minConfidence;
         this.maxConfidence = maxConfidence;
-        this.#updatedThresh = true;
+
+        for (const groupName of this.groupNames) {
+            this.glyphs[groupName].setConfidence(minConfidence, maxConfidence);
+        }
     }
 
     setLift(minLift, maxLift = Infinity) {
         this.minLift = minLift;
         this.maxLift = maxLift;
-        this.#updatedThresh = true;
+
+        for (const groupName of this.groupNames) {
+            this.glyphs[groupName].setLift(minLift, maxLift);
+        }
     }
 
     setCoordsColumns(latColumn, lonColumn, coordFunct = this.defaultCoords) {
@@ -158,7 +170,7 @@ class GlyphData {
         this.coordFunct = coordFunct
     }
 
-    addCoords() {
+    getCoords() {
         for (const groupKey in this.groupedData) {
             const group = this.groupedData[groupKey];
 
@@ -171,16 +183,18 @@ class GlyphData {
 
     groupByColumn() {
         this.groupedData = {};
+        this.groupNames = [];
 
         //divide os dados em provincias e cria as colunas de coordenadas
         this.origData.forEach(entry => {
-            var segment = entry[this.groupColumn];
+            var group = entry[this.groupColumn];
 
-            if (this.groupedData[segment] == undefined) {
-                this.groupedData[segment] = []
+            if (this.groupedData[group] == undefined) {
+                this.groupedData[group] = []
+                this.groupNames.push(group);
             }
 
-            this.groupedData[segment].push(entry);
+            this.groupedData[group].push(entry);
         });
     }
 
@@ -215,7 +229,7 @@ class GlyphData {
         this.uniqueValues = [];
 
         //acha todos os valores distintos
-        for (const groupKey in this.filteredData) {
+        for (const groupKey in this.groupedData) {
             const group = this.filteredData[groupKey];
             this.freqData[groupKey] = {};
 
@@ -289,175 +303,5 @@ class GlyphData {
 
             this.surpriseData[groupKey] = dataPointArray;
         }
-    }
-
-    getScore(rule) {
-        const base = rule.confidence + rule.antecedentSupport + rule.consequentSupport - (rule.antecedents.length + rule.consequents.length) * 2;
-        return base * rule.lift * rule.lift;
-    }
-
-    sortRulesByScore() {
-        for (const groupKey in this.groupedData) {
-            this.assocRules[groupKey] = this.assocRules[groupKey].sort((a, b) => {
-
-                return this.getScore(b) - this.getScore(a);
-            });
-        }
-    }
-
-    updateTransTables() {
-        this.transTables = {};
-
-        //transforma os objetos de arrays de cada grupo em arrays de array
-        for (const groupKey in this.filteredData) {
-            const group = this.filteredData[groupKey];
-            this.transTables[groupKey] = [];
-
-            for (let i = 0; i < group.length; i++) {
-                const entry = group[i];
-                this.transTables[groupKey][i] = [];
-
-                for (const category in entry) {
-                    const value = entry[category];
-
-                    this.transTables[groupKey][i].push(value);
-                }
-            }
-        }
-    }
-
-    getAssocRules() {
-        this.updateTransTables();
-        this.updateFreqItemSets();
-        this.updateAssociations();
-    }
-
-    filterAssocRules() {    //filtra as regras que estao dentro dos limites dos limiares
-        this.filteredAssocRules = {};
-
-        for (const groupKey in this.filteredData) {
-            const group = this.assocRules[groupKey];
-            this.filteredAssocRules[groupKey] = [];
-
-            for (let i = 0; i < group.length; i++) {
-                const rule = group[i];
-
-                if (rule.antecedentSupport >= this.minSupport &&
-                    rule.consequentSupport >= this.minSupport &&
-                    rule.antecedentSupport <= this.maxSupport &&
-                    rule.consequentSupport <= this.maxSupport &&
-                    rule.confidence >= this.minConfidence &&
-                    rule.confidence <= this.maxConfidence &&
-                    rule.lift >= this.minLift &&
-                    rule.lift <= this.maxLift &&
-                    rule.antecedents.length + rule.consequents.length >= this.maxArrows) {
-                    this.filteredAssocRules[groupKey].push(rule);
-                }
-
-            }
-        }
-    }
-
-    updateFreqItemSets() {
-        this.assocFreqItems = {};
-        this.assocHeader = {};
-        this.assocTree = {};
-        this.lastAppearance = {};
-
-        for (const tableKey in this.transTables) {
-            const table = this.transTables[tableKey];
-            const fpGrowth = new FPGrowth(0);
-            const { patterns, root, header } = fpGrowth.run(table);
-
-            this.assocFreqItems[tableKey] = patterns;
-            this.assocHeader[tableKey] = header;
-            this.assocTree[tableKey] = root;
-        }
-    }
-
-    updateAssociations() {
-        this.assocRules = {};
-        this.filteredAssocRules = {};
-
-        for (const groupKey in this.transTables) {
-            const table = this.transTables[groupKey];
-            const header = this.assocHeader[groupKey];
-
-            this.assocRules[groupKey] = generateAssociationRules(this.assocFreqItems[groupKey], header, table.length);
-
-            this.filteredAssocRules[groupKey] = structuredClone(this.assocRules[groupKey]);
-        }
-    }
-
-    processDisplayCategs() {
-        this.displayCategs = {};
-        var sortedItems;
-
-        switch (this.displayMethod) {
-            //escolhe as categorias com mais regras em cada grupo
-            case 0:
-                sortedItems = getItemsByFrequencyGrouped(this.filteredAssocRules);
-
-                for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = sortedItems[groupKey];
-                }
-                break;
-
-            //escolhe as categorias com mais regras globalmente
-            case 1:
-                sortedItems = getItemsByFrequencyGlobal(this.filteredAssocRules);
-
-                for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = sortedItems;
-                }
-                break;
-
-            //escolhe categorias com maiores surpresas de cada grupo
-            case 2:
-                sortedItems = getItemsBySurpriseGrouped(this.surpriseData);
-
-                for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = sortedItems[groupKey];
-                }
-                break;
-
-            //escolhe categorias com as maiores surpresas gerais
-            case 3:
-                sortedItems = getItemsBySurpriseGlobal(this.surpriseData);
-
-                for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = sortedItems;
-                }
-                break;
-
-            default:
-                //escolhe qualquer categoria
-                for (const groupKey in this.groupedData) {
-                    this.displayCategs[groupKey] = this.uniqueValues;
-                }
-                break;
-        }
-
-        //adiciona categorias  caso não tenha a quantidade necessaria
-        for (const groupKey in this.groupedData) {
-            this.displayCategs[groupKey] = [...new Set([...this.displayCategs[groupKey], ...this.uniqueValues])];
-        }
-
-    }
-
-    drawGlyphs() {
-        this.processDisplayCategs();
-
-        for (const groupKey in this.groupedData) {
-            const glyph = this.glyphs[groupKey];
-
-            //adiciona os dados
-            glyph.setData(this.surpriseData[groupKey], this.filteredAssocRules[groupKey], this.displayCategs[groupKey], this.maxCategories);
-            const marker = glyph.getMarker();
-
-            this.markers.addLayer(marker);
-        };
-
-        map.addLayer(this.markers);
     }
 }
