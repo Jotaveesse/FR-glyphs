@@ -24,6 +24,7 @@ class Glyph {
         this.deferredUpdate = false;
         this.needsDataUpdate = true;
         this.needsIconUpdate = true;
+        this.needsPosUpdate = true;
         this.needsFilterUpdate = true;
 
         this.chosenData = [];
@@ -60,7 +61,7 @@ class Glyph {
         this.updateScales();
         this.updateIconSize();
 
-        this.updateSVG();
+        this.updateMarker();
     }
 
     applyFilterChanges() {
@@ -69,7 +70,7 @@ class Glyph {
         this.updateDisplayRules();
         this.updateScales();
 
-        this.updateSVG();
+        this.updateMarker();
     }
 
     applyDataChanges() {
@@ -87,7 +88,7 @@ class Glyph {
         this.updateDisplayRules();
         this.updateScales();
 
-        this.updateSVG();
+        this.updateMarker();
     }
 
     markForUpdate() {
@@ -111,22 +112,39 @@ class Glyph {
             if (this.needsFilterUpdate) {
                 this.applyFilterChanges();
             }
+            if (this.needsPosUpdate) {
+                this.updatePosition();
+            }
         }
         this.deferredUpdate = false;
         this.needsDataUpdate = false;
         this.needsIconUpdate = false;
+        this.needsPosUpdate = false;
         this.needsFilterUpdate = false;
     }
 
     setSize(size) {
         this.size = size;
-        this.displaySize = size;
         this.needsIconUpdate = true;
         this.markForUpdate();
     }
 
     setHoverSize(size) {
         this.hoverSize = size;
+        this.needsIconUpdate = true;
+        this.markForUpdate();
+    }
+
+    updateIconSize() {
+        if (this.marker) {
+            this.icon.options.iconSize = [this.size * 2, this.size * 2];
+            this.icon.options.iconAnchor = [this.size, this.size];
+            this.marker.setIcon(this.icon);
+
+            this.hoverIcon.options.iconSize = [this.hoverSize * 2, this.hoverSize * 2];
+            this.hoverIcon.options.iconAnchor = [this.hoverSize, this.hoverSize];
+            this.marker.setIcon(this.hoverIcon);
+        }
     }
 
     setName(name) {
@@ -138,9 +156,8 @@ class Glyph {
     setPosition(lat, lon) {
         this.lat = lat;
         this.lon = lon;
-        this.point = projectPoint(map, this.lat, this.lon);
 
-        this.needsIconUpdate = true;
+        this.needsPosUpdate = true;
         this.markForUpdate();
     }
 
@@ -203,15 +220,6 @@ class Glyph {
         this.markForUpdate();
     }
 
-    updateIconSize() {
-        if (this.marker) {
-            const icon = this.marker.options.icon;
-            icon.options.iconSize = [this.displaySize * 2, this.displaySize * 2];
-            icon.options.iconAnchor = [this.displaySize, this.displaySize];
-            this.marker.setIcon(icon);
-        }
-    }
-
     updateChosenData() {
         this.chosenData = [];
 
@@ -265,6 +273,7 @@ class Glyph {
     }
 
     updateDisplayRules() {
+        // tira apenas a quantidade necessaria e ordena alfabeticamente
         const slicedCategs = this.displayItems.slice(0, this.maxCategories);
 
         this.displaySurprises = this.surprises.filter(surp =>
@@ -282,12 +291,10 @@ class Glyph {
 
     updateDisplayItems() {
         this.displayItems = [];
-
         switch (this.displayMethod) {
             //escolhe as categorias com mais regras em cada grupo
             case 0:
-                console.log(this.group.surpriseData, this.name)
-                this.displayItems = getItemsBySurpriseGrouped(this.group.surpriseData[this.name]);
+                this.displayItems = getItemsBySurpriseGrouped(this.surprises);
                 break;
 
             //escolhe as categorias com mais regras globalmente
@@ -312,6 +319,7 @@ class Glyph {
                 break;
         }
 
+        //adiciona items para preencher a quantidade maxima
         this.displayItems = [...new Set([...this.displayItems, ...this.group.uniqueValues])];
     }
 
@@ -329,7 +337,10 @@ class Glyph {
         this.lat = avrgLat;
         this.lon = avrgLon;
 
-        this.point = projectPoint(map, this.lat, this.lon);
+        if (this.marker) {
+            const newLatLng = new L.LatLng(this.lat, this.lon);
+            this.marker.setLatLng(newLatLng);
+        }
     }
 
     updateFilteredRules() {    //filtra as regras que estao dentro dos limites dos limiares
@@ -403,7 +414,7 @@ class Glyph {
             .endAngle(Math.PI * 3 + this.startAngle / RADIANS) // garante que sempre vai ser um circulo completo
             .value(1);
 
-        this.pieData = this.borderPie(this.displaySurprises).map(d => ({
+        this.pieData = this.borderPie(this.displaySurprises.sort((a, b) => a.name.localeCompare(b.name))).map(d => ({
             ...d,
             middleAngle: (d.startAngle + d.endAngle) / 2
         }));
@@ -481,7 +492,7 @@ class Glyph {
 
     initializeMarker() {
         if (this.marker) {
-            this.updateSVG();
+            this.updateMarker();
             return this.marker;
         }
 
@@ -550,7 +561,7 @@ class Glyph {
             .attr("class", "glyph-title")
             .attr("fill", "black")
             .attr("font-family", "Trebuchet MS, monospace")
-            .attr("font-size", this.width / 12)
+            .attr("font-size", this.width / (4 + 0.2 * this.name.length))
             .attr("text-anchor", "middle")                      //centraliza horizontalmente
             .attr("dominant-baseline", "middle")            //centraliza verticalmente
             .attr("visibility", "");
@@ -567,7 +578,7 @@ class Glyph {
 
         const svgIcon = this.svg.node();
 
-        const customIcon = L.divIcon({
+        this.icon = L.divIcon({
             className: 'custom-icon',
             html: svgIcon,
             iconSize: [this.size * 2, this.size * 2],
@@ -575,17 +586,22 @@ class Glyph {
             popupAnchor: [0, 0]
         });
 
-        this.marker = L.marker([this.lat, this.lon], { icon: customIcon, zIndexOffset: 1000 });
+        this.hoverIcon = L.divIcon({
+            className: 'custom-icon',
+            html: svgIcon,
+            iconSize: [this.hoverSize * 2, this.hoverSize * 2],
+            iconAnchor: [this.hoverSize, this.hoverSize],
+            popupAnchor: [0, 0]
+        });
+
+        this.marker = L.marker([this.lat, this.lon], { icon: this.icon, zIndexOffset: 1000, glyph: this });
 
         return this.marker;
     }
 
-    updateSVG() {
+    updateMarker() {
         if (!this.marker)
             this.initializeMarker();
-
-        const newLatLng = new L.LatLng(this.lat, this.lon);
-        this.marker.setLatLng(newLatLng);
 
         this.arrowOutlines
             .selectAll("g")
@@ -767,16 +783,14 @@ class Glyph {
 
     hoverBegin() {
         this.mainText.attr("visibility", "hidden");
-        this.displaySize = this.hoverSize;
-        this.updateIconSize();
+        this.marker.setIcon(this.hoverIcon);
         this.background.style("opacity", 0.3);
         this.svg.node().parentElement.style.zIndex = 9000;
     }
 
     hoverEnd() {
         this.mainText.attr("visibility", "");
-        this.displaySize = this.size;
-        this.updateIconSize();
+        this.marker.setIcon(this.icon);
         this.background.style("opacity", 0);
         this.svg.node().parentElement.style.zIndex = 1000;
     }

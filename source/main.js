@@ -47,7 +47,6 @@ function addGlyph(data, name) {
     glyphData.setConfidence(initThreshVal.confidenceMin, initThreshVal.confidenceMax);
     glyphData.setLift(initThreshVal.liftMin, initThreshVal.liftMax);
 
-    glyphData.setDisplayMethod(2);
     glyphData.updateAll();
 
     console.log("glyph", glyphData)

@@ -11,6 +11,7 @@ class GlyphGroup {
         this.maxSupport = 1;
         this.minConfidence = 0;
         this.maxConfidence = 0;
+        this.displayMethod = 0;
         this.minLift = 0;
         this.maxLift = 3;
         this.glyphs = [];
@@ -19,23 +20,74 @@ class GlyphGroup {
 
         this.groupNames = [];
 
+        this.clusterMarkers = [];
+
         this.markers = new L.markerClusterGroup({
             maxClusterRadius: this.glyphSize,
             spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
             iconCreateFunction: (cluster) => {
-                const childCount = cluster.getChildCount();
+                this.clusterMarkers.push(cluster);
+                const clusterMarkers = cluster.getAllChildMarkers();
+                const name = `${clusterMarkers.length}`;
+                var mergedSurprise = {};
+                var mergedData = [];
 
-                const size = this.glyphSize * 0.8;
-                const color = childCount > 10 ? 'red' : childCount > 5 ? 'orange' : 'green'; // Change color based on count
+                clusterMarkers.forEach(marker => {
+                    const childGlyph = marker.options.glyph;
 
-                return L.divIcon({
-                    html: `<div class="cluster-icon" style="background-color: ${color}; width: ${size}px; height: ${size}px;
-                    text-align: center; line-height: ${size}px; color: white; font-size: ${size / 3}px;">${childCount}</div>`,
-                    className: 'custom-cluster-icon',
-                    iconSize: L.point(size, size),
-                    iconAnchor: L.point(size / 2, size / 2)
+                    mergedData = mergedData.concat(childGlyph.rawData);
+
+                    childGlyph.surprises.forEach(surprise => {
+                        if (!mergedSurprise[surprise.name])
+                            mergedSurprise[surprise.name] = 0;
+
+                        mergedSurprise[surprise.name] += surprise.value / clusterMarkers.length
+                    });
                 });
+
+                var dataPoint = {};
+
+                for (const category in mergedSurprise) {
+                    const values = mergedSurprise[category];
+
+                    dataPoint[category] = { value: values };
+                }
+
+                mergedSurprise = Object.entries(dataPoint).map(([name, data]) => ({
+                    name,
+                    ...data
+                }));
+
+                // const glyph = new Glyph("aaa", this, childGlyph.rawData, childGlyph.surprises);
+                const glyph = new Glyph(name, this, mergedData, mergedSurprise);
+
+                glyph.deferUpdate();
+                glyph.setSupport(this.minSupport, this.maxSupport);
+                glyph.setConfidence(this.minConfidence, this.maxConfidence);
+                glyph.setLift(this.minLift, this.maxLift);
+                glyph.setSize(this.glyphSize);
+                glyph.setDisplayMethod(this.displayMethod);
+                glyph.setHoverSize(this.glyphHoverSize);
+                glyph.setMaxCategories(this.maxCategories);
+                glyph.applyUpdates();
+
+                cluster.glyph = glyph;
+
+                return glyph.icon;
             }
+        });
+
+        this.markers.on('clustermouseover', function (ev) {
+            const childGlyph = ev.layer.getAllChildMarkers()[0].options.glyph;
+
+            ev.layer.setIcon(ev.layer.glyph.hoverIcon);
+        });
+
+        this.markers.on('clustermouseout', function (ev) {
+            const childGlyph = ev.layer.getAllChildMarkers()[0].options.glyph;
+
+            ev.layer.setIcon(ev.layer.glyph.icon);
         });
     }
 
@@ -60,10 +112,14 @@ class GlyphGroup {
         this.glyphs = {};
         for (const groupKey in this.groupedData) {
             const glyph = new Glyph(groupKey, this, this.groupedData[groupKey], this.surpriseData[groupKey]);
-            
+
             glyph.deferUpdate();
+            glyph.setSupport(this.minSupport, this.maxSupport);
+            glyph.setConfidence(this.minConfidence, this.maxConfidence);
+            glyph.setLift(this.minLift, this.maxLift);
             glyph.setSize(this.glyphSize);
             glyph.setHoverSize(this.glyphHoverSize);
+            glyph.setDisplayMethod(this.displayMethod);
             glyph.setMaxCategories(this.maxCategories);
             glyph.applyUpdates();
 
@@ -92,6 +148,8 @@ class GlyphGroup {
             glyph.applyUpdates();
         };
 
+        // this.markers.refreshClusters();
+
         const endTime = performance.now();
         console.log(`updateAll total time: ${(endTime - startTime).toFixed(2)} ms`);
 
@@ -114,6 +172,13 @@ class GlyphGroup {
 
             glyph.setDisplayMethod(method);
         };
+
+        this.clusterMarkers.forEach(function (marker) {
+            const glyph = marker.glyph;
+
+            glyph.setDisplayMethod(method);
+
+        });
     }
 
     setChosenColumns(categsChosen) {
@@ -144,6 +209,15 @@ class GlyphGroup {
         for (const groupName of this.groupNames) {
             this.glyphs[groupName].setSupport(minSupport, maxSupport);
         }
+
+        //atualiza clusters
+        this.clusterMarkers.forEach(function (marker) {
+            const glyph = marker.glyph;
+
+            glyph.setSupport(minSupport, maxSupport);
+
+        });
+
     }
 
     setConfidence(minConfidence, maxConfidence = Infinity) {
@@ -153,6 +227,14 @@ class GlyphGroup {
         for (const groupName of this.groupNames) {
             this.glyphs[groupName].setConfidence(minConfidence, maxConfidence);
         }
+
+        //atualiza clusters
+        this.clusterMarkers.forEach(function (marker) {
+            const glyph = marker.glyph;
+
+            glyph.setConfidence(minConfidence, maxConfidence);
+
+        });
     }
 
     setLift(minLift, maxLift = Infinity) {
@@ -162,6 +244,14 @@ class GlyphGroup {
         for (const groupName of this.groupNames) {
             this.glyphs[groupName].setLift(minLift, maxLift);
         }
+
+        //atualiza clusters
+        this.clusterMarkers.forEach(function (marker) {
+            const glyph = marker.glyph;
+
+            glyph.setLift(minLift, maxLift);
+
+        });
     }
 
     setCoordsColumns(latColumn, lonColumn, coordFunct = this.defaultCoords) {
@@ -278,9 +368,30 @@ class GlyphGroup {
 
 
     getSurprise() {
+        // this.testSurprises = {};
+        // for (const groupKey in this.freqData) {
+        //     this.testFreq = {};
+
+        //     for (const groupKey2 in this.freqData) {
+        //         const group = {};
+        //         for (const item in this.freqData[groupKey2]) {
+        //             if (groupKey == groupKey2)
+        //                 group[item] = this.freqData[groupKey2][item];
+        //             else
+        //                 group[item] = 0;
+        //         }
+        //         this.testFreq[groupKey2] = group;
+        //     }
+        //     // freq[groupKey] = this.freqData[groupKey];
+
+        //     let mod = {};
+        //     mod[groupKey] = this.surpriseModels[0][groupKey];
+        //     var [newSurprise, beliefs] = calcSurpriseNew(this.testFreq, this.surpriseModels);
+        //     this.testSurprises[groupKey] = newSurprise;
+        // }
+
         //calcula a surpresa
         var [newSurprise, beliefs] = calcSurpriseNew(this.freqData, this.surpriseModels);
-
         this.beliefs = beliefs;
         this.surpriseData = {};
 
