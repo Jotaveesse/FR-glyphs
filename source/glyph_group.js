@@ -27,54 +27,26 @@ class GlyphGroup {
             spiderfyOnMaxZoom: true,
             showCoverageOnHover: false,
             iconCreateFunction: (cluster) => {
+
                 this.clusterMarkers.push(cluster);
                 const clusterMarkers = cluster.getAllChildMarkers();
-                const name = `${clusterMarkers.length}`;
-                var mergedSurprise = {};
-                var mergedData = [];
+                const clusterGlyphs = clusterMarkers.map(cl => cl.options.glyph);
 
-                clusterMarkers.forEach(marker => {
-                    const childGlyph = marker.options.glyph;
+                const mergedGlyph = Glyph.merge(clusterGlyphs);
+                mergedGlyph.group=this;
+                mergedGlyph.setSupport(this.minSupport, this.maxSupport);
+                mergedGlyph.setConfidence(this.minConfidence, this.maxConfidence);
+                mergedGlyph.setLift(this.minLift, this.maxLift);
+                mergedGlyph.setSize(this.glyphSize);
+                mergedGlyph.setDisplayMethod(this.displayMethod);
+                mergedGlyph.setHoverSize(this.glyphHoverSize);
+                mergedGlyph.setMaxCategories(this.maxCategories);
+                mergedGlyph.applyUpdates();
 
-                    mergedData = mergedData.concat(childGlyph.rawData);
+                cluster.glyph = mergedGlyph;
 
-                    childGlyph.surprises.forEach(surprise => {
-                        if (!mergedSurprise[surprise.name])
-                            mergedSurprise[surprise.name] = 0;
-
-                        mergedSurprise[surprise.name] += surprise.value / clusterMarkers.length
-                    });
-                });
-
-                var dataPoint = {};
-
-                for (const category in mergedSurprise) {
-                    const values = mergedSurprise[category];
-
-                    dataPoint[category] = { value: values };
-                }
-
-                mergedSurprise = Object.entries(dataPoint).map(([name, data]) => ({
-                    name,
-                    ...data
-                }));
-
-                // const glyph = new Glyph("aaa", this, childGlyph.rawData, childGlyph.surprises);
-                const glyph = new Glyph(name, this, mergedData, mergedSurprise);
-
-                glyph.deferUpdate();
-                glyph.setSupport(this.minSupport, this.maxSupport);
-                glyph.setConfidence(this.minConfidence, this.maxConfidence);
-                glyph.setLift(this.minLift, this.maxLift);
-                glyph.setSize(this.glyphSize);
-                glyph.setDisplayMethod(this.displayMethod);
-                glyph.setHoverSize(this.glyphHoverSize);
-                glyph.setMaxCategories(this.maxCategories);
-                glyph.applyUpdates();
-
-                cluster.glyph = glyph;
-
-                return glyph.icon;
+                return mergedGlyph.icon;
+                
             }
         });
 

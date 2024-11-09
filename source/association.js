@@ -1,129 +1,307 @@
-
-// FP-Tree Node Class
-class FPNode {
-    constructor(item, parent = null) {
-        this.item = item;
-        this.count = 1;
-        this.parent = parent;
-        this.children = {};
-        this.link = null;
+class Association {
+    constructor() {
+        this.patterns = [];
+        this.rules = [];
     }
 
-    increment() {
-        this.count += 1;
+    generatePatterns(transactions, minSupport = 0) {
+        throw new Error("Classe deve ter o metodo generatePatterns");
+    }
+
+    mergePatterns(otherTree) {
+        throw new Error("Classe deve ter o metodo mergePatterns");
+    }
+
+    generateRules(minConfidence = 0, minLift = 0) {
+        throw new Error("Classe deve ter o metodo generateRules");
     }
 }
 
-// FP-Growth Algorithm Class
-class FPGrowth {
-    constructor(minSupport) {
-        this.minSupport = minSupport;
-        this.transCount = 1;
-        this.frequentPatterns = [];
+class FPGrowth extends Association {
+    constructor() {
+        super();
+        this.tree = new FPTree();
+        this.transactionCount = 1;
     }
 
-    // Construct FP-Tree
-    buildFPTree(transactions) {
-        const headerTable = this.buildHeaderTable(transactions);
-        const root = new FPNode(null); // Root of the FP-Tree
+    generatePatterns(transactions, minSupport = 0) {
+        this.transactionCount = transactions.length;
+        this.tree.build(transactions, minSupport * this.transactionCount);
+        this.patterns = this.tree.minePatterns();
 
-        transactions.forEach(transaction => {
-            const filteredTransaction = transaction
-                .filter(item => headerTable[item]) // Filter non-frequent items
-                .sort((a, b) => headerTable[b].count - headerTable[a].count); // Sort items by frequency
-
-            this.insertTransaction(root, filteredTransaction, headerTable);
-        });
-
-        return { root, headerTable };
+        return this.patterns;
     }
 
-    // Build the header table
-    buildHeaderTable(transactions) {
-        const frequencyMap = {};
+    mergePatterns(otherTree) {
+        const newGroup = new FPGrowth(null);
+        var newTree = this.tree.merge(otherTree.tree);
 
-        // Count item frequencies
-        transactions.forEach(transaction => {
-            transaction.forEach(item => {
-                if (item == "") return;
-                if (!frequencyMap[item]) {
-                    frequencyMap[item] = 0;
-                }
-                frequencyMap[item]++;
-            });
-        });
+        newGroup.tree = newTree;
+        newGroup.patterns = newTree.minePatterns();
+        newGroup.transactionCount = this.transactionCount + otherTree.transactionCount;
 
-        // Remove items that do not meet the minimum support
-        const headerTable = {};
-        Object.keys(frequencyMap).forEach((item, i) => {
-            if (frequencyMap[item] / this.transCount > this.minSupport) {
-                headerTable[item] = { count: frequencyMap[item], index: i, head: null };
+        return newGroup;
+    }
+
+    generateRules(minConfidence = 0, minLift = 0) {
+        this.rules = [];
+        const supportCache = {};
+
+        this.patterns.forEach(itemset => {
+            if (itemset.length > 1) {
+
+                //checa se o valor ja esta na cache
+                if (!supportCache[itemset])
+                    supportCache[itemset] = this.tree.getItemsetCount(itemset) / this.transactionCount;
+
+                const itemsetSupport = supportCache[itemset];
+
+                const { subsets: antecedents, remainings: consequents } = FPGrowth.getSubsets(itemset);
+
+                antecedents.forEach((ante, i) => {
+                    const cons = consequents[i];
+
+                    if (!supportCache[ante])
+                        supportCache[ante] = this.tree.getItemsetCount(ante) / this.transactionCount;
+
+                    const antecedentSupport = supportCache[ante];
+
+                    const confidence = itemsetSupport / antecedentSupport;
+
+
+                    if (confidence >= minConfidence) {
+                        if (!supportCache[cons])
+                            supportCache[cons] = this.tree.getItemsetCount(cons) / this.transactionCount;
+
+                        const consequentSupport = supportCache[cons];
+
+                        const lift = confidence / consequentSupport;
+
+                        if (lift >= minLift) {
+
+                            this.rules.push({
+                                antecedents: ante,
+                                consequents: cons,
+                                confidence: confidence,
+                                lift: lift,
+                                antecedentSupport: antecedentSupport,
+                                consequentSupport: consequentSupport
+                            });
+                        }
+                    }
+                });
             }
         });
 
-        return headerTable;
+        return this.rules;
     }
 
-    // Insert a transaction into the FP-Tree
-    insertTransaction(root, transaction, headerTable) {
-        if (transaction.length === 0) return;
+    // gera todos os subconjuntos de um conjunto de itens
+    static getSubsets(array) {
+        let subsets = [];
+        let remainings = [];
+        let len = array.length;
 
-        const firstItem = transaction[0];
-        let childNode;
-
-        if (!root.children[firstItem]) {
-            childNode = new FPNode(firstItem, root);
-            root.children[firstItem] = childNode;
-
-            // Link the child node in the header table
-            if (!headerTable[firstItem].head) {
-                headerTable[firstItem].head = childNode;
-            } else {
-                let current = headerTable[firstItem].head;
-                while (current.link) {
-                    current = current.link;
+        for (let i = 1; i < (1 << len) - 1; i++) {
+            let subset = [];
+            let remaining = [];
+            for (let j = 0; j < len; j++) {
+                if (i & (1 << j)) {
+                    subset.push(array[j]);
                 }
-                current.link = childNode;
+                else {
+                    remaining.push(array[j]);
+                }
             }
-        } else {
-            childNode = root.children[firstItem];
-            childNode.increment();
+            subsets.push(subset);
+            remainings.push(remaining);
         }
 
-        const remainingTransaction = transaction.slice(1);
-        this.insertTransaction(childNode, remainingTransaction, headerTable);
+        return { subsets: subsets, remainings: remainings };
+    }
+}
+
+class FPTree {
+    constructor() {
+        this.header = {};
+        this.root = new FPNode(null);
     }
 
-    // Mine the FP-Tree for frequent patterns
-    mineTree(headerTable, suffix) {
+    build(transactions, minFrequency = 0) {
+        this.buildHeaderTable(transactions, minFrequency);
+        this.buildTree(transactions);
+    }
 
-        const items = Object.keys(headerTable).sort(
-            (a, b) => headerTable[a].count - headerTable[b].count
+    buildTree(transactions) {
+        this.root = new FPNode(null);
+
+        transactions.forEach(transaction => {
+            this.insertTransaction(transaction);
+        });
+    }
+
+    buildHeaderTable(transactions, minFrequency = 0) {
+        const frequencyMap = {};
+
+        transactions.forEach(transaction => {
+            if (transaction.path) {
+                transaction.path.forEach(item => {
+                    if (item == "") return;
+                    if (!frequencyMap[item]) {
+                        frequencyMap[item] = 0;
+                    }
+                    frequencyMap[item] += transaction.count;
+                });
+            }
+            else {
+                transaction.forEach(item => {
+                    if (item == "") return;
+                    if (!frequencyMap[item]) {
+                        frequencyMap[item] = 0;
+                    }
+                    frequencyMap[item]++;
+                });
+            }
+        });
+
+        this.header = {};
+        Object.keys(frequencyMap).forEach((item, i) => {
+            if (frequencyMap[item] >= minFrequency) {
+                this.header[item] = new FPHeaderNode(frequencyMap[item], null);
+            }
+        });
+    }
+
+    insertTransaction(transaction, amount = 1) {
+        if (transaction.length === 0) return;
+
+        const filteredTransaction = transaction
+            .filter(item => this.header[item]) //fitlra os items não frequentes
+            .sort((a, b) => {
+                const countDifference = this.header[b].count - this.header[a].count;
+
+                // ordena alfabeticamente se estiverem empatados
+                if (countDifference === 0) {
+                    return a.localeCompare(b);
+                }
+
+                return countDifference;
+            });
+
+        let currentNode = this.root;
+
+        for (let item of filteredTransaction) {
+            if (!currentNode.children[item]) {
+                let newNode = currentNode.insert(item, amount);
+
+                this.header[item].insert(newNode);
+            }
+            else {
+                currentNode.children[item].increment(amount);
+            }
+
+            currentNode = currentNode.children[item];
+        }
+    }
+
+    merge(otherTree) {
+        const thisPath = this.getAllPaths();
+        const otherPath = otherTree.getAllPaths();
+        const mergedPath = thisPath.concat(otherPath);
+
+        const newTree = new FPTree();
+
+        newTree.buildHeaderTable(mergedPath);
+
+        for (const { path, count } of mergedPath) {
+            newTree.insertTransaction(path, count);
+        }
+
+        return newTree;
+    }
+
+    minePatterns(suffix = []) {
+        const frequentPatterns = [];
+
+        const items = Object.keys(this.header).sort(
+            (a, b) => this.header[a].count - this.header[b].count
         );
 
         items.forEach(item => {
-            if (item == "") return;
+            if (item === "") return;
+
             const newPattern = [item, ...suffix];
-            this.frequentPatterns.push(newPattern);
+            frequentPatterns.push(newPattern);
 
-            const conditionalPatternBase = this.findConditionalPatternBase(
-                headerTable[item].head
-            );
+            const conditionalPatternBase = this.header[item].getConditionalPatternBase();
 
+            var condition = new FPTree();
+            condition.build(conditionalPatternBase);
 
-            const { root, headerTable: newHeaderTable } = this.buildFPTree(
-                conditionalPatternBase
-            );
-
-            if (Object.keys(newHeaderTable).length > 0) {
-                this.mineTree(newHeaderTable, newPattern);
+            if (Object.keys(condition.header).length > 0) {
+                const newPatterns = condition.minePatterns(newPattern);
+                frequentPatterns.push(...newPatterns);
             }
         });
+
+        return frequentPatterns;
     }
 
-    // Find conditional pattern base
-    findConditionalPatternBase(node) {
+    getAllPaths() {
+        return this.root.getPaths();
+    }
+
+    getItemsetCount(itemset) {
+        let supportCount = 0;
+        //ordena itemset pela frequencia dos items
+        itemset = itemset.sort((a, b) => {
+            const countDifference = this.header[b].count - this.header[a].count;
+
+            // ordena alfabeticamente se estiverem empatados
+            if (countDifference === 0) {
+                return a.localeCompare(b);
+            }
+
+            return countDifference;
+        });
+
+        const lastItem = itemset[itemset.length - 1];
+
+        let currentNode = this.header[lastItem].head;
+
+        while (currentNode !== null && currentNode !== undefined) {
+            if (currentNode.isPathContainsItemset(itemset)) {
+                supportCount += currentNode.count;
+            }
+            currentNode = currentNode.link;
+        }
+
+        return supportCount;
+    }
+}
+
+
+class FPHeaderNode {
+    constructor(count, head) {
+        this.count = count;
+        this.head = head;
+    }
+
+    insert(newNode) {
+        if (!this.head) {
+            this.head = newNode;
+        } else {
+            let current = this.head;
+            while (current.link) {
+                current = current.link;
+            }
+            current.link = newNode;
+        }
+    }
+
+    getConditionalPatternBase() {
         const patterns = [];
+        var node = this.head;
 
         while (node) {
             const path = [];
@@ -134,7 +312,8 @@ class FPGrowth {
             }
 
             for (let i = 0; i < node.count; i++) {
-                if (path.length > 0) patterns.push(path);
+                if (path.length > 0)
+                    patterns.push(path);
             }
 
             node = node.link;
@@ -142,141 +321,71 @@ class FPGrowth {
 
         return patterns;
     }
+}
 
-    // Run the FP-Growth algorithm
-    run(transactions) {
-        this.transCount = transactions.length;
-        const sets = [];
-        for (let index = 0; index < transactions.length; index++) {
-            const element = transactions[index];
-            sets[index] = [...element];
-        }
-        const { root, headerTable } = this.buildFPTree(sets);
-        this.mineTree(headerTable, []);
-        const patterns = this.frequentPatterns;
-        // console.log(headerTable)
-        // console.log(patterns)
-        return { patterns: patterns, root: root, header: headerTable };
+class FPNode {
+    /**
+     * @param {string} item - Nome do item
+     * @param {FPNode} parent - Pai do nó
+     */
+    constructor(item, parent = null) {
+        this.item = item;
+        this.count = 0;
+        this.parent = parent;
+        this.children = {};
+        this.link = null;
     }
-}
-
-
-function getItemsetCount(itemset, header) {
-    // Start by finding the minimum support of the first item in the itemset
-    let supportCount = 0;
-    for (let index = 0; index < itemset.length; index++) {
-
-        let firstItem = itemset[itemset.length - index - 1];
-        let currentNode = header[firstItem].head;
-
-        // Traverse the linked list for the first item to find all occurrences in the FP-tree
-        while (currentNode !== null && currentNode !== undefined) {
-            // Check if the current path in the tree matches the itemset
-            if (isPathContainsItemset(currentNode, itemset)) {
-                // If it does, add the count of this node to the support count
-                supportCount += currentNode.count;
-            }
-            // Move to the next node in the linked list of this item
-            currentNode = currentNode.link;
-        }
-    };
-
-    return supportCount;
-}
-
-
-// Helper function to check if a path from a node contains the itemset in order
-function isPathContainsItemset(node, itemset) {
-    let itemsToFind = new Set(itemset);
-    let currentNode = node;
-
-    // Traverse up the tree from the node and check each item against the itemset
-    while (currentNode !== null && currentNode !== undefined && itemsToFind.size > 0) {
-        if (itemsToFind.has(currentNode.item)) {
-            itemsToFind.delete(currentNode.item);
-        }
-        currentNode = currentNode.parent; // Move up the tree
+    /**
+     * @param {number} amount - Quantidade para incrementar
+     */
+    increment(amount = 1) {
+        this.count += amount;
     }
 
-    // If itemsToFind is empty, it means we've found all items in the itemset along the path
-    return itemsToFind.size === 0;
-}
+    insert(item, amount = 1) {
+        let newNode = new FPNode(item, this);
+        newNode.increment(amount);
+        this.children[item] = newNode;
 
-function generateAssociationRules(frequentItemsets, header, transactionLength, minConfidence = 0, minLift = 0) {
-    const rules = [];
-    const supportCache = {};
-
-    frequentItemsets.forEach(itemset => {
-        if (itemset.length > 1) {
-
-            //checa se o valor ja esta na cache
-            if (!supportCache[itemset])
-                supportCache[itemset] = getItemsetCount(itemset, header) / transactionLength;
-
-            const itemsetSupport = supportCache[itemset];
-
-            const { subsets: antecedents, remainings: consequents } = getSubsets(itemset);
-
-            antecedents.forEach((ante, i) => {
-                const cons = consequents[i];
-
-                if (!supportCache[ante])
-                    supportCache[ante] = getItemsetCount(ante, header) / transactionLength;
-
-                const antecedentSupport = supportCache[ante];
-
-                const confidence = itemsetSupport / antecedentSupport;
-
-                
-                if (confidence >= minConfidence) {
-                    if (!supportCache[cons])
-                        supportCache[cons] = getItemsetCount(cons, header) / transactionLength;
-                    
-                    const consequentSupport = supportCache[cons];
-                    
-                    const lift = confidence / consequentSupport;
-
-                    if (lift >= minLift) {
-
-                        rules.push({
-                            antecedents: ante,
-                            consequents: cons,
-                            confidence: confidence,
-                            lift: lift,
-                            antecedentSupport: antecedentSupport,
-                            consequentSupport: consequentSupport
-                        });
-
-                    }
-
-                }
-            });
-        }
-    });
-
-    return rules;
-}
-
-// gera todos os subconjuntos de um conjunto de itens
-function getSubsets(array) {
-    let subsets = [];
-    let remainings = [];
-    let len = array.length;
-
-    for (let i = 1; i < (1 << len) - 1; i++) {
-        let subset = [];
-        let remaining = [];
-        for (let j = 0; j < len; j++) {
-            if (i & (1 << j)) {
-                subset.push(array[j]);
-            }
-            else {
-                remaining.push(array[j]);
-            }
-        }
-        subsets.push(subset);
-        remainings.push(remaining);
+        return newNode;
     }
 
-    return { subsets: subsets, remainings: remainings };
+    getPaths(path = [], pathsWithCounts = []) {
+        if (this.item !== null) { //nao adiciona o primeiro nó
+            path.push(this.item);
+        }
+
+        if (Object.keys(this.children).length === 0) {
+            pathsWithCounts.push({ path: [...path], count: this.count });
+        } else {
+            let childCount = 0;
+            for (let child of Object.values(this.children)) {
+                child.getPaths(path, pathsWithCounts);
+                childCount += child.count;
+            }
+
+            if (childCount < this.count) {
+                pathsWithCounts.push({ path: [...path], count: this.count - childCount }); // Add a copy of the path with its count
+            }
+        }
+
+        path.pop();
+        return pathsWithCounts;
+    }
+
+    isPathContainsItemset(itemset) {
+        let itemsToFind = new Set(itemset);
+        let currentNode = this;
+
+        // Traverse up the tree from the node and check each item against the itemset
+        while (currentNode !== null && currentNode !== undefined && itemsToFind.size > 0) {
+            if (itemsToFind.has(currentNode.item)) {
+                itemsToFind.delete(currentNode.item);
+            }
+            currentNode = currentNode.parent; // Move up the tree
+        }
+
+        // If itemsToFind is empty, it means we've found all items in the itemset along the path
+        return itemsToFind.size === 0;
+    }
 }

@@ -1,5 +1,5 @@
 class Glyph {
-    constructor(name, group, data, surprises) {
+    constructor(name, group = null, data = null, surprises = null) {
         this.rawData = data;
         this.group = group;
         this.surprises = surprises;
@@ -33,7 +33,7 @@ class Glyph {
 
         this.rulesHeader = [];
         this.rulesTree = [];
-        this.rules = [];
+        this.associations = null;
         this.filteredRules = [];
 
         this.displayItems = [];
@@ -220,54 +220,115 @@ class Glyph {
         this.markForUpdate();
     }
 
+    setRuleTree(tree) {
+        this.associations = tree;
+    }
+
+    static merge(glyphs) {
+        const name = `${glyphs.length}`;
+        var mergedSurprise = {};
+        var newRuleData = null;
+        var avrgLat = 0;
+        var avrgLon = 0;
+
+        glyphs.forEach(glyph => {
+
+            //tira a media das surpresas
+            glyph.surprises.forEach(surprise => {
+                if (!mergedSurprise[surprise.name])
+                    mergedSurprise[surprise.name] = 0;
+
+                mergedSurprise[surprise.name] += surprise.value / glyphs.length
+            });
+
+            //merge cada associação, uma por uma
+            if (newRuleData) {
+                newRuleData = newRuleData.mergePatterns(glyph.associations);
+            }
+            else {
+                newRuleData = glyph.associations;
+            }
+
+            avrgLat += glyph.lat;
+            avrgLon += glyph.lon;
+        });
+
+        avrgLat /= glyphs.length;
+        avrgLon /= glyphs.length;
+       
+        var dataPoint = {};
+
+        for (const category in mergedSurprise) {
+            const values = mergedSurprise[category];
+
+            dataPoint[category] = { value: values };
+        }
+
+        mergedSurprise = Object.entries(dataPoint).map(([name, data]) => ({
+            name,
+            ...data
+        }));
+
+        const mergedGlyph = new Glyph(name);
+        mergedGlyph.deferUpdate();
+        mergedGlyph.setRuleTree(newRuleData);
+        mergedGlyph.setSurprise(mergedSurprise);
+        mergedGlyph.setPosition(avrgLat, avrgLon);
+
+        return mergedGlyph;
+    }
+
     updateChosenData() {
         this.chosenData = [];
+        if (this.rawData != null) {
 
-        for (let i = 0; i < this.rawData.length; i++) {
-            const entry = this.rawData[i];
-            this.chosenData[i] = {};
+            for (let i = 0; i < this.rawData.length; i++) {
+                const entry = this.rawData[i];
+                this.chosenData[i] = {};
 
-            for (const category in entry) {
-                if (this.group.chosenColumns.includes(category)) {
-                    const value = entry[category];
+                for (const category in entry) {
+                    if (this.group.chosenColumns.includes(category)) {
+                        const value = entry[category];
 
-                    this.chosenData[i][category] = value;
+                        this.chosenData[i][category] = value;
+                    }
                 }
             }
         }
     }
 
     updateTransTable() {
-        //transforma os objetos de arrays de cada grupo em arrays de array
-        this.transTable = [];
+        //transforma os objetos de arrays de cada grupo em arrays de arrays
+        if (this.chosenData.length > 0) {
+            this.transTable = [];
 
-        for (let i = 0; i < this.chosenData.length; i++) {
-            const entry = this.chosenData[i];
-            this.transTable[i] = [];
+            for (let i = 0; i < this.chosenData.length; i++) {
+                const entry = this.chosenData[i];
+                this.transTable[i] = [];
 
-            for (const category in entry) {
-                const value = entry[category];
+                for (const category in entry) {
+                    const value = entry[category];
 
-                this.transTable[i].push(value);
+                    this.transTable[i].push(value);
+                }
             }
         }
     }
 
     updateFreqItems() {
-        const fpGrowth = new FPGrowth(0);
-        const { patterns, root, header } = fpGrowth.run(this.transTable);
-
-        this.frequentItemsets = patterns;
-        this.rulesHeader = header;
-        this.rulesTree = root;
+        if (this.transTable.length > 0) {
+            const tree = new FPGrowth();
+            tree.generatePatterns(this.transTable, this.minSupport);
+            this.associations = tree;
+        }
     }
 
     updateRules() {
-        this.rules = generateAssociationRules(this.frequentItemsets, this.rulesHeader, this.transTable.length);
-        this.filteredRules = structuredClone(this.rules);
+        this.associations.generateRules();
 
+        this.filteredRules = structuredClone(this.associations.rules);
         //ordena as regras por maior score
-        this.rules = this.rules.sort((a, b) => {
+        this.associations.rules = this.associations.rules.sort((a, b) => {
             return Glyph.getRuleScore(b) - Glyph.getRuleScore(a);
         });
     }
@@ -324,29 +385,31 @@ class Glyph {
     }
 
     updatePosition() {
-        var avrgLat = 0;
-        var avrgLon = 0;
+        if (this.rawData != null) {
+            var avrgLat = 0;
+            var avrgLon = 0;
 
-        for (let index = 0; index < this.rawData.length; index++) {
-            avrgLat += this.rawData[index].lat;
-            avrgLon += this.rawData[index].lon;
-        }
-        avrgLat /= this.rawData.length;
-        avrgLon /= this.rawData.length;
+            for (let index = 0; index < this.rawData.length; index++) {
+                avrgLat += this.rawData[index].lat;
+                avrgLon += this.rawData[index].lon;
+            }
+            avrgLat /= this.rawData.length;
+            avrgLon /= this.rawData.length;
 
-        this.lat = avrgLat;
-        this.lon = avrgLon;
+            this.lat = avrgLat;
+            this.lon = avrgLon;
 
-        if (this.marker) {
-            const newLatLng = new L.LatLng(this.lat, this.lon);
-            this.marker.setLatLng(newLatLng);
+            if (this.marker) {
+                const newLatLng = new L.LatLng(this.lat, this.lon);
+                this.marker.setLatLng(newLatLng);
+            }
         }
     }
 
     updateFilteredRules() {    //filtra as regras que estao dentro dos limites dos limiares
         this.filteredRules = [];
-        for (let i = 0; i < this.rules.length; i++) {
-            const rule = this.rules[i];
+        for (let i = 0; i < this.associations.rules.length; i++) {
+            const rule = this.associations.rules[i];
 
             if (rule.antecedentSupport >= this.minSupport &&
                 rule.consequentSupport >= this.minSupport &&
@@ -356,7 +419,7 @@ class Glyph {
                 rule.confidence <= this.maxConfidence &&
                 rule.lift >= this.minLift &&
                 rule.lift <= this.maxLift &&
-                rule.antecedents.length + rule.consequents.length >= this.group.maxArrows) {
+                rule.antecedents.length + rule.consequents.length <= this.group.maxArrows) {
                 this.filteredRules.push(rule);
             }
         }
