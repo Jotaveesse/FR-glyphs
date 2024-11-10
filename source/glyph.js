@@ -1,8 +1,7 @@
 class Glyph {
-    constructor(name, group = null, data = null, surprises = null) {
+    constructor(name, group = null, data = null) {
         this.rawData = data;
         this.group = group;
-        this.surprises = surprises;
         this.name = name;
 
         this.size = 400;
@@ -31,14 +30,14 @@ class Glyph {
         this.transTable = [];
         this.frequentItemsets = [];
 
-        this.rulesHeader = [];
-        this.rulesTree = [];
         this.associations = null;
         this.filteredRules = [];
 
         this.displayItems = [];
         this.displayRules = [];
         this.displaySurprises = [];
+
+        this.surprise = new Surprise();
 
         this.colorRange = [
             "#8F8F3C", //laranja
@@ -75,6 +74,8 @@ class Glyph {
 
     applyDataChanges() {
         this.updateChosenData();
+        this.updateSurprise();
+
         this.updateTransTable();
         this.updateFreqItems();
         this.updateRules();
@@ -214,7 +215,7 @@ class Glyph {
     }
 
     setSurprise(surprises) {
-        this.surprises = surprises;
+        this.surprise = surprises;
 
         this.needsFilterUpdate = true
         this.markForUpdate();
@@ -224,55 +225,49 @@ class Glyph {
         this.associations = tree;
     }
 
+    setModels(models) {
+        this.surprise.models = models;
+    }
+
+    setCategSums(categSums) {
+        this.surprise.categSums = categSums;
+    }
+
+
     static merge(glyphs) {
         const name = `${glyphs.length}`;
         var mergedSurprise = {};
         var newRuleData = null;
+        var newSurp = null;
         var avrgLat = 0;
         var avrgLon = 0;
 
         glyphs.forEach(glyph => {
-
-            //tira a media das surpresas
-            glyph.surprises.forEach(surprise => {
-                if (!mergedSurprise[surprise.name])
-                    mergedSurprise[surprise.name] = 0;
-
-                mergedSurprise[surprise.name] += surprise.value / glyphs.length
-            });
-
             //merge cada associação, uma por uma
             if (newRuleData) {
                 newRuleData = newRuleData.mergePatterns(glyph.associations);
+                newSurp = Surprise.merge(glyph.surprise, newSurp);
             }
             else {
                 newRuleData = glyph.associations;
+                newSurp = glyph.surprise;
             }
 
             avrgLat += glyph.lat;
             avrgLon += glyph.lon;
+
+
         });
 
         avrgLat /= glyphs.length;
         avrgLon /= glyphs.length;
-       
-        var dataPoint = {};
 
-        for (const category in mergedSurprise) {
-            const values = mergedSurprise[category];
 
-            dataPoint[category] = { value: values };
-        }
-
-        mergedSurprise = Object.entries(dataPoint).map(([name, data]) => ({
-            name,
-            ...data
-        }));
 
         const mergedGlyph = new Glyph(name);
         mergedGlyph.deferUpdate();
         mergedGlyph.setRuleTree(newRuleData);
-        mergedGlyph.setSurprise(mergedSurprise);
+        mergedGlyph.setSurprise(newSurp);
         mergedGlyph.setPosition(avrgLat, avrgLon);
 
         return mergedGlyph;
@@ -295,6 +290,12 @@ class Glyph {
                 }
             }
         }
+    }
+
+    updateSurprise() {
+        if (this.chosenData.length > 0)
+            this.surprise.setFrequency(this.chosenData);
+        const [surp, beliefs] = this.surprise.generateSurprise();
     }
 
     updateTransTable() {
@@ -337,7 +338,7 @@ class Glyph {
         // tira apenas a quantidade necessaria e ordena alfabeticamente
         const slicedCategs = this.displayItems.slice(0, this.maxCategories);
 
-        this.displaySurprises = this.surprises.filter(surp =>
+        this.displaySurprises = this.surprise.surprises.filter(surp =>
             slicedCategs.includes(surp.name));
 
         //filtra somente as regras que possuem todos os seus antecessores
@@ -353,24 +354,24 @@ class Glyph {
     updateDisplayItems() {
         this.displayItems = [];
         switch (this.displayMethod) {
-            //escolhe as categorias com mais regras em cada grupo
-            case 0:
-                this.displayItems = getItemsBySurpriseGrouped(this.surprises);
-                break;
-
-            //escolhe as categorias com mais regras globalmente
-            case 1:
-                this.displayItems = getItemsBySurpriseGlobal(this.group.surpriseData);
-                break;
-
             //escolhe categorias com maiores surpresas de cada grupo
+            case 0:
+                this.displayItems = getItemsBySurpriseGrouped(this.surprise.surprises);
+                break;
+
+            //escolhe categorias com as maiores surpresas gerais
+            case 1:
+                this.displayItems = getItemsBySurpriseGlobal(this.group.getAllSurprises());
+                break;
+
+            //escolhe as categorias com mais regras em cada grupo
             case 2:
                 this.displayItems = getItemsByFrequencyGrouped(this.filteredRules);
                 break;
 
-            //escolhe categorias com as maiores surpresas gerais
+            //escolhe as categorias com mais regras globalmente
             case 3:
-                this.displayItems = getItemsByFrequencyGlobal(this.group.filteredAssocRules);
+                this.displayItems = getItemsByFrequencyGlobal(this.group.getAllFilteredRules());
                 break;
 
             //escolhe qualquer categoria

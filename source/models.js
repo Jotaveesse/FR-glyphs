@@ -235,37 +235,36 @@ function getPopulModel(data) {
 }
 
 function getAverageModel(data) {
-    const groupCount = Object.keys(data).length;
-    const averages = {};
-    const model = {};
-
-    //calcula as somas de cada categoria
-    for (const groupKey in data) {
-        for (const category in data[groupKey]) {
-            const attrLength = data[groupKey][category].length
-
-            if (averages[key2] == undefined)
-                averages[key2] = Array(attrLength).fill(0);
-
-            for (let i = 0; i < attrLength; i++) {
-                averages[category][i] += data[groupKey][category][i];
-            }
-        }
-    }
-
-    //divide pela uantidade de provincias
+    var averages = {};
+    
+    var model = {};
+  
     for (const key in data) {
-        model[key] = {};
-        for (const key2 in data[key]) {
-            model[key][key2] = [];
-            for (let i = 0; i < attrLength; i++) {
-                model[key][key2].push(averages[key2][i] / groupCount);
-            }
+      for (const key2 in data[key]) {
+        var attrLength = data[key][key2].length
+        if (averages[key2] == undefined)
+          averages[key2] = Array(attrLength).fill(0);
+  
+        for (let i = 0; i < attrLength; i++) {
+          averages[key2][i] += data[key][key2][i];
+  
         }
+      }
     }
-
+  
+    for (const key in data) {
+      model[key] = {};
+      for (const key2 in data[key]) {
+        model[key][key2] = [];
+        for (let i = 0; i < attrLength; i++) {
+          model[key][key2].push(averages[key2][i] / Object.keys(data).length)
+        }
+      }
+    }
+  
+    // console.log("model",model)
     return model;
-}
+  }
 
 function getItemsByFrequencyGlobal(data) {
     const frequencyMap = {};

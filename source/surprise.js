@@ -1,201 +1,210 @@
+var cachedTotals = {};
 
-function getYearModel(data, year) {
-  var model = {};
+class Surprise {
+  constructor() {
+    this.models = [];
+    this.frequencies = {};
+    this.categSums = {};
 
-  for (const key in data) {
-    model[key] = {};
-
-    for (const key2 in data[key]) {
-      model[key][key2] = [];
-
-      for (let i = 0; i < data[key][key2].length; i++) {
-        model[key][key2].push(data[key][key2][year]);
-      }
-
-    }
+    this.surprises = {};
+    this.beliefs = {};
   }
 
-  // console.log("model", model)
-  return model;
-}
+  static merge(surp1, surp2) {
+    const mergedSurprise = new Surprise();
+    mergedSurprise.frequencies = Surprise.mergeFrequencies(surp1.frequencies, surp2.frequencies);
+    mergedSurprise.models = Surprise.mergeModels(surp1.models, surp2.models);
+    mergedSurprise.setCategSums(surp1.categSums);
 
-function getAverageModel(data) {
-  var averages = {};
-
-  var firstKey = Object.keys(data)[0];
-
-  var model = {};
-
-  for (const key in data) {
-    for (const key2 in data[key]) {
-      var attrLength = data[key][key2].length
-      if (averages[key2] == undefined)
-        averages[key2] = Array(attrLength).fill(0);
-
-      for (let i = 0; i < attrLength; i++) {
-        averages[key2][i] += data[key][key2][i];
-
-      }
-    }
+    return mergedSurprise;
   }
 
-  for (const key in data) {
-    model[key] = {};
-    for (const key2 in data[key]) {
-      model[key][key2] = [];
-      for (let i = 0; i < attrLength; i++) {
-        model[key][key2].push(averages[key2][i] / Object.keys(data).length)
+
+  setCategSums(categSums) {
+    this.categSums = categSums;
+  }
+
+  setFrequency(data) {
+    this.frequencies = {};
+
+    for (let i = 0; i < data.length; i++) {
+      const entry = data[i];
+
+      for (const category in entry) {
+        const value = entry[category];
+
+        //incrementa a quantidade para esse valor, cria uma array de frequencias
+        //caso tenham dados de varios anos
+        if (value != "") {
+          if (!this.frequencies[value])
+            this.frequencies[value] = [0];
+
+          this.frequencies[value][0] += 1;
+        }
       }
     }
   }
 
-  // console.log("model",model)
-  return model;
-}
+  setModels(models) {
+    this.models = models;
+  }
 
-function calcSurpriseNew(data, models) {
-  // console.log(data)
-  var surpData = {};
-  var dataLength = 0;
+  generateSurprise() {
+    var dataLength = 0;
+    this.surprises = {};
 
-  for (var prop in data) {
-    surpData[prop] = {};
-
-    for (var prop2 in data[prop]) {
-      surpData[prop][prop2] = [];
-      dataLength = data[prop][prop2].length;
+    for (var categ in this.frequencies) {
+      this.surprises[categ] = [];
+      dataLength = this.frequencies[categ].length;
 
       for (var i = 0; i < dataLength; i++) {
-        surpData[prop][prop2][i] = 0;
+        this.surprises[categ][i] = 0;
       }
     }
-  }
-  // Start with equiprobably P(M)s
-  // For each year:
-  // Calculate observed-expected
-  // Estimate P(D|M)
-  // Estimate P(M|D)
-  // Surprise is D_KL ( P(M|D) || P(M) )
-  // Normalize so sum P(M)s = 1
 
-  //0 = uniform, 1 = boom, 2 = bust
+    // Start with equiprobably P(M)s
+    // For each year:
+    // Calculate observed-expected
+    // Estimate P(D|M)
+    // Estimate P(M|D)
+    // Surprise is D_KL ( P(M|D) || P(M) )
+    // Normalize so sum P(M)s = 1
 
-  //Initially, everything is equiprobable.
-  var pMs = {};
+    //0 = uniform, 1 = boom, 2 = bust
 
-  var pMHistory = {};
+    //Initially, everything is equiprobable.
+    var pMs = {};
 
-  var pDMs = {};
-  var pMDs = {};
-  var total;
-  //Bayesian surprise is the KL divergence from prior to posterior
-  var kl;
-  var diffs = Array(models.length).fill(0);
-  var sumDiffs = Array(models.length).fill(0);
+    this.beliefs = {};
 
-  for (var i = 0; i < dataLength; i++) {
+    var pDMs = {};
+    var pMDs = {};
+    var total;
+    //Bayesian surprise is the KL divergence from prior to posterior
+    var kl;
+    var diffs = Array(this.models.length).fill(0);
+    var sumDiffs = Array(this.models.length).fill(0);
 
-    var keys = Object.keys(data);
+    for (var i = 0; i < dataLength; i++) {
 
-    for (var prop2 in data[keys[0]]) {
-      if (pMs[prop2] == undefined) {
-        pMs[prop2] = Array(models.length).fill(1 / models.length);
-      }
-      if (pMDs[prop2] == undefined) {
-        pMDs[prop2] = [];
-      }
-      if (pDMs[prop2] == undefined) {
-        pDMs[prop2] = [];
-      }
-      if (pMHistory[prop2] == undefined) {
-        pMHistory[prop2] = [structuredClone(pMs[prop2])];
-      }
+      var keys = Object.keys(this.categSums);
 
-
-      sumDiffs = Array(models.length).fill(0);
-      diffs = Array(models.length).fill(0);
-      total = sumUNew(data, prop2, i);
-
-      //Calculate per state surprise
-      for (var prop in data) {
-
-        //Estimate P(D|M) as 1 - |O - E|
-        for (let modelInd = 0; modelInd < models.length; modelInd++) {
-          var IO = 0;
-          var EI = 0;
-          if (data[prop][prop2] != undefined)
-            IO = data[prop][prop2][i] / total;
-
-          if (models[modelInd][prop][prop2] != undefined)
-            EI = models[modelInd][prop][prop2][i];
-
-          diffs[modelInd] = (IO - (EI / total));
-
-          pDMs[prop2][modelInd] = 1 - Math.abs(diffs[modelInd]);
-
-          pMDs[prop2][modelInd] = pMs[prop2][modelInd] * pDMs[prop2][modelInd];
+      for (var categ of keys) {
+        if (pMs[categ] == undefined) {
+          pMs[categ] = Array(this.models.length).fill(1 / this.models.length);
+        }
+        if (pMDs[categ] == undefined) {
+          pMDs[categ] = [];
+        }
+        if (pDMs[categ] == undefined) {
+          pDMs[categ] = [];
+        }
+        if (this.beliefs[categ] == undefined) {
+          this.beliefs[categ] = [structuredClone(pMs[categ])];
         }
 
+        sumDiffs = Array(this.models.length).fill(0);
+        diffs = Array(this.models.length).fill(0);
+
+        total = this.categSums[categ][i];
+
+        // total=1;
+        //Calculate per state surprise
+
+        //Estimate P(D|M) as 1 - |O - E|
+        for (let modelInd = 0; modelInd < this.models.length; modelInd++) {
+          var IO = 0;
+          var EI = 0;
+          if (this.frequencies[categ] != undefined)
+            IO = this.frequencies[categ][i] / total;
+
+          if (this.models[modelInd][categ] != undefined)
+            EI = this.models[modelInd][categ][i] / total;
+
+          diffs[modelInd] = IO - EI;
+          // console.log(total, diffs[modelInd])
+
+
+          pDMs[categ][modelInd] = 1 - Math.abs(diffs[modelInd]);
+
+          pMDs[categ][modelInd] = pMs[categ][modelInd] * pDMs[categ][modelInd];
+        }
 
         // Surprise is the sum of KL divergance across model space
         // Each model also gets a weighted "vote" on what the sign should be
         kl = 0;
         var voteSum = 0;
 
-        for (var j = 0; j < models.length; j++) {
-          kl += pMDs[prop2][j] * (Math.log(pMDs[prop2][j] / pMs[prop2][j]) / Math.log(2));
-          voteSum += diffs[j] * pMs[prop2][j];
+        for (var j = 0; j < this.models.length; j++) {
+          //usa entropia relativa como calculo da distancia ( divergencia Kullback-Leibler)
+          kl += pMDs[categ][j] * (Math.log(pMDs[categ][j] / pMs[categ][j]) / Math.log(2));
+          voteSum += diffs[j] * pMs[categ][j];
           sumDiffs[j] += Math.abs(diffs[j]);
         }
 
-        if(surpData[prop][prop2]==undefined){
-          surpData[prop][prop2] = [];
+        if (this.surprises[categ] == undefined) {
+          this.surprises[categ] = [];
         }
-        surpData[prop][prop2][i] = voteSum >= 0 ? Math.abs(kl) : -1 * Math.abs(kl);
+        this.surprises[categ][i] = voteSum >= 0 ? Math.abs(kl) : -1 * Math.abs(kl);
       }
 
       //Now lets globally update our model belief.
 
-      for (var j = 0; j < models.length; j++) {
-        pDMs[prop2][j] = 1 - (0.5 * sumDiffs[j]);
-        pMDs[prop2][j] = pMs[prop2][j] * pDMs[prop2][j];
-        pMs[prop2][j] = pMDs[prop2][j];
+      for (var j = 0; j < this.models.length; j++) {
+        pDMs[categ][j] = 1 - (0.5 * sumDiffs[j]);
+        pMDs[categ][j] = pMs[categ][j] * pDMs[categ][j];
+        pMs[categ][j] = pMDs[categ][j];
       }
 
       //Normalize
-      var sum = pMs[prop2].reduce(function (a, b) { return a + b; }, 0);
+      var sum = pMs[categ].reduce(function (a, b) { return a + b; }, 0);
 
-      for (var j = 0; j < pMs[prop2].length; j++) {
-        pMs[prop2][j] /= sum;
+      for (var j = 0; j < pMs[categ].length; j++) {
+        pMs[categ][j] /= sum;
       }
 
-      pMHistory[prop2].push(structuredClone(pMs[prop2]))
+      this.beliefs[categ].push(structuredClone(pMs[categ]))
+
     }
+    this.surprises = Surprise.transformObjectToArray(this.surprises);
+
+
+    return [this.surprises, this.beliefs];
   }
 
-  return [surpData, pMHistory];
-}
-
-
-
-function averageNew(data, index) {
-  //Average unemployement for the current year.
-  var sum = 0;
-  var n = 0;
-  for (var prop in data) {
-    sum += data[prop][index];
-    n++;
+  static transformObjectToArray(data) {
+    return Object.entries(data).map(([key, valueArray], index) => ({
+      name: key,
+      value: valueArray[0],
+    }));
   }
-  return sum / n;
-}
 
-function sumUNew(data, key, index) {
-  //Sum unemployement for the current year.
-  var sum = 0;
-  for (var prop in data) {
-    if (data[prop][key] == undefined)
-      continue
-    sum += data[prop][key][index];
+  static mergeFrequencies(freq1, freq2) {
+    const merged = {};
+
+    for (const key in freq1) {
+      if (freq2.hasOwnProperty(key)) {
+        merged[key] = [freq1[key][0] + freq2[key][0]];
+      } else {
+        merged[key] = [...freq1[key]];
+      }
+    }
+
+    for (const key in freq2) {
+      if (!freq1.hasOwnProperty(key)) {
+        merged[key] = [...freq2[key]];
+      }
+    }
+
+    return merged;
   }
-  return sum;
+
+  static mergeModels(model1, model2) {
+    const merged = [];
+
+    for (let modelInd = 0; modelInd < model1.length; modelInd++) {
+      merged[modelInd] = Surprise.mergeFrequencies(model1[modelInd], model2[modelInd]);
+    }
+    return merged;
+  }
 }

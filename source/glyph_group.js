@@ -33,7 +33,7 @@ class GlyphGroup {
                 const clusterGlyphs = clusterMarkers.map(cl => cl.options.glyph);
 
                 const mergedGlyph = Glyph.merge(clusterGlyphs);
-                mergedGlyph.group=this;
+                mergedGlyph.group = this;
                 mergedGlyph.setSupport(this.minSupport, this.maxSupport);
                 mergedGlyph.setConfidence(this.minConfidence, this.maxConfidence);
                 mergedGlyph.setLift(this.minLift, this.maxLift);
@@ -46,7 +46,7 @@ class GlyphGroup {
                 cluster.glyph = mergedGlyph;
 
                 return mergedGlyph.icon;
-                
+
             }
         });
 
@@ -63,6 +63,61 @@ class GlyphGroup {
         });
     }
 
+    setTotals() {
+        this.categFreq = {};
+        this.uniqueValues = [];
+
+        for (const group of Object.values(this.filteredData)) {
+            for (const entry of group) {
+                for (const value of Object.values(entry)) {
+                    if (value !== "") {
+                        if (!this.categFreq[value]) {
+                            this.categFreq[value] = [0];
+                            this.uniqueValues.push(value);
+                        }
+
+                        this.categFreq[value][0] += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    transformModels(models) {
+        const transformed = {};
+    
+        // Iterate over each model
+        for (let modelInd = 0; modelInd < models.length; modelInd++) {
+            const model = models[modelInd];
+    
+            // Iterate over each group in the model
+            for (const group in model) {
+                const groupData = model[group];
+    
+                // Initialize the group in the transformed object if not already
+                if (!transformed[group]) {
+                    transformed[group] = [];
+                }
+    
+                // Iterate over each category within the group
+                for (const categ in groupData) {
+                    const categoryData = groupData[categ];
+    
+                    // Initialize the category in the group if not already
+                    if (!transformed[group][modelInd]) {
+                        transformed[group][modelInd] = {};
+                    }
+    
+                    // Push the model data into the new structure
+                    // Ensure the category array contains arrays of the data per modelInd
+                    transformed[group][modelInd][categ] = categoryData;
+                }
+            }
+        }
+    
+        return transformed;
+    }
+
     updateAll() {
         console.log("===== Starting Update =====")
         const startTime = performance.now();
@@ -74,16 +129,21 @@ class GlyphGroup {
         this.logExecutionTime(() => this.filterCategories(), 'filterCategories');
 
         this.logExecutionTime(() => this.getFrequencies(), 'getFrequencies');
+        this.setTotals(this.freqData);
 
-        this.logExecutionTime(() => this.addSurpriseModel(getPopulModel), 'addSurpriseModel');
+        this.logExecutionTime(() => this.addSurpriseModel(getAverageModel), 'addSurpriseModel');
 
-        this.logExecutionTime(() => this.getSurprise(), 'getSurprise');
+
+        var transformedModels = this.transformModels(this.surpriseModels);
+        // this.surp = new Surprise();
+        // this.surp.addSurpriseModel(getPopulModel);
+        // this.surp.run(this.filteredData);
 
         const tGlyphsStart = performance.now();
         //cria os glifos
         this.glyphs = {};
         for (const groupKey in this.groupedData) {
-            const glyph = new Glyph(groupKey, this, this.groupedData[groupKey], this.surpriseData[groupKey]);
+            const glyph = new Glyph(groupKey, this, this.groupedData[groupKey]);
 
             glyph.deferUpdate();
             glyph.setSupport(this.minSupport, this.maxSupport);
@@ -93,6 +153,8 @@ class GlyphGroup {
             glyph.setHoverSize(this.glyphHoverSize);
             glyph.setDisplayMethod(this.displayMethod);
             glyph.setMaxCategories(this.maxCategories);
+            glyph.setModels(transformedModels[groupKey]);
+            glyph.setCategSums(this.categFreq);
             glyph.applyUpdates();
 
             this.glyphs[groupKey] = glyph;
@@ -338,53 +400,22 @@ class GlyphGroup {
         this.surpriseModels.push(model);
     }
 
-
-    getSurprise() {
-        // this.testSurprises = {};
-        // for (const groupKey in this.freqData) {
-        //     this.testFreq = {};
-
-        //     for (const groupKey2 in this.freqData) {
-        //         const group = {};
-        //         for (const item in this.freqData[groupKey2]) {
-        //             if (groupKey == groupKey2)
-        //                 group[item] = this.freqData[groupKey2][item];
-        //             else
-        //                 group[item] = 0;
-        //         }
-        //         this.testFreq[groupKey2] = group;
-        //     }
-        //     // freq[groupKey] = this.freqData[groupKey];
-
-        //     let mod = {};
-        //     mod[groupKey] = this.surpriseModels[0][groupKey];
-        //     var [newSurprise, beliefs] = calcSurpriseNew(this.testFreq, this.surpriseModels);
-        //     this.testSurprises[groupKey] = newSurprise;
-        // }
-
-        //calcula a surpresa
-        var [newSurprise, beliefs] = calcSurpriseNew(this.freqData, this.surpriseModels);
-        this.beliefs = beliefs;
-        this.surpriseData = {};
-
-        for (const groupKey in this.freqData) {
-            const group = this.freqData[groupKey];
-
-            var dataPoint = {};
-
-            for (const category in newSurprise[groupKey]) {
-                const values = newSurprise[groupKey][category];
-
-                dataPoint[category] = { value: values[0] };
-            }
-
-            var dataPointArray = Object.entries(dataPoint).map(([name, data]) => ({
-                name,
-                ...data
-            }));
-
-
-            this.surpriseData[groupKey] = dataPointArray;
+    getAllSurprises(){
+        const allSuprises = {};
+        for (const groupName of this.groupNames) {
+            allSuprises[groupName]=this.glyphs[groupName].surprise.surprises;
         }
+
+        return allSuprises;
     }
+
+    getAllFilteredRules(){
+        const allRules = {};
+        for (const groupName of this.groupNames) {
+            allRules[groupName]=this.glyphs[groupName].filteredRules;
+        }
+
+        return allRules;
+    }
+
 }
