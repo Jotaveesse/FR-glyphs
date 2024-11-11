@@ -848,7 +848,7 @@ class Glyph {
     hoverBegin() {
         this.mainText.attr("visibility", "hidden");
         this.marker.setIcon(this.hoverIcon);
-        this.background.style("opacity", 0.3);
+        this.background.style("opacity", 0.6);
         this.svg.node().parentElement.style.zIndex = 9000;
     }
 

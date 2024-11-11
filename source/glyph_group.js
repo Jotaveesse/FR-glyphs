@@ -5,7 +5,7 @@ class GlyphGroup {
         this.origData = data;
         this.surpriseModels = [];
         this.maxRules = 4;
-        this.maxArrows = 2;
+        this.maxArrows = 4;
         this.maxCategories = 8;
         this.minSupport = 0;
         this.maxSupport = 1;
@@ -129,15 +129,12 @@ class GlyphGroup {
         this.logExecutionTime(() => this.filterCategories(), 'filterCategories');
 
         this.logExecutionTime(() => this.getFrequencies(), 'getFrequencies');
+        
+        this.logExecutionTime(() => this.addSurpriseModel(getPopulModel), 'addSurpriseModel');
+        
+        
         this.setTotals(this.freqData);
-
-        this.logExecutionTime(() => this.addSurpriseModel(getAverageModel), 'addSurpriseModel');
-
-
         var transformedModels = this.transformModels(this.surpriseModels);
-        // this.surp = new Surprise();
-        // this.surp.addSurpriseModel(getPopulModel);
-        // this.surp.run(this.filteredData);
 
         const tGlyphsStart = performance.now();
         //cria os glifos
@@ -225,11 +222,19 @@ class GlyphGroup {
 
     setMaxCategories(maxCategs) {
         this.maxCategories = maxCategs;
+
         for (const groupKey in this.groupedData) {
             const glyph = this.glyphs[groupKey];
 
-            glyph.setMaxCategories(this.maxCategories);
+            glyph.setMaxCategories(maxCategs);
         }
+
+        this.clusterMarkers.forEach(function (marker) {
+            const glyph = marker.glyph;
+
+            glyph.setMaxCategories(maxCategs);
+
+        });
     }
 
     setGroupColumn(groupColumn) {

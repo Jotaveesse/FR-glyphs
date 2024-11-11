@@ -42,7 +42,7 @@ function addGlyph(data, name) {
     // glyphData.setCoordsColumns('x', 'y', RDToCoords);
     // const columnsToKeep = ['road_situation', 'road_surface', 'maximun_speed', 'type_of_accident'];
     glyphData.setChosenColumns(columnsToKeep);
-    // glyphData.setAssocThresh(initThreshVal.support, initThreshVal.confidence, initThreshVal.lift);
+
     glyphData.setSupport(initThreshVal.supportMin, initThreshVal.supportMax);
     glyphData.setConfidence(initThreshVal.confidenceMin, initThreshVal.confidenceMax);
     glyphData.setLift(initThreshVal.liftMin, initThreshVal.liftMax);
