@@ -5,9 +5,22 @@ body {
     margin: 0;
 }
 
+#main{
+    display:flex;
+    height:100%;
+    width:100%;
+}
+
+#settings{
+    height:100%;
+    width:30%;
+    background-color: #bbb;;
+}
+
 #map {
     height: 100%;
-    width: 100%;
+    flex-grow: 2;
+    flex-shrink: 2;
 }
 
 .cluster-icon{

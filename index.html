@@ -16,11 +16,13 @@
     <script src="source/glyph_group.js"></script>
     <script src="source/models.js"></script>
     <script src="source/association.js"></script>
-    <script  src="source/surprise.js"></script>
+    <script src="source/surprise.js"></script>
 
     <script src="source/map.js"></script>
+    <script src="source/menu.js"></script>
     <script src="source/rangeSlider.js"></script>
-    <script  src="source/mapControls.js"></script>
+    <script src="source/mapControls.js"></script>
+    <script src="source/comboBoxMulti.js"></script>
 
     <script src="source/main.js"></script>
 
@@ -28,16 +30,23 @@
 
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/mapControls.css">
+    <link rel="stylesheet" href="styles/comboBoxMulti.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
-    
+
     <title>Mapinha</title>
-
-    <!-- <div id="slider-container"></div>
-    <div id="range-label">0 - 10</div> -->
-
 
 </head>
 
 <body>
-    <div id="map"></div>
+    <div id="main">
+        <div id="settings" >
+            <div id="import-area">
+         
+            </div>
+            <div id="options-area">
+
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
 </body>

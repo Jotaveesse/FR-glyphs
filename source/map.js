@@ -2,7 +2,7 @@ const RADIANS = 180 / Math.PI;
 var map;
 
 function loadMap() {
-    map = L.map('map').setView([51.505, -0.05], 12); // London
+    map = L.map('map').setView([-15.793889, -47.882778], 4); // brasilia
 
     L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.{ext}', {
         ext: 'png'
@@ -10,124 +10,77 @@ function loadMap() {
 
     L.control.scale().addTo(map);
 
-    const comboboxControl = new L.Control.ComboBox({
-        position: 'topright',
-        labelText: 'Escolha das categorias',
-        initValue: 0,
-        optionsList: [
-            { label: 'Maior Surpresa No Grupo', value: 0 },
-            { label: 'Maior Surpresa Geral', value: 1 },
-            { label: 'Mais Regras No Grupo', value: 2 },
-            { label: 'Mais Regras Geral', value: 3 },
-        ],
-        onChange: function (value) {
-            for (const key in glyphGroups) {
-                const glyph = glyphGroups[key];
-                glyph.setDisplayMethod(parseInt(value));
-                glyph.update();
-            }
+    
+    const menuButton = new L.Control.Button({
+        position: 'topleft',
+        text:'≡',
+        onChange: function () {
+            toggleMenu()
         }
     });
 
-    comboboxControl.addTo(map);
-
-    //criação dos slider de suporte
-    const supportSlider = new L.Control.RangeSlider({
-        position: 'topright',
-        labelText: 'Suporte',
-        rangeMin: initThreshVal.supportMin,
-        rangeMax: initThreshVal.supportMax,
-        rangeStep: 0.05,
-        rangeInitMin: initThreshVal.supportMin,
-        rangeInitMax: initThreshVal.supportMax,
-        onChange: function (range) {
-            for (const key in glyphGroups) {
-                const glyph = glyphGroups[key];
-                glyph.setSupport(range.begin, range.end);
-                glyph.update();
-            }
-        }
-    });
-    supportSlider.addTo(map);
-    supportSlider.addSlider();;
-
-    //criação dos slider de confiança
-    const confidenceSlider = new L.Control.RangeSlider({
-        position: 'topright',
-        labelText: 'Confiança',
-        rangeMin: initThreshVal.confidenceMin,
-        rangeMax: initThreshVal.confidenceMax,
-        rangeStep: 0.05,
-        rangeInitMin: initThreshVal.confidenceMin,
-        rangeInitMax: initThreshVal.confidenceMax,
-        onChange: function (range) {
-            for (const key in glyphGroups) {
-                const glyph = glyphGroups[key];
-                glyph.setConfidence(range.begin, range.end);
-                glyph.update();
-            }
-        }
-    });
-    confidenceSlider.addTo(map);
-    confidenceSlider.addSlider();
-
-    //criação dos slider de lift
-    const liftSlider = new L.Control.RangeSlider({
-        position: 'topright',
-        labelText: 'Lift',
-        rangeMin: initThreshVal.liftMin,
-        rangeMax: initThreshVal.liftMax,
-        rangeStep: 0.05,
-        rangeInitMin: initThreshVal.liftMin,
-        rangeInitMax: initThreshVal.liftMax,
-        onChange: function (range) {
-            for (const key in glyphGroups) {
-                const glyph = glyphGroups[key];
-                glyph.setLift(range.begin, range.end);
-                glyph.update();
-            }
-        }
-    });
-    liftSlider.addTo(map);
-    liftSlider.addSlider();
-
-    const categSlider = new L.Control.Slider({
-        position: 'topright',
-        labelText: 'Número de categorias',
-        rangeMin: 1,
-        rangeMax: 8,
-        rangeStep: 1,
-        rangeInit: 8,
-        onChange: function (value) {
-            for (const key in glyphGroups) {
-                const glyph = glyphGroups[key];
-                glyph.setMaxCategories(value);
-                // glyph.update();
-            }
-        }
-    });
-
-    categSlider.addTo(map);
-    categSlider.updateTooltip(map);
-
-    // //atualiza a posição quando move e da zoom
-    // map.on('zoomend', function () {
-    //     for (const key in glyphGroups) {
-    //         const glyphGroup = glyphGroups[key];
-
-    //         //diminui o tamanho dos glifos quando o nivel de zoom é baixo
-    //         for (const key in glyphGroup.newGlyphs) {
-    //             const glyph = glyphGroup.newGlyphs[key];
-    //             // glyph.updateSize();
-    //         };
-    //     }
-    // });
+    menuButton.addTo(map);
 };
 
 function projectPoint(map, lat, lon) {
     return map.latLngToLayerPoint(new L.LatLng(lat, lon));
 }
 
-function clearGlyphs() {
-    d3.selectAll(".svg-layer").remove();
+async function readCsv(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const csvData = e.target.result;  // Get the CSV data from the file
+            Papa.parse(csvData, {
+                header: true,
+                complete: function (results) {
+                    const dataObj = results.data.slice(0, 1000);  // Get the first 1000 rows of data
+
+                    resolve(dataObj);  // Resolve the Promise with the parsed data
+                },
+                error: function (error) {
+                    reject(error);  // Reject the Promise if parsing fails
+                }
+            });
+        };
+
+        reader.onerror = function (error) {
+            reject(error);  // Reject the Promise if file reading fails
+        };
+
+        reader.readAsText(file);
+    });
+}
+
+
+function getSimilarity(str1, str2) {
+    const bigrams = (str) => {
+        const result = [];
+        for (let i = 0; i < str.length - 1; i++) {
+            result.push(str.slice(i, i + 2));
+        }
+        return result;
+    };
+
+    const bigrams1 = bigrams(str1);
+    const bigrams2 = bigrams(str2);
+
+    const intersection = bigrams1.filter(bigram => bigrams2.includes(bigram));
+    return (2 * intersection.length) / (bigrams1.length + bigrams2.length);
+}
+
+function findMostSimilar(target, array) {
+    let maxSimilarity = 0;
+    let mostSimilar = null;
+
+    array.forEach(item => {
+        const similarity = getSimilarity(target, item);
+        if (similarity > maxSimilarity) {
+            maxSimilarity = similarity;
+            mostSimilar = item;
+        }
+    });
+
+    return mostSimilar;
 }

@@ -1,24 +1,103 @@
-.leaflet-control.slider-control,
-.leaflet-control.range-control,
-.leaflet-control.combobox-control {
-    background-color: white;
-    padding: 6px 12px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    z-index: initial;
-    margin-bottom: 12px;
-    text-align: center;
-    font-size: 12px;
-    font-weight: bold;
-    min-width: 130px;
+.expand {
+    animation: expand-width 0.5s ease-in-out forwards;
 }
 
-.slider-container {
-    position: relative;
-    width: 130px;
-    height: min-content;
-    display: flex;
-    margin: auto;
+.retract {
+    animation: retract-width 0.5s ease-in-out forwards;
+}
+
+@keyframes expand-width {
+    from {
+        width: 0;
+    }
+
+    to {
+        width: 296px;
+    }
+}
+
+@keyframes retract-width {
+    from {
+        width: 296px;
+    }
+
+    to {
+        width: 0;
+    }
+}
+
+#settings {
+    display:flex;
+    flex-direction:column;
+    box-sizing: border-box;
+    background-color: #bbd;
+    font-family: Helvetica;
+    width: 0px;
+    height:100%;
+    overflow:scroll;
+}
+
+#settings>* {
+    padding: 8px;
+    width: 280px;
+}
+
+.control {
+    background-color: white;
+    border-radius: 0px;
+    padding: 6px 12px;
+    margin-bottom: 0px;
+    text-align: center;
+}
+
+.control label,
+.control .range-label {
+    font-family: Helvetica;
+    font-size: 12px;
+    font-weight: bold;
+    display: block;
+    padding: 0px 0px 4px 0px;
+}
+
+.map-button {
+    background-color: white;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    background-clip: padding-box;
+    text-align: center;
+    cursor: pointer;
+    width: fit-content;
+    border-radius: 4px;
+}
+
+.map-button button:hover {
+    background-color: #f4f4f4;
+
+}
+
+.map-button button {
+    background-color: white;
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.file-control input::file-selector-button {
+    border: none;
+    padding: 2px 4px;
+    background-color: #7AC;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.combobox-container {
+    width: 100%;
+    cursor: pointer;
 }
 
 .slider-control input[type="range"] {
@@ -36,34 +115,48 @@
 .slider-control input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 30px;
+    width: 32px;
     height: 20px;
     background: #7AC;
+    border: none;
     border-radius: 50%;
     cursor: pointer;
     position: relative;
-    z-index: 1;
 }
 
 .slider-control input[type="range"]::-moz-range-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 30px;
-    height: 20px;
+    width: 32px;
+    height: 90px;
     background: #7AC;
+    border: none;
     border-radius: 50% 50% 0 0;
     cursor: pointer;
     position: relative;
-    z-index: 1;
+}
+
+.slider-control {
+    position: relative;
+    z-index: 100;
+    padding-bottom: 20px;
+}
+
+.slider-container {
+    position: relative;
+    width: 100%;
+    height: min-content;
+    display: flex;
+    margin: auto;
 }
 
 .tooltip {
     position: absolute;
     width: 32px;
-    height: 32px;
+    height: 24px;
     left: 50%;
     box-sizing: border-box;
-    transform: translate(calc(-50% + 15px), calc(50% - 8px));
+    transform: translate(calc(-50% + 16px), calc(50% - 8px));
     background: #7AC;
     color: white;
     padding: 2px 5px;
@@ -74,7 +167,7 @@
     align-items: end;
     display: flex;
     justify-content: center;
-    z-index: -1;
+    z-index:-1;
 }
 
 .slider-label {
@@ -83,6 +176,12 @@
     margin-bottom: 4px;
     font-size: 12px;
     font-weight: bold;
+}
+
+.range-control {
+    padding-left: 0px;
+    padding-right: 0px;
+    box-sizing: border-box;
 }
 
 .range-label {
@@ -99,11 +198,11 @@
     font-weight: bold;
 }
 
-.range-container {
+.range-slider-container {
     background-color: #eee;
-    width: 120px;
+    width: 80%;
     height: 12px;
-    margin:auto;
+    margin: auto;
     position: relative;
     border-radius: 12px;
 }
@@ -175,4 +274,16 @@ select.combobox-container option {
     background-color: #ffffff;
     color: #000;
     transform: translate(10px, 0);
+}
+
+.button-control button {
+    font-family: inherit;
+    font-weight: bold;
+    font-size: 16px;
+    border-radius: 8px;
+    border: none;
+    background-color: #7AC;
+    color: white;
+    padding: 8px 12px;
+    cursor: pointer;
 }

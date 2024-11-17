@@ -19,7 +19,6 @@ class Glyph {
 
         this.maxCategories = 4;
 
-        this.isDrawn = false;
         this.deferredUpdate = false;
         this.needsDataUpdate = true;
         this.needsIconUpdate = true;
@@ -560,8 +559,6 @@ class Glyph {
             return this.marker;
         }
 
-        this.isDrawn = true;
-
         this.svg = d3.create("svg");
 
         this.svg.attr('viewBox', `${-this.size}, ${-this.size}, ${this.size * 2}, ${this.size * 2}`)
@@ -865,7 +862,6 @@ class Glyph {
     }
 
     removeMarker() {
-        this.svgLayer.remove();
-        this.isDrawn = false;
+        this.marker.remove();
     }
 }

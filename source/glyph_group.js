@@ -118,6 +118,20 @@ class GlyphGroup {
         return transformed;
     }
 
+    remove(){
+        for (const groupKey in this.groupedData) {
+            const glyph = this.glyphs[groupKey];
+            glyph.removeMarker();
+        }
+
+        this.clusterMarkers.forEach(function (marker) {
+            const glyph = marker.glyph;
+            glyph.removeMarker();
+        });
+
+        this.markers.clearLayers();
+    }
+
     updateAll() {
         console.log("===== Starting Update =====")
         const startTime = performance.now();
@@ -130,7 +144,7 @@ class GlyphGroup {
 
         this.logExecutionTime(() => this.getFrequencies(), 'getFrequencies');
         
-        this.logExecutionTime(() => this.addSurpriseModel(getPopulModel), 'addSurpriseModel');
+        this.logExecutionTime(() => this.addSurpriseModel(getAverageModel), 'addSurpriseModel');
         
         
         this.setTotals(this.freqData);
