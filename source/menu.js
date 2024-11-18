@@ -10,7 +10,6 @@ var importData = {
 };
 
 function toggleMenu() {
-    console.log(settings)
     const box = settings;
     const isExpanded = box.classList.contains("expand")
 

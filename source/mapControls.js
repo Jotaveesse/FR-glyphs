@@ -86,7 +86,7 @@ class RangeControl extends Control {
     `;
 
         const d3Div = div;
-        console.log(d3Div)
+
         this.slider = d3Div.select(".range-container");
         this.label = d3Div.select(".range-label");
         this.tooltip = d3Div.select(".range-tooltip");

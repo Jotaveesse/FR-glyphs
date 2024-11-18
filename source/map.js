@@ -20,6 +20,28 @@ function loadMap() {
     });
 
     menuButton.addTo(map);
+
+    //coloca todos os glifos no tamanho normal,
+    //para evitar que eles continuem grandes mesmo quando o mouse não está em cima
+    map.on('zoomend', function () {
+        const zoomLevel = map.getZoom();
+
+        for (const groupKey in  glyphGroups) {
+            const group = glyphGroups[groupKey];
+            for (const glyphKey in group.glyphs) {
+                const glyph = group.glyphs[glyphKey];
+    
+                glyph.hoverEnd();
+            }
+    
+            group.clusterMarkers.forEach(function (marker) {
+                const glyph = marker.glyph;
+    
+                glyph.hoverEnd();
+    
+            });
+        }
+    });
 };
 
 function projectPoint(map, lat, lon) {

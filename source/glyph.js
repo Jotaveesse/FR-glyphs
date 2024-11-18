@@ -853,7 +853,8 @@ class Glyph {
         this.mainText.attr("visibility", "");
         this.marker.setIcon(this.icon);
         this.background.style("opacity", 0);
-        this.svg.node().parentElement.style.zIndex = 1000;
+        if(this.svg.node().parentElement)
+            this.svg.node().parentElement.style.zIndex = 1000;
     }
 
     static getRuleScore(rule) {
