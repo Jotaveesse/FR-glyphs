@@ -1,4 +1,10 @@
-class Glyph {
+import { Surprise } from './surprise.js';
+import { FPGrowth } from './association.js';
+import * as models from './models.js';
+
+const RADIANS = 180 / Math.PI;
+
+export class Glyph {
     constructor(name, group = null, data = []) {
         this.rawData = data;
         this.group = group;
@@ -361,22 +367,22 @@ class Glyph {
         switch (this.displayMethod) {
             //escolhe categorias com maiores surpresas de cada grupo
             case 0:
-                this.displayItems = getItemsBySurpriseGrouped(this.surprise.surprises);
+                this.displayItems = models.getItemsBySurpriseGrouped(this.surprise.surprises);
                 break;
 
             //escolhe categorias com as maiores surpresas gerais
             case 1:
-                this.displayItems = getItemsBySurpriseGlobal(this.group.getAllSurprises());
+                this.displayItems = models.getItemsBySurpriseGlobal(this.group.getAllSurprises());
                 break;
 
             //escolhe as categorias com mais regras em cada grupo
             case 2:
-                this.displayItems = getItemsByFrequencyGrouped(this.filteredRules);
+                this.displayItems = models.getItemsByFrequencyGrouped(this.filteredRules);
                 break;
 
             //escolhe as categorias com mais regras globalmente
             case 3:
-                this.displayItems = getItemsByFrequencyGlobal(this.group.getAllFilteredRules());
+                this.displayItems = models.getItemsByFrequencyGlobal(this.group.getAllFilteredRules());
                 break;
 
             //escolhe qualquer categoria

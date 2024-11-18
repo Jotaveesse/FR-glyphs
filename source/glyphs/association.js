@@ -1,4 +1,4 @@
-class Association {
+export class Association {
     constructor() {
         this.patterns = [];
         this.rules = [];
@@ -17,7 +17,7 @@ class Association {
     }
 }
 
-class FPGrowth extends Association {
+export class FPGrowth extends Association {
     constructor() {
         super();
         this.tree = new FPTree();
@@ -279,7 +279,6 @@ class FPTree {
         return supportCount;
     }
 }
-
 
 class FPHeaderNode {
     constructor(count, head) {

@@ -1,6 +1,4 @@
-var cachedTotals = {};
-
-class Surprise {
+export class Surprise {
   constructor() {
     this.models = [];
     this.frequencies = {};
@@ -18,7 +16,6 @@ class Surprise {
 
     return mergedSurprise;
   }
-
 
   setCategSums(categSums) {
     this.categSums = categSums;

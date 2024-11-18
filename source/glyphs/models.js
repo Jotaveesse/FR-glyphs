@@ -202,7 +202,7 @@ const citiesPopulation = {
     "FERNANDO DE NORONHA": 3316
 }
 
-function getPopulModel(data) {
+export function getPopulModel(data) {
     var averages = {};
     var totalPop = 0;
     var model = {};
@@ -234,7 +234,7 @@ function getPopulModel(data) {
     return model;
 }
 
-function getAverageModel(data) {
+export function getAverageModel(data) {
     var averages = {};
     
     var model = {};
@@ -266,7 +266,7 @@ function getAverageModel(data) {
     return model;
   }
 
-function getItemsByFrequencyGlobal(data) {
+  export function getItemsByFrequencyGlobal(data) {
     const frequencyMap = {};
 
     for (const municipality in data) {
@@ -297,7 +297,7 @@ function getItemsByFrequencyGlobal(data) {
     return sortedItems;
 }
 
-function getItemsByFrequencyGrouped(rules) {
+export function getItemsByFrequencyGrouped(rules) {
     const frequencyMap = {};
 
     for (const rule of rules) {
@@ -322,13 +322,13 @@ function getItemsByFrequencyGrouped(rules) {
     return Object.keys(frequencyMap).sort((a, b) => frequencyMap[b] - frequencyMap[a]);
 }
 
-function getItemsBySurpriseGrouped(data) {
+export function getItemsBySurpriseGrouped(data) {
     let sortedEntries = data.sort((a, b) => b.value - a.value);
 
     return sortedEntries.map(entry => entry.name);
 }
 
-function getItemsBySurpriseGlobal(data) {
+export function getItemsBySurpriseGlobal(data) {
     let summedValues = {};
 
     for (let city in data) {

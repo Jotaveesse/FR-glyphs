@@ -1,3 +1,61 @@
+import { Control } from "./control.js"
+
+export class RangeControl extends Control {
+    constructor(selector, options) {
+        super(selector, options);
+        this.wrapper.classed('range-control', true);
+        this.addSlider();
+    }
+
+    createControl() {
+        const div = this.wrapper;
+
+        div.node().innerHTML = `
+        <div class="range-label">${this.options.labelText}</div>
+        <div class="range-container"></div>
+        <div class="range-tooltip">0 - 10</div>
+    `;
+
+        const d3Div = div;
+
+        this.slider = d3Div.select(".range-container");
+        this.label = d3Div.select(".range-label");
+        this.tooltip = d3Div.select(".range-tooltip");
+
+
+        return div;
+    }
+
+    addSlider() {
+        const slider = createD3RangeSlider(this.options.rangeMin, this.options.rangeMax, this.options.rangeStep, this.slider);
+
+        slider.onChange(function (newRange) {
+            this.range = newRange;
+            this.updateToolTip();
+        }.bind(this));
+
+        slider.onTouchEnd(function (newRange) {
+            this.range = newRange;
+            this.updateToolTip();
+            this.update();
+        }.bind(this));
+
+        slider.range(this.options.rangeInitMin, this.options.rangeInitMax);
+
+        this.update();
+    }
+
+    updateToolTip() {
+        this.tooltip.text(this.range.begin + " - " + this.range.end);
+    }
+
+    update() {
+        if (this.options.onChange) {
+            this.options.onChange(this.range);
+        }
+    }
+}
+
 /*jslint browser: true */
 /*jslint this */
 

@@ -1,54 +1,4 @@
-const RADIANS = 180 / Math.PI;
-var map;
-
-function loadMap() {
-    map = L.map('map').setView([-15.793889, -47.882778], 4); // brasilia
-
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.{ext}', {
-        ext: 'png'
-    }).addTo(map);
-
-    L.control.scale().addTo(map);
-
-    
-    const menuButton = new L.Control.Button({
-        position: 'topleft',
-        text:'≡',
-        onChange: function () {
-            toggleMenu()
-        }
-    });
-
-    menuButton.addTo(map);
-
-    //coloca todos os glifos no tamanho normal,
-    //para evitar que eles continuem grandes mesmo quando o mouse não está em cima
-    map.on('zoomend', function () {
-        const zoomLevel = map.getZoom();
-
-        for (const groupKey in  glyphGroups) {
-            const group = glyphGroups[groupKey];
-            for (const glyphKey in group.glyphs) {
-                const glyph = group.glyphs[glyphKey];
-    
-                glyph.hoverEnd();
-            }
-    
-            group.clusterMarkers.forEach(function (marker) {
-                const glyph = marker.glyph;
-    
-                glyph.hoverEnd();
-    
-            });
-        }
-    });
-};
-
-function projectPoint(map, lat, lon) {
-    return map.latLngToLayerPoint(new L.LatLng(lat, lon));
-}
-
-async function readCsv(file) {
+export async function readCsv(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
 
@@ -75,8 +25,7 @@ async function readCsv(file) {
     });
 }
 
-
-function getSimilarity(str1, str2) {
+export function getSimilarity(str1, str2) {
     const bigrams = (str) => {
         const result = [];
         for (let i = 0; i < str.length - 1; i++) {
@@ -92,7 +41,7 @@ function getSimilarity(str1, str2) {
     return (2 * intersection.length) / (bigrams1.length + bigrams2.length);
 }
 
-function findMostSimilar(target, array) {
+export function findMostSimilar(target, array) {
     let maxSimilarity = 0;
     let mostSimilar = null;
 

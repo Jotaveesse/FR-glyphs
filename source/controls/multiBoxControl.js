@@ -1,5 +1,6 @@
-class MultiBoxControl extends Control {
+import {Control} from "./control.js"
 
+export class MultiBoxControl extends Control {
     constructor(element, options = {}) {
         super(element, options);
         let defaults = {

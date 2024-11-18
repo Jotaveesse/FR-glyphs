@@ -1,8 +1,13 @@
-class GlyphGroup {
+import * as models from './models.js';
+import { Glyph } from './glyph.js';
+
+export class GlyphGroup {
     transTables = {};
 
-    constructor(data) {
+    constructor(data, map) {
         this.origData = data;
+        this.map = map;
+
         this.surpriseModels = [];
         this.maxRules = 4;
         this.maxArrows = 4;
@@ -138,16 +143,15 @@ class GlyphGroup {
         console.log("===== Starting Update =====")
         const startTime = performance.now();
 
-        this.logExecutionTime(() => this.groupByColumn(), 'groupByColumn');
+         this.groupByColumn();
 
-        this.logExecutionTime(() => this.getCoords(), 'addCoords');
+        this.getCoords();
 
-        this.logExecutionTime(() => this.filterCategories(), 'filterCategories');
+        this.filterCategories();
 
-        this.logExecutionTime(() => this.getFrequencies(), 'getFrequencies');
-        
-        this.logExecutionTime(() => this.addSurpriseModel(getAverageModel), 'addSurpriseModel');
-        
+        this.getFrequencies();
+
+        this.addSurpriseModel(models.getAverageModel);
         
         this.setTotals(this.freqData);
         var transformedModels = this.transformModels(this.surpriseModels);
@@ -174,7 +178,7 @@ class GlyphGroup {
             this.markers.addLayer(glyph.marker);
         };
 
-        map.addLayer(this.markers);
+        this.map.addLayer(this.markers);
 
         const tGlyphsEnd = performance.now();
         console.log(`createGlyphs for groups: ${(tGlyphsEnd - tGlyphsStart).toFixed(2)} ms`);
