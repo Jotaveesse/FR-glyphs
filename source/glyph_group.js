@@ -54,12 +54,14 @@ class GlyphGroup {
             const childGlyph = ev.layer.getAllChildMarkers()[0].options.glyph;
 
             ev.layer.setIcon(ev.layer.glyph.hoverIcon);
+            ev.layer.glyph.svg.node().parentElement.style.zIndex = 9000;
         });
 
         this.markers.on('clustermouseout', function (ev) {
             const childGlyph = ev.layer.getAllChildMarkers()[0].options.glyph;
 
             ev.layer.setIcon(ev.layer.glyph.icon);
+            ev.layer.glyph.svg.node().parentElement.style.zIndex = -9000;
         });
     }
 

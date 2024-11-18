@@ -391,7 +391,7 @@ class Glyph {
     }
 
     updatePosition() {
-        if (this.rawData != null && this.rawData.length>0) {
+        if (this.rawData != null && this.rawData.length > 0) {
             var avrgLat = 0;
             var avrgLon = 0;
 
@@ -671,7 +671,7 @@ class Glyph {
             popupAnchor: [0, 0]
         });
 
-        this.marker = L.marker([this.lat, this.lon], { icon: this.icon, zIndexOffset: 1000, glyph: this });
+        this.marker = L.marker([this.lat, this.lon], { icon: this.icon, zIndexOffset: -9000, glyph: this });
 
         return this.marker;
     }
@@ -889,7 +889,7 @@ class Glyph {
         this.marker.setIcon(this.icon);
         this.background.style("opacity", 0);
         if (this.svg.node().parentElement)
-            this.svg.node().parentElement.style.zIndex = 1000;
+            this.svg.node().parentElement.style.zIndex = -9000;
     }
 
     static getRuleScore(rule) {
