@@ -86,7 +86,7 @@ function loadMenu() {
     controllers.importButton = new ButtonControl('#import-area', {
         text: "Importar",
         onChange: () => {
-            addGlyph(importData);
+            addGlyphGroup(importData);
         },
     });
 

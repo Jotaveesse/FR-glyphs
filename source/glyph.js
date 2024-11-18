@@ -1,8 +1,9 @@
 class Glyph {
-    constructor(name, group = null, data = null) {
+    constructor(name, group = null, data = []) {
         this.rawData = data;
         this.group = group;
         this.name = name;
+        this.itemCount = this.rawData.length;
 
         this.size = 400;
         this.hoverSize = 400;
@@ -232,10 +233,13 @@ class Glyph {
         this.surprise.categSums = categSums;
     }
 
+    setCount(count) {
+        this.itemCount = count;
+    }
 
     static merge(glyphs) {
         const name = `${glyphs.length}`;
-        var mergedSurprise = {};
+        var mergedCount = 0;
         var newRuleData = null;
         var newSurp = null;
         var avrgLat = 0;
@@ -246,10 +250,12 @@ class Glyph {
             if (newRuleData) {
                 newRuleData = newRuleData.mergePatterns(glyph.associations);
                 newSurp = Surprise.merge(glyph.surprise, newSurp);
+                mergedCount += glyph.itemCount;
             }
             else {
                 newRuleData = glyph.associations;
                 newSurp = glyph.surprise;
+                mergedCount = glyph.itemCount;
             }
 
             avrgLat += glyph.lat;
@@ -262,9 +268,9 @@ class Glyph {
         avrgLon /= glyphs.length;
 
 
-
         const mergedGlyph = new Glyph(name);
         mergedGlyph.deferUpdate();
+        mergedGlyph.setCount(mergedCount);
         mergedGlyph.setRuleTree(newRuleData);
         mergedGlyph.setSurprise(newSurp);
         mergedGlyph.setPosition(avrgLat, avrgLon);
@@ -385,7 +391,7 @@ class Glyph {
     }
 
     updatePosition() {
-        if (this.rawData != null) {
+        if (this.rawData != null && this.rawData.length>0) {
             var avrgLat = 0;
             var avrgLon = 0;
 
@@ -627,6 +633,16 @@ class Glyph {
             .attr("dominant-baseline", "middle")            //centraliza verticalmente
             .attr("visibility", "");
 
+        //texto da quantidade de items
+        this.countText = this.svgGroup.append("g")
+            .attr("class", "glyph-count")
+            .attr("fill", "black")
+            .attr("font-family", "Trebuchet MS, monospace")
+            .attr("font-size", this.width / 12)
+            .attr("text-anchor", "middle")                      //centraliza horizontalmente
+            .attr("dominant-baseline", "middle")            //centraliza verticalmente
+            .attr("visibility", "");
+
         //hitbox do svg para detectar hover
         this.hitbox = this.svgGroup.append("circle")
             .attr("r", this.width / 2)
@@ -792,7 +808,7 @@ class Glyph {
                     .call(text => text.append("tspan")
                         .attr("y", -this.textSize / 2)
                         .attr("font-weight", 900)
-                        .text(d => d.data.name))
+                        .text(d => d.data.name.slice(0, 16)))
                     .call(text => text.append("tspan")
                         .attr("x", 0)
                         .attr("y", this.textSize / 2)
@@ -816,7 +832,7 @@ class Glyph {
                         return `${100 / 3 + startOffset * 100 / 3}%`;   //texto é colocado na 2° volta pra evitar cortes
                     })
                     .call(text => text.selectAll("tspan")
-                        .data(d => [d.data.name, d.data.value.toLocaleString("pt-BR")])
+                        .data(d => [d.data.name.slice(0, 16), d.data.value.toLocaleString("pt-BR")])
                         .join("tspan")
                         .attr("y", (d, i) => i === 0 ? -this.textSize / 2 : this.textSize / 2)
                         .text(d => d)),
@@ -839,11 +855,29 @@ class Glyph {
                 exit => exit.remove()
             );
 
+        this.countText
+            .selectAll("text")
+            .data([this.itemCount])
+            .join(
+                enter => enter.append("text")
+                    .call(text => text.append("tspan")
+                        .attr("font-weight", 900)
+                        .attr("y", "20")
+                        .text(this.itemCount))
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 2)
+                    .attr("paint-order", "stroke"),
+                update => update
+                    .select('tspan').text(this.itemCount),
+                exit => exit.remove()
+            );
+
         return this.marker;
     }
 
     hoverBegin() {
         this.mainText.attr("visibility", "hidden");
+        this.countText.attr("visibility", "hidden");
         this.marker.setIcon(this.hoverIcon);
         this.background.style("opacity", 0.6);
         this.svg.node().parentElement.style.zIndex = 9000;
@@ -851,9 +885,10 @@ class Glyph {
 
     hoverEnd() {
         this.mainText.attr("visibility", "");
+        this.countText.attr("visibility", "");
         this.marker.setIcon(this.icon);
         this.background.style("opacity", 0);
-        if(this.svg.node().parentElement)
+        if (this.svg.node().parentElement)
             this.svg.node().parentElement.style.zIndex = 1000;
     }
 

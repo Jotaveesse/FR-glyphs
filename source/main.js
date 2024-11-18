@@ -4,7 +4,8 @@ const initThreshVal = {
     confidenceMin: 0,
     confidenceMax: 1,
     liftMin: 1,
-    liftMax: 2.5
+    liftMax: 2.5,
+    maxCategs: 6
 }
 
 window.onload = function () {
@@ -13,8 +14,7 @@ window.onload = function () {
 }
 const glyphGroups = {};
 
-function addGlyph() {
-    console.log(importData)
+function addGlyphGroup() {
     for (const groupKey in glyphGroups) {
         const group = glyphGroups[groupKey];
 
@@ -30,6 +30,7 @@ function addGlyph() {
     glyphData.setSupport(initThreshVal.supportMin, initThreshVal.supportMax);
     glyphData.setConfidence(initThreshVal.confidenceMin, initThreshVal.confidenceMax);
     glyphData.setLift(initThreshVal.liftMin, initThreshVal.liftMax);
+    glyphData.setMaxCategories(initThreshVal.maxCategs);
 
     glyphData.updateAll();
 

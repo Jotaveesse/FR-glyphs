@@ -57,7 +57,7 @@ async function readCsv(file) {
             Papa.parse(csvData, {
                 header: true,
                 complete: function (results) {
-                    const dataObj = results.data.slice(0, 1000);  // Get the first 1000 rows of data
+                    const dataObj = results.data;  // Get the first 1000 rows of data
 
                     resolve(dataObj);  // Resolve the Promise with the parsed data
                 },
