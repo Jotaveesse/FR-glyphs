@@ -46,7 +46,7 @@ export function findMostSimilar(target, array) {
     let mostSimilar = null;
 
     array.forEach(item => {
-        const similarity = getSimilarity(target, item);
+        const similarity = getSimilarity(target.toLowerCase(), item.toLowerCase());
         if (similarity > maxSimilarity) {
             maxSimilarity = similarity;
             mostSimilar = item;

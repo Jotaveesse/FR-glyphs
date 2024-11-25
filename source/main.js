@@ -1,4 +1,4 @@
-import { GlyphGroup } from './glyphs/glyph_group.js';
+import { GlyphGroup } from './glyphs/glyphGroup.js';
 import * as common from './common.js';
 import * as controls from './controls/index.js';
 
@@ -52,7 +52,7 @@ function addGlyphGroup() {
 
     glyphData.updateAll();
 
-    console.log("glyph", glyphData)
+    console.log("glyph group", glyphData)
 
     glyphGroups[importData.name] = glyphData;
     const firstKey = Object.keys(glyphGroups.crimes.glyphs)[0];
@@ -61,7 +61,7 @@ function addGlyphGroup() {
 }
 
 function toggleMenu() {
-    const box = settings;
+    const box = document.getElementById("menu");
     const isExpanded = box.classList.contains("expand")
 
     box.classList.remove('expand', 'retract');
@@ -118,7 +118,7 @@ function loadMenu() {
 
     menuButton.addTo(leafletMap);
 
-    controllers.fileInput = new controls.FileInputControl('#import-area', {
+    controllers.fileInput = new controls.FileInputControl('#import-area .menu-dropdown-items', {
         labelText: 'Escolha um arquivo CSV para importar',
         type: ".csv",
 
@@ -129,7 +129,7 @@ function loadMenu() {
         },
     });
 
-    controllers.groupComboBox = new controls.ComboBoxControl('#import-area', {
+    controllers.groupComboBox = new controls.ComboBoxControl('#import-area .menu-dropdown-items', {
         labelText: 'Coluna de Agrupamento',
         optionsList: [],
         onChange: (value) => {
@@ -137,7 +137,7 @@ function loadMenu() {
         },
     });
 
-    controllers.latComboBox = new controls.ComboBoxControl('#import-area', {
+    controllers.latComboBox = new controls.ComboBoxControl('#import-area .menu-dropdown-items', {
         labelText: 'Coluna da Latitude',
         optionsList: [],
         onChange: (value) => {
@@ -145,7 +145,7 @@ function loadMenu() {
         },
     });
 
-    controllers.lonComboBox = new controls.ComboBoxControl('#import-area', {
+    controllers.lonComboBox = new controls.ComboBoxControl('#import-area .menu-dropdown-items', {
         labelText: 'Coluna da Longitude',
         optionsList: [],
         onChange: (value) => {
@@ -153,7 +153,7 @@ function loadMenu() {
         },
     });
 
-    controllers.chosenMultiBox = new controls.MultiBoxControl('#import-area', {
+    controllers.chosenMultiBox = new controls.MultiBoxControl('#import-area .menu-dropdown-items', {
         data: [],
         labelText: 'Colunas escolhidas',
         placeholder: 'Escolha as colunas',
@@ -171,14 +171,14 @@ function loadMenu() {
         }
     });
 
-    controllers.importButton = new controls.ButtonControl('#import-area', {
+    controllers.importButton = new controls.ButtonControl('#import-area .menu-dropdown-items', {
         text: "Importar",
         onChange: () => {
             addGlyphGroup(importData);
         },
     });
 
-    controllers.categRankComboBox = new controls.ComboBoxControl('#options-area', {
+    controllers.categRankComboBox = new controls.ComboBoxControl('#options-area .menu-dropdown-items', {
         labelText: 'Escolha das categorias',
         initValue: 0,
         optionsList: [
@@ -196,7 +196,7 @@ function loadMenu() {
         }
     });
 
-    controllers.categSlider = new controls.SliderControl('#options-area', {
+    controllers.categSlider = new controls.SliderControl('#options-area .menu-dropdown-items', {
         position: 'topright',
         labelText: 'Número de categorias',
         rangeMin: 1,
@@ -212,7 +212,7 @@ function loadMenu() {
         }
     });
 
-    controllers.supportRange = new controls.RangeControl('#options-area', {
+    controllers.supportRange = new controls.RangeControl('#options-area .menu-dropdown-items', {
         labelText: 'Suporte',
         rangeMin: initThreshVal.supportMin,
         rangeMax: initThreshVal.supportMax,
@@ -228,7 +228,7 @@ function loadMenu() {
         }
     });
 
-    controllers.confidenceRange = new controls.RangeControl('#options-area', {
+    controllers.confidenceRange = new controls.RangeControl('#options-area .menu-dropdown-items', {
         position: 'topright',
         labelText: 'Confiança',
         rangeMin: initThreshVal.confidenceMin,
@@ -245,7 +245,7 @@ function loadMenu() {
         }
     });
 
-    controllers.supportRange = new controls.RangeControl('#options-area', {
+    controllers.supportRange = new controls.RangeControl('#options-area .menu-dropdown-items', {
         labelText: 'Lift',
         rangeMin: initThreshVal.liftMin,
         rangeMax: initThreshVal.liftMax,

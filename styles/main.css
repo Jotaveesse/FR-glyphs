@@ -5,16 +5,73 @@ body {
     margin: 0;
 }
 
-#main{
-    display:flex;
-    height:100%;
-    width:100%;
+#main {
+    display: flex;
+    height: 100%;
+    width: 100%;
 }
 
-#settings{
-    height:100%;
-    width:30%;
-    background-color: #bbb;;
+#menu {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    background-color: white;
+    font-family: Helvetica;
+    width: 0px;
+    height: 100%;
+    overflow: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    font-family: 'Roboto', 'Parkinsans','Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    
+}
+
+#menu::-webkit-scrollbar {
+    display: none;
+}
+
+#menu>* {
+    width: 100%;
+}
+
+.menu-dropdown-items{
+   padding: 8px;
+}
+
+#menu>*:first-child .menu-dropdown{
+    border-width: 0px 0px 0px 0px;
+}
+
+.menu-dropdown {
+    position: relative;
+    height: 44px;
+    width: 100%;
+    background-color: white;
+    cursor: pointer;
+    color: #222;
+        border-width: 2px 0px 0px 0px;
+
+    border: 2px solid #444;
+    border-width: 2px 0px 0px 0px;
+
+    box-sizing: border-box;
+    font-weight: 300;
+    font-size: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.menu-dropdown-icon {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23222222' viewBox='0 0 16 16'%3E%3Cpath d='M8 13l-6-6 1.5-1.5L8 10.5l4.5-4.5L14 7z'/%3E%3C/svg%3E");
+    height: 12px;
+    width: 12px;
 }
 
 #map {
@@ -23,12 +80,12 @@ body {
     flex-shrink: 2;
 }
 
-.cluster-icon{
+.cluster-icon {
     opacity: 0.6;
     border: solid 4px black;
     border-radius: 50%
 }
 
-.custom-icon{
+.custom-icon {
     pointer-events: none !important;
 }

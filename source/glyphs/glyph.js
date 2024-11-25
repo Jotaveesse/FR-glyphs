@@ -86,6 +86,7 @@ export class Glyph {
         this.updateFreqItems();
         this.updateRules();
 
+        this.updateDefaultPosition();
         this.updatePosition();
         this.updateProportions();
         this.updateIconSize();
@@ -396,7 +397,7 @@ export class Glyph {
         this.displayItems = [...new Set([...this.displayItems, ...this.group.uniqueValues])];
     }
 
-    updatePosition() {
+    updateDefaultPosition() {
         if (this.rawData != null && this.rawData.length > 0) {
             var avrgLat = 0;
             var avrgLon = 0;
@@ -410,11 +411,13 @@ export class Glyph {
 
             this.lat = avrgLat;
             this.lon = avrgLon;
+        }
+    }
 
-            if (this.marker) {
-                const newLatLng = new L.LatLng(this.lat, this.lon);
-                this.marker.setLatLng(newLatLng);
-            }
+    updatePosition() {
+        if (this.marker) {
+            const newLatLng = new L.LatLng(this.lat, this.lon);
+            this.marker.setLatLng(newLatLng);
         }
     }
 

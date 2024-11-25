@@ -12,13 +12,13 @@
     }
 
     to {
-        width: 296px;
+        width: 316px;
     }
 }
 
 @keyframes retract-width {
     from {
-        width: 296px;
+        width: 316px;
     }
 
     to {
@@ -26,35 +26,18 @@
     }
 }
 
-#settings {
-    display:flex;
-    flex-direction:column;
-    box-sizing: border-box;
-    background-color: #bbd;
-    font-family: Helvetica;
-    width: 0px;
-    height:100%;
-    overflow:scroll;
-}
-
-#settings>* {
-    padding: 8px;
-    width: 280px;
-}
-
 .control {
     background-color: white;
     border-radius: 0px;
-    padding: 6px 12px;
+    padding: 6px 16px;
     margin-bottom: 0px;
     text-align: center;
 }
 
 .control label,
 .control .range-label {
-    font-family: Helvetica;
-    font-size: 12px;
-    font-weight: bold;
+    font-size: 13px;
+    font-weight: 400;
     display: block;
     padding: 0px 0px 4px 0px;
 }
@@ -71,7 +54,6 @@
 
 .map-button button:hover {
     background-color: #f4f4f4;
-
 }
 
 .map-button button {
@@ -84,20 +66,29 @@
     border-radius: 2px;
 }
 
-.file-control input::file-selector-button {
-    border: none;
-    padding: 2px 4px;
-    background-color: #7AC;
-    color: white;
-    font-weight: bold;
-    font-size: 14px;
-    border-radius: 4px;
+.file-control input {
     cursor: pointer;
+    font-weight: 300;
+    font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.combobox-container {
-    width: 100%;
-    cursor: pointer;
+.file-control input::file-selector-button {
+    border: none;
+    padding: 4px 6px;
+    background-color: white;
+    color: black;
+    font-weight: 300;
+    font-size: 14px;
+    border-radius: 4px;
+
+    border: 1px solid #444;
+    border-radius: 4px;
+
+    font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.file-control input::file-selector-button:hover {
+    background-color: #f2f2f2;
 }
 
 .slider-control input[type="range"] {
@@ -105,8 +96,8 @@
     -webkit-appearance: none;
     appearance: none;
     height: 12px;
-    background: #ddd;
-    outline: none;
+    background: white;
+    outline: 1px #444 solid;
     border-radius: 12px;
     margin: 0px;
     overflow: hidden;
@@ -116,12 +107,13 @@
     -webkit-appearance: none;
     appearance: none;
     width: 32px;
-    height: 20px;
-    background: #7AC;
+    height: 90px;
+    background: #444;
     border: none;
-    border-radius: 50%;
+    border-radius: 50% 50% 0 0;
     cursor: pointer;
     position: relative;
+    outline: 1px #444 solid;
 }
 
 .slider-control input[type="range"]::-moz-range-thumb {
@@ -129,11 +121,12 @@
     appearance: none;
     width: 32px;
     height: 90px;
-    background: #7AC;
+    background: #444;
     border: none;
     border-radius: 50% 50% 0 0;
     cursor: pointer;
     position: relative;
+    outline: 1px #444 solid;
 }
 
 .slider-control {
@@ -157,8 +150,10 @@
     left: 50%;
     box-sizing: border-box;
     transform: translate(calc(-50% + 16px), calc(50% - 8px));
-    background: #7AC;
+    background: #444;
     color: white;
+    outline: 1px #444 solid;
+
     padding: 2px 5px;
     border-radius: 0px 0px 8px 8px;
     text-align: center;
@@ -167,7 +162,7 @@
     align-items: end;
     display: flex;
     justify-content: center;
-    z-index:-1;
+    z-index: -1;
 }
 
 .slider-label {
@@ -179,8 +174,6 @@
 }
 
 .range-control {
-    padding-left: 0px;
-    padding-right: 0px;
     box-sizing: border-box;
 }
 
@@ -193,15 +186,17 @@
 .range-tooltip {
     display: block;
     text-align: center;
-    margin-bottom: 4px;
+    margin-top: 4px;
     font-size: 12px;
     font-weight: bold;
 }
 
 .range-slider-container {
-    background-color: #eee;
-    width: 80%;
+    background-color: white;
+    width: 100%;
     height: 12px;
+    outline: 1px #444 solid;
+
     margin: auto;
     position: relative;
     border-radius: 12px;
@@ -209,7 +204,8 @@
 
 .range-slider {
     position: absolute;
-    background: #7AC;
+    background: #444;
+    outline: 1px #444 solid;
     height: 100%;
     width: 58px;
     top: 0px;
@@ -221,10 +217,8 @@
     height: 16px;
     width: 16px;
     top: -2px;
-    background: rgb(255, 255, 255);
-    border-width: 1px;
-    border: solid;
-    border-color: #7AC;
+    background: white;
+    border: 2px solid #444;
 
 
     /* Support for bootstrap */
@@ -247,43 +241,47 @@
     border-radius: 100%
 }
 
-.play-container .button {
-    fill-opacity: 0.0;
-    stroke: #AAB;
-    stroke-width: 1.6;
-}
-
-.play-container .play,
-.play-container .stop {
-    fill: #BCE;
-    stroke: #AAB;
-    stroke-width: 1;
-}
-
 .combobox-container {
-    text-align: center;
-    background: #7AC;
+    width: 100%;
+    height: 30px;
+    padding: 4px 8px;
+    background: white;
+    cursor: pointer;
+
     border: none;
     border-radius: 4px;
-    padding: 4px 8px;
-    color: white;
-    font-weight: 900;
+    outline: 1px #444 solid;
+
+    color: #222;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 400;
+    font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-sizing: border-box;
+}
+
+.combobox-container:hover {
+    background-color: #f2f2f2;
 }
 
 select.combobox-container option {
     background-color: #ffffff;
-    color: #000;
     transform: translate(10px, 0);
 }
 
 .button-control button {
-    font-family: inherit;
-    font-weight: bold;
     font-size: 16px;
-    border-radius: 8px;
-    border: none;
-    background-color: #7AC;
-    color: white;
+    border: 1px solid #444;
+    border-radius: 4px;
+    font-weight: 300;
+    background-color: white;
+    color: #222;
     padding: 8px 12px;
     cursor: pointer;
+
+    font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.button-control button:hover {
+    background-color: #f2f2f2;
 }

@@ -92,40 +92,40 @@ export class GlyphGroup {
 
     transformModels(models) {
         const transformed = {};
-    
+
         // Iterate over each model
         for (let modelInd = 0; modelInd < models.length; modelInd++) {
             const model = models[modelInd];
-    
+
             // Iterate over each group in the model
             for (const group in model) {
                 const groupData = model[group];
-    
+
                 // Initialize the group in the transformed object if not already
                 if (!transformed[group]) {
                     transformed[group] = [];
                 }
-    
+
                 // Iterate over each category within the group
                 for (const categ in groupData) {
                     const categoryData = groupData[categ];
-    
+
                     // Initialize the category in the group if not already
                     if (!transformed[group][modelInd]) {
                         transformed[group][modelInd] = {};
                     }
-    
+
                     // Push the model data into the new structure
                     // Ensure the category array contains arrays of the data per modelInd
                     transformed[group][modelInd][categ] = categoryData;
                 }
             }
         }
-    
+
         return transformed;
     }
 
-    remove(){
+    remove() {
         for (const groupKey in this.groupedData) {
             const glyph = this.glyphs[groupKey];
             glyph.removeMarker();
@@ -143,7 +143,7 @@ export class GlyphGroup {
         console.log("===== Starting Update =====")
         const startTime = performance.now();
 
-         this.groupByColumn();
+        this.groupByColumn();
 
         this.getCoords();
 
@@ -152,7 +152,7 @@ export class GlyphGroup {
         this.getFrequencies();
 
         this.addSurpriseModel(models.getAverageModel);
-        
+
         this.setTotals(this.freqData);
         var transformedModels = this.transformModels(this.surpriseModels);
 
@@ -334,16 +334,18 @@ export class GlyphGroup {
         this.groupedData = {};
         this.groupNames = [];
 
-        //divide os dados em provincias e cria as colunas de coordenadas
+        //divide os dados em grupos e cria as colunas de coordenadas
         this.origData.forEach(entry => {
             var group = entry[this.groupColumn];
 
-            if (this.groupedData[group] == undefined) {
-                this.groupedData[group] = []
-                this.groupNames.push(group);
-            }
+            if (group) {
+                if (this.groupedData[group] == undefined) {
+                    this.groupedData[group] = []
+                    this.groupNames.push(group);
+                }
 
-            this.groupedData[group].push(entry);
+                this.groupedData[group].push(entry);
+            }
         });
     }
 
@@ -425,19 +427,19 @@ export class GlyphGroup {
         this.surpriseModels.push(model);
     }
 
-    getAllSurprises(){
+    getAllSurprises() {
         const allSuprises = {};
         for (const groupName of this.groupNames) {
-            allSuprises[groupName]=this.glyphs[groupName].surprise.surprises;
+            allSuprises[groupName] = this.glyphs[groupName].surprise.surprises;
         }
 
         return allSuprises;
     }
 
-    getAllFilteredRules(){
+    getAllFilteredRules() {
         const allRules = {};
         for (const groupName of this.groupNames) {
-            allRules[groupName]=this.glyphs[groupName].filteredRules;
+            allRules[groupName] = this.glyphs[groupName].filteredRules;
         }
 
         return allRules;
