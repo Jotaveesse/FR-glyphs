@@ -118,7 +118,63 @@ function loadMenu() {
 
     menuButton.addTo(leafletMap);
 
-    controllers.fileInput = new controls.FileInputControl('#import-area .menu-dropdown-items', {
+    controllers.importAreaAccordion = new controls.MenuAccordionControl('#import-area', {
+        text: 'Importar',
+        insertBefore:'#import-area .menu-accordion-items',
+        onChange: async (self) => {
+            if(self.opened){
+                self.opened = false;
+            }
+            else{
+                self.opened = true;
+            }
+
+            const accordionIcon = d3.select('#import-area .menu-accordion-icon');
+            accordionIcon.classed('upside-down', self.opened);
+
+            const accordion = d3.select('#import-area .menu-accordion-items');
+            accordion.classed('collapsed', !self.opened);
+        },
+    });
+
+    controllers.optionsAreaAccordion = new controls.MenuAccordionControl('#options-area', {
+        text: 'Configurações',
+        insertBefore:'#options-area .menu-accordion-items',
+        onChange: async (self) => {
+            if(self.opened){
+                self.opened = false;
+            }
+            else{
+                self.opened = true;
+            }
+
+            const accordionIcon = d3.select('#options-area .menu-accordion-icon');
+            accordionIcon.classed('upside-down', self.opened);
+            const accordion = d3.select('#options-area .menu-accordion-items');
+            accordion.classed('collapsed', !self.opened);
+        },
+    });
+
+    controllers.optionsAreaAccordion = new controls.MenuAccordionControl('#compare-area', {
+        text: 'Comparar',
+        insertBefore:'#compare-area .menu-accordion-items',
+        onChange: async (self) => {
+            if(self.opened){
+                self.opened = false;
+            }
+            else{
+                self.opened = true;
+            }
+
+            const accordionIcon = d3.select('#compare-area .menu-accordion-icon');
+            accordionIcon.classed('upside-down', self.opened);
+
+            const accordion = d3.select('#compare-area .menu-accordion-items');
+            accordion.classed('collapsed', !self.opened);
+        },
+    });
+
+    controllers.fileInput = new controls.FileInputControl('#import-area .menu-accordion-items', {
         labelText: 'Escolha um arquivo CSV para importar',
         type: ".csv",
 
@@ -128,32 +184,8 @@ function loadMenu() {
             loadOptions(readFile);
         },
     });
-
-    controllers.groupComboBox = new controls.ComboBoxControl('#import-area .menu-dropdown-items', {
-        labelText: 'Coluna de Agrupamento',
-        optionsList: [],
-        onChange: (value) => {
-            importData.groupColumn = value;
-        },
-    });
-
-    controllers.latComboBox = new controls.ComboBoxControl('#import-area .menu-dropdown-items', {
-        labelText: 'Coluna da Latitude',
-        optionsList: [],
-        onChange: (value) => {
-            importData.latColumn = value;
-        },
-    });
-
-    controllers.lonComboBox = new controls.ComboBoxControl('#import-area .menu-dropdown-items', {
-        labelText: 'Coluna da Longitude',
-        optionsList: [],
-        onChange: (value) => {
-            importData.lonColumn = value;
-        },
-    });
-
-    controllers.chosenMultiBox = new controls.MultiBoxControl('#import-area .menu-dropdown-items', {
+    
+    controllers.chosenMultiBox = new controls.MultiBoxControl('#import-area .menu-accordion-items', {
         data: [],
         labelText: 'Colunas escolhidas',
         placeholder: 'Escolha as colunas',
@@ -171,14 +203,38 @@ function loadMenu() {
         }
     });
 
-    controllers.importButton = new controls.ButtonControl('#import-area .menu-dropdown-items', {
+    controllers.groupComboBox = new controls.ComboBoxControl('#import-area .menu-accordion-items', {
+        labelText: 'Coluna de Agrupamento',
+        optionsList: [],
+        onChange: (value) => {
+            importData.groupColumn = value;
+        },
+    });
+
+    controllers.latComboBox = new controls.ComboBoxControl('#import-area .menu-accordion-items', {
+        labelText: 'Coluna da Latitude',
+        optionsList: [],
+        onChange: (value) => {
+            importData.latColumn = value;
+        },
+    });
+
+    controllers.lonComboBox = new controls.ComboBoxControl('#import-area .menu-accordion-items', {
+        labelText: 'Coluna da Longitude',
+        optionsList: [],
+        onChange: (value) => {
+            importData.lonColumn = value;
+        },
+    });
+
+    controllers.importButton = new controls.ButtonControl('#import-area .menu-accordion-items', {
         text: "Importar",
         onChange: () => {
             addGlyphGroup(importData);
         },
     });
 
-    controllers.categRankComboBox = new controls.ComboBoxControl('#options-area .menu-dropdown-items', {
+    controllers.categRankComboBox = new controls.ComboBoxControl('#options-area .menu-accordion-items', {
         labelText: 'Escolha das categorias',
         initValue: 0,
         optionsList: [
@@ -196,7 +252,7 @@ function loadMenu() {
         }
     });
 
-    controllers.categSlider = new controls.SliderControl('#options-area .menu-dropdown-items', {
+    controllers.categSlider = new controls.SliderControl('#options-area .menu-accordion-items', {
         position: 'topright',
         labelText: 'Número de categorias',
         rangeMin: 1,
@@ -212,7 +268,7 @@ function loadMenu() {
         }
     });
 
-    controllers.supportRange = new controls.RangeControl('#options-area .menu-dropdown-items', {
+    controllers.supportRange = new controls.RangeControl('#options-area .menu-accordion-items', {
         labelText: 'Suporte',
         rangeMin: initThreshVal.supportMin,
         rangeMax: initThreshVal.supportMax,
@@ -228,7 +284,7 @@ function loadMenu() {
         }
     });
 
-    controllers.confidenceRange = new controls.RangeControl('#options-area .menu-dropdown-items', {
+    controllers.confidenceRange = new controls.RangeControl('#options-area .menu-accordion-items', {
         position: 'topright',
         labelText: 'Confiança',
         rangeMin: initThreshVal.confidenceMin,
@@ -245,7 +301,7 @@ function loadMenu() {
         }
     });
 
-    controllers.supportRange = new controls.RangeControl('#options-area .menu-dropdown-items', {
+    controllers.supportRange = new controls.RangeControl('#options-area .menu-accordion-items', {
         labelText: 'Lift',
         rangeMin: initThreshVal.liftMin,
         rangeMax: initThreshVal.liftMax,

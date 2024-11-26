@@ -278,6 +278,7 @@ select.combobox-container option {
     color: #222;
     padding: 8px 12px;
     cursor: pointer;
+    box-shadow: 1px 1px;
 
     font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }

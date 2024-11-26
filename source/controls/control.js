@@ -14,7 +14,15 @@ export class Control {
     init() {
         const container = d3.select(this.selector);
 
-        this.wrapper = container.append('div').attr('class', 'control');
+        if (this.options.insertBefore) {
+            const nextSib = d3.select(this.options.insertBefore);
+            console.log(nextSib.node())
+            this.wrapper = d3.select(container.node().insertBefore(d3.create("div").node(), nextSib.node()));
+            this.wrapper.attr('class', 'control');
+        }
+        else
+            this.wrapper = container.append('div').attr('class', 'control');
+
         if (this.options.labelText)
             this.wrapper
                 .append('label')

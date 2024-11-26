@@ -1,3 +1,13 @@
+@keyframes open-anim {
+    from {
+        max-height: 0px;
+    }
+
+    to {
+        max-height: 400px;
+    }
+}
+
 html,
 body {
     height: 100%;
@@ -11,6 +21,10 @@ body {
     width: 100%;
 }
 
+.collapsed {
+    height: 0 !important;
+}
+
 #menu {
     display: flex;
     flex-direction: column;
@@ -22,8 +36,7 @@ body {
     overflow: scroll;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    font-family: 'Roboto', 'Parkinsans','Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    
+    font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 #menu::-webkit-scrollbar {
@@ -31,28 +44,30 @@ body {
 }
 
 #menu>* {
-    width: 100%;
+    width: 316px;
+    border: 2px solid #444;
+    border-width: 0px 0px 2px 0px;
 }
 
-.menu-dropdown-items{
-   padding: 8px;
+.menu-accordion-items {
+    padding: 0px 8px;
+    overflow-y: hidden;
+    transition: height 0.8s;
+    height: calc-size(auto, size)
 }
 
-#menu>*:first-child .menu-dropdown{
+#menu>*:first-child .menu-dropdown {
     border-width: 0px 0px 0px 0px;
 }
 
-.menu-dropdown {
+.menu-accordion {
     position: relative;
     height: 44px;
     width: 100%;
     background-color: white;
     cursor: pointer;
     color: #222;
-        border-width: 2px 0px 0px 0px;
 
-    border: 2px solid #444;
-    border-width: 2px 0px 0px 0px;
 
     box-sizing: border-box;
     font-weight: 300;
@@ -62,16 +77,24 @@ body {
     align-items: center;
 }
 
-.menu-dropdown-icon {
+.menu-accordion:hover {
+    background-color: #f2f2f2;
+}
+
+.upside-down{
+    transform: translateY(-50%) rotate(180deg) !important;
+}
+
+.menu-accordion-icon {
     content: "";
     display: block;
     position: absolute;
     top: 50%;
     right: 15px;
-    transform: translateY(-50%);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23222222' viewBox='0 0 16 16'%3E%3Cpath d='M8 13l-6-6 1.5-1.5L8 10.5l4.5-4.5L14 7z'/%3E%3C/svg%3E");
-    height: 12px;
-    width: 12px;
+    height: 16px;
+    width: 16px;
+    transform: translateY(-50%) rotate(0deg);
 }
 
 #map {
