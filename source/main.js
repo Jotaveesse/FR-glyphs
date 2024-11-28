@@ -78,8 +78,8 @@ function toggleMenu() {
 export function loadMap() {
     leafletMap = L.map('map').setView([-15.793889, -47.882778], 4); // brasilia
 
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.{ext}', {
-        ext: 'png'
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}{r}.png', {
+        style: 'light_all'
     }).addTo(leafletMap);
 
     L.control.scale().addTo(leafletMap);
