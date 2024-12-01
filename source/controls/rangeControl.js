@@ -7,6 +7,12 @@ export class RangeControl extends Control {
         this.addSlider();
     }
 
+    reload(){
+        this.wrapper.node().innerHTML="";
+        this.createControl();
+        this.addSlider();
+    }
+
     createControl() {
         const div = this.wrapper;
 
@@ -27,6 +33,7 @@ export class RangeControl extends Control {
     }
 
     addSlider() {
+        this.slider.node().innerHTML = "";
         const slider = createD3RangeSlider(this.options.rangeMin, this.options.rangeMax, this.options.rangeStep, this.slider);
 
         slider.onChange(function (newRange) {
@@ -46,7 +53,12 @@ export class RangeControl extends Control {
     }
 
     updateToolTip() {
-        this.tooltip.text(this.range.begin + " - " + this.range.end);
+        if (this.options.updateTooltip) {
+            this.options.updateTooltip(this.tooltip, this.range);
+        }
+        else{
+            this.tooltip.text(this.range.begin + " - " + this.range.end);
+        }
     }
 
     update() {
@@ -78,7 +90,7 @@ export class RangeControl extends Control {
  * @param containerSelector A CSS selection indicating exactly one element in the document
  * @returns {{range: function(number, number), onChange: function(function)}}
  */
-function createD3RangeSlider(rangeMin, rangeMax, rangeStep, container, playButton) {
+export function createD3RangeSlider(rangeMin, rangeMax, rangeStep, container, playButton) {
     "use strict";
 
     if (container instanceof Element)

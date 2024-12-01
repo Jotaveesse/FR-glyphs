@@ -2,6 +2,8 @@ import { GlyphGroup } from './glyphs/glyphGroup.js';
 import * as common from './common.js';
 import * as controls from './controls/index.js';
 
+dayjs.extend(dayjs_plugin_customParseFormat);
+
 const controllers = {};
 
 const initThreshVal = {
@@ -20,7 +22,9 @@ var importData = {
     chosenColumns: new Set(),
     groupColumn: null,
     latColumn: null,
-    lonColumn: null
+    lonColumn: null,
+    dateColumn: null,
+    dateFormat: null,
 };
 
 var leafletMap = null;
@@ -32,6 +36,10 @@ window.onload = function () {
     loadMenu();
 }
 
+window.controllers = controllers;
+window.importData = importData;
+window.glyphGroups = glyphGroups;
+
 function addGlyphGroup() {
     for (const groupKey in glyphGroups) {
         const group = glyphGroups[groupKey];
@@ -39,24 +47,26 @@ function addGlyphGroup() {
         group.remove();
     }
 
-    var glyphData = new GlyphGroup(importData.data, leafletMap);
+    var glyphGroup = new GlyphGroup(importData.data, leafletMap);
 
-    glyphData.setGroupColumn(importData.groupColumn);
-    glyphData.setCoordsColumns(importData.latColumn, importData.lonColumn);
-    glyphData.setChosenColumns([...importData.chosenColumns]);
+    glyphGroup.setGroupColumn(importData.groupColumn);
+    glyphGroup.setDateColumn(importData.dateColumn);
+    glyphGroup.setCoordsColumns(importData.latColumn, importData.lonColumn);
+    glyphGroup.setDateFormat(importData.dateFormat);
+    glyphGroup.setChosenColumns([...importData.chosenColumns]);
 
-    glyphData.setSupport(initThreshVal.supportMin, initThreshVal.supportMax);
-    glyphData.setConfidence(initThreshVal.confidenceMin, initThreshVal.confidenceMax);
-    glyphData.setLift(initThreshVal.liftMin, initThreshVal.liftMax);
-    glyphData.setMaxCategories(initThreshVal.maxCategs);
+    glyphGroup.setSupport(initThreshVal.supportMin, initThreshVal.supportMax);
+    glyphGroup.setConfidence(initThreshVal.confidenceMin, initThreshVal.confidenceMax);
+    glyphGroup.setLift(initThreshVal.liftMin, initThreshVal.liftMax);
+    glyphGroup.setMaxCategories(initThreshVal.maxCategs);
 
-    glyphData.updateAll();
+    glyphGroup.updateAll();
 
-    console.log("glyph group", glyphData)
+    console.log("glyph group", glyphGroup)
 
-    glyphGroups[importData.name] = glyphData;
-    const firstKey = Object.keys(glyphGroups.crimes.glyphs)[0];
-    const firstGlyph = glyphGroups.crimes.glyphs[firstKey];
+    glyphGroups[importData.name] = glyphGroup;
+    const firstKey = Object.keys(glyphGroup.glyphs)[0];
+    const firstGlyph = glyphGroup.glyphs[firstKey];
     leafletMap.panTo([firstGlyph.lat, firstGlyph.lon]);
 }
 
@@ -89,19 +99,19 @@ export function loadMap() {
     leafletMap.on('zoomend', function () {
         const zoomLevel = leafletMap.getZoom();
 
-        for (const groupKey in  glyphGroups) {
+        for (const groupKey in glyphGroups) {
             const group = glyphGroups[groupKey];
             for (const glyphKey in group.glyphs) {
                 const glyph = group.glyphs[glyphKey];
-    
+
                 glyph.hoverEnd();
             }
-    
+
             group.clusterMarkers.forEach(function (marker) {
                 const glyph = marker.glyph;
-    
+
                 glyph.hoverEnd();
-    
+
             });
         }
     });
@@ -110,7 +120,7 @@ export function loadMap() {
 function loadMenu() {
     const menuButton = new L.Control.Button({
         position: 'topleft',
-        text:'≡',
+        text: '≡',
         onChange: function () {
             toggleMenu()
         }
@@ -120,12 +130,12 @@ function loadMenu() {
 
     controllers.importAreaAccordion = new controls.MenuAccordionControl('#import-area', {
         text: 'Importar',
-        insertBefore:'#import-area .menu-accordion-items',
+        insertBefore: '#import-area .menu-accordion-items',
         onChange: async (self) => {
-            if(self.opened){
+            if (self.opened) {
                 self.opened = false;
             }
-            else{
+            else {
                 self.opened = true;
             }
 
@@ -138,13 +148,13 @@ function loadMenu() {
     });
 
     controllers.optionsAreaAccordion = new controls.MenuAccordionControl('#options-area', {
-        text: 'Configurações',
-        insertBefore:'#options-area .menu-accordion-items',
+        text: 'Filtros',
+        insertBefore: '#options-area .menu-accordion-items',
         onChange: async (self) => {
-            if(self.opened){
+            if (self.opened) {
                 self.opened = false;
             }
-            else{
+            else {
                 self.opened = true;
             }
 
@@ -157,12 +167,12 @@ function loadMenu() {
 
     controllers.optionsAreaAccordion = new controls.MenuAccordionControl('#compare-area', {
         text: 'Comparar',
-        insertBefore:'#compare-area .menu-accordion-items',
+        insertBefore: '#compare-area .menu-accordion-items',
         onChange: async (self) => {
-            if(self.opened){
+            if (self.opened) {
                 self.opened = false;
             }
-            else{
+            else {
                 self.opened = true;
             }
 
@@ -184,7 +194,7 @@ function loadMenu() {
             loadOptions(readFile);
         },
     });
-    
+
     controllers.chosenMultiBox = new controls.MultiBoxControl('#import-area .menu-accordion-items', {
         data: [],
         labelText: 'Colunas escolhidas',
@@ -227,10 +237,33 @@ function loadMenu() {
         },
     });
 
+    controllers.dateComboBox = new controls.ComboBoxControl('#import-area .menu-accordion-items', {
+        labelText: 'Coluna das Datas',
+        optionsList: [],
+        onChange: (value) => {
+            importData.dateColumn = value == "" ? null : value;
+            if (importData.dateColumn == null) {
+                controllers.dateInput.hide();
+            }
+            else {
+                controllers.dateInput.show();
+            }
+        },
+    });
+
+    controllers.dateInput = new controls.TextInputControl('#import-area .menu-accordion-items', {
+        labelText: 'Formato da Data',
+        initText: "DD/MM/YYYY",
+        optionsList: [],
+        onChange: (value) => {
+            importData.dateFormat = value;
+        },
+    });
+
     controllers.importButton = new controls.ButtonControl('#import-area .menu-accordion-items', {
         text: "Importar",
         onChange: () => {
-            addGlyphGroup(importData);
+            importFile();
         },
     });
 
@@ -263,7 +296,7 @@ function loadMenu() {
             for (const key in glyphGroups) {
                 const glyph = glyphGroups[key];
                 glyph.setMaxCategories(value);
-                // glyph.update();
+                glyph.update();
             }
         }
     });
@@ -301,7 +334,7 @@ function loadMenu() {
         }
     });
 
-    controllers.supportRange = new controls.RangeControl('#options-area .menu-accordion-items', {
+    controllers.liftRange = new controls.RangeControl('#options-area .menu-accordion-items', {
         labelText: 'Lift',
         rangeMin: initThreshVal.liftMin,
         rangeMax: initThreshVal.liftMax,
@@ -316,6 +349,53 @@ function loadMenu() {
             }
         }
     });
+
+    controllers.dateRange = new controls.DateRangeControl('#options-area .menu-accordion-items', {
+        labelText: 'Data',
+        rangeMin: new Date("1/1/2000"),
+        rangeMax: new Date(),
+        rangeStep: 1,
+        rangeTimeUnit: controls.DateRangeControl.TimeUnit.HOURS,
+        rangeInitMin: new Date("1/1/2000"),
+        rangeInitMax: new Date(),
+        onChange: function (range) {
+            for (const key in glyphGroups) {
+                const glyphGroup = glyphGroups[key];
+                glyphGroup.setDateRange(range.begin, range.end);
+                glyphGroup.update();
+            }
+        }
+    });
+}
+
+function importFile() {
+    addGlyphGroup();
+
+    if (importData.dateColumn != null) {
+        var minDate = new Date(864000000000000);
+        var maxDate = new Date(0);
+
+        for (let i = 0; i < importData.data.length; i++) {
+            const date = dayjs(importData.data[i][importData.dateColumn], importData.dateFormat).toDate();
+
+            if (date < minDate)
+                minDate = date;
+            if (date > maxDate) {
+                maxDate = date;
+            }
+        }
+
+        controllers.dateRange.options.rangeInitMin = minDate;
+        controllers.dateRange.options.rangeInitMax = maxDate;
+        controllers.dateRange.options.rangeMin = minDate;
+        controllers.dateRange.options.rangeMax = maxDate;
+        controllers.dateRange.show();
+        controllers.dateRange.reload();
+    }
+    else {
+        controllers.dateRange.hide();
+    }
+
 }
 
 function loadOptions(data) {
@@ -325,7 +405,9 @@ function loadOptions(data) {
         chosenColumns: new Set(),
         groupColumn: null,
         latColumn: null,
-        lonColumn: null
+        lonColumn: null,
+        dateColumn: null,
+        dateFormat: "DD/MM/YYYY",
     };
 
     const newOptions = [];
@@ -339,14 +421,25 @@ function loadOptions(data) {
     controllers.groupComboBox.removeOptions();
     controllers.latComboBox.removeOptions();
     controllers.lonComboBox.removeOptions();
+    controllers.dateComboBox.removeOptions();
 
     controllers.groupComboBox.addOptions(newOptions);
     controllers.latComboBox.addOptions(newOptions);
     controllers.lonComboBox.addOptions(newOptions);
     controllers.chosenMultiBox.addOptions(newOptions);
 
+    newOptions.unshift({ value: "", text: "Sem data" })
+    controllers.dateComboBox.addOptions(newOptions);
+
     const latColumn = common.findMostSimilar("latitude", controllers.latComboBox.optionsList);
     controllers.latComboBox.setValue(latColumn);
     const lonColumn = common.findMostSimilar("longitude", controllers.lonComboBox.optionsList);
     controllers.lonComboBox.setValue(lonColumn);
+    const dateColumn = common.findMostSimilar("date", controllers.lonComboBox.optionsList);
+    const dateSimil = common.getSimilarity(dateColumn, "date")
+    if (dateSimil > 0.5)
+        controllers.dateComboBox.setValue(dateColumn);
+    else
+        controllers.dateComboBox.setValue("");
+
 }

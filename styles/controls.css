@@ -36,7 +36,7 @@
 
 .control label,
 .control .range-label {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 400;
     display: block;
     padding: 0px 0px 4px 0px;
@@ -68,6 +68,7 @@
 
 .file-control input {
     cursor: pointer;
+    width: 100%;
     font-weight: 300;
     font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -89,6 +90,24 @@
 
 .file-control input::file-selector-button:hover {
     background-color: #f2f2f2;
+}
+
+.input-container{
+    width: 100%;
+    height: 30px;
+    padding: 4px 8px;
+    background: white;
+
+    border: none;
+    border-radius: 4px;
+    outline: 1px #444 solid;
+
+    color: #222;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 400;
+    font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-sizing: border-box;
 }
 
 .slider-control input[type="range"] {

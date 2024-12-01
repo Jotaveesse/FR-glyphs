@@ -4,5 +4,7 @@ export * from './fileInputControl.js';
 export * from './mapButtonControl.js';
 export * from './sliderControl.js';
 export * from './rangeControl.js';
+export * from './dateRangeControl.js';
 export * from './multiBoxControl.js';
+export * from './textInputControl.js';
 export * from './menuAccordionControl.js';

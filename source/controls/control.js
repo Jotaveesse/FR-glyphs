@@ -16,7 +16,7 @@ export class Control {
 
         if (this.options.insertBefore) {
             const nextSib = d3.select(this.options.insertBefore);
-            console.log(nextSib.node())
+
             this.wrapper = d3.select(container.node().insertBefore(d3.create("div").node(), nextSib.node()));
             this.wrapper.attr('class', 'control');
         }
@@ -40,6 +40,30 @@ export class Control {
     update() {
         if (this.options.onChange) {
             this.options.onChange(this.value);
+        }
+    }
+
+    reload() {
+        this.wrapper.node().innerHTML = "";
+        this.createControl();
+    }
+
+    show() {
+        this.wrapper.style("display", "");
+    }
+
+    hide() {
+        this.wrapper.style("display", "none");
+    }
+
+    toggleShow() {
+        const display = this.wrapper.style("display");
+
+        if (display != "none") {
+            this.wrapper.style("display", "none");
+        }
+        else {
+            this.wrapper.style("display", "");
         }
     }
 }

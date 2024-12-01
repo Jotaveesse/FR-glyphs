@@ -19,6 +19,10 @@ export class GlyphGroup {
         this.displayMethod = 0;
         this.minLift = 0;
         this.maxLift = 3;
+        this.startDate = new Date(0);
+        this.endDate = new Date(864000000000000);
+        this.dateFormat = "DD/MM/YYYY, HH:mm:ss";
+
         this.glyphs = [];
         this.glyphSize = 150;
         this.glyphHoverSize = 450;
@@ -93,30 +97,23 @@ export class GlyphGroup {
     transformModels(models) {
         const transformed = {};
 
-        // Iterate over each model
         for (let modelInd = 0; modelInd < models.length; modelInd++) {
             const model = models[modelInd];
 
-            // Iterate over each group in the model
             for (const group in model) {
                 const groupData = model[group];
 
-                // Initialize the group in the transformed object if not already
                 if (!transformed[group]) {
                     transformed[group] = [];
                 }
 
-                // Iterate over each category within the group
                 for (const categ in groupData) {
                     const categoryData = groupData[categ];
 
-                    // Initialize the category in the group if not already
                     if (!transformed[group][modelInd]) {
                         transformed[group][modelInd] = {};
                     }
 
-                    // Push the model data into the new structure
-                    // Ensure the category array contains arrays of the data per modelInd
                     transformed[group][modelInd][categ] = categoryData;
                 }
             }
@@ -135,6 +132,8 @@ export class GlyphGroup {
             const glyph = marker.glyph;
             glyph.removeMarker();
         });
+
+        this.clusterMarkers=[];
 
         this.markers.clearLayers();
     }
@@ -172,6 +171,9 @@ export class GlyphGroup {
             glyph.setMaxCategories(this.maxCategories);
             glyph.setModels(transformedModels[groupKey]);
             glyph.setCategSums(this.categFreq);
+            glyph.setDateFormat(this.dateFormat);
+            glyph.setDateColumn(this.dateColumn);
+            glyph.setDateRange(this.startDate, this.endDate);
             glyph.applyUpdates();
 
             this.glyphs[groupKey] = glyph;
@@ -199,10 +201,10 @@ export class GlyphGroup {
             glyph.applyUpdates();
         };
 
-        // this.markers.refreshClusters();
+        this.markers.refreshClusters();
 
         const endTime = performance.now();
-        console.log(`updateAll total time: ${(endTime - startTime).toFixed(2)} ms`);
+        console.log(`update total time: ${(endTime - startTime).toFixed(2)} ms`);
 
         console.log("===== Finished Update =====")
     }
@@ -261,6 +263,14 @@ export class GlyphGroup {
         this.groupColumn = groupColumn;
     }
 
+    setDateColumn(dateColumn) {
+        this.dateColumn = dateColumn;
+
+        for (const groupName of this.groupNames) {
+            this.glyphs[groupName].setDateColumn(dateColumn);
+        }
+    }
+
     setSupport(minSupport, maxSupport = Infinity) {
         this.minSupport = minSupport;
         this.maxSupport = maxSupport;
@@ -311,6 +321,24 @@ export class GlyphGroup {
             glyph.setLift(minLift, maxLift);
 
         });
+    }
+
+    setDateFormat(format) {
+        this.dateFormat = format;
+
+        for (const groupName of this.groupNames) {
+            this.glyphs[groupName].setDateFormat(format);
+        }
+    }
+
+    setDateRange(startDate, endDate) {
+        this.startDate = startDate;
+        this.endDate = endDate;
+
+        for (const groupName of this.groupNames) {
+            this.glyphs[groupName].deferUpdate();
+            this.glyphs[groupName].setDateRange(startDate, endDate);
+        }
     }
 
     setCoordsColumns(latColumn, lonColumn, coordFunct = this.defaultCoords) {

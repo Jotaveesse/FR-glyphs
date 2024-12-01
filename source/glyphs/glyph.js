@@ -10,6 +10,7 @@ export class Glyph {
         this.group = group;
         this.name = name;
         this.itemCount = this.rawData.length;
+        this.displayedCount = 0;
 
         this.size = 400;
         this.hoverSize = 400;
@@ -42,6 +43,10 @@ export class Glyph {
         this.displayItems = [];
         this.displayRules = [];
         this.displaySurprises = [];
+
+        this.startDate = new Date(0);
+        this.endDate = new Date(864000000000000);
+        this.dateFormat = "DD/MM/YYYY, HH:mm:ss";
 
         this.surprise = new Surprise();
 
@@ -80,6 +85,7 @@ export class Glyph {
 
     applyDataChanges() {
         this.updateChosenData();
+
         this.updateSurprise();
 
         this.updateTransTable();
@@ -145,13 +151,12 @@ export class Glyph {
 
     updateIconSize() {
         if (this.marker) {
+            this.hoverIcon.options.iconSize = [this.hoverSize * 2, this.hoverSize * 2];
+            this.hoverIcon.options.iconAnchor = [this.hoverSize, this.hoverSize];
+
             this.icon.options.iconSize = [this.size * 2, this.size * 2];
             this.icon.options.iconAnchor = [this.size, this.size];
             this.marker.setIcon(this.icon);
-
-            this.hoverIcon.options.iconSize = [this.hoverSize * 2, this.hoverSize * 2];
-            this.hoverIcon.options.iconAnchor = [this.hoverSize, this.hoverSize];
-            this.marker.setIcon(this.hoverIcon);
         }
     }
 
@@ -240,12 +245,47 @@ export class Glyph {
         this.surprise.categSums = categSums;
     }
 
-    setCount(count) {
+    setCount(count, displayedCount = null) {
         this.itemCount = count;
+        if (displayedCount != null)
+            this.displayedCount = displayedCount;
+    }
+
+    /**
+     * @param {Date} startDate A data inicial para fitlrar os dados
+     * @param {string} endDate A data final para fitlrar os dados
+     */
+    setDateRange(startDate, endDate) {
+        this.startDate = startDate;
+        this.endDate = endDate;
+
+        this.needsDataUpdate = true
+        this.markForUpdate();
+    }
+
+    /**
+     * @param {string} format Formato da data que será usada
+     */
+    setDateFormat(format) {
+        this.dateFormat = format;
+
+        this.needsDataUpdate = true
+        this.markForUpdate();
+    }
+
+    /**
+     * @param {string} format Formato da data que será usada
+     */
+    setDateColumn(dateColumn) {
+        this.dateColumn = dateColumn;
+
+        this.needsDataUpdate = true
+        this.markForUpdate();
     }
 
     static merge(glyphs) {
         const name = `${glyphs.length}`;
+        var mergedDisplayedCount = 0;
         var mergedCount = 0;
         var newRuleData = null;
         var newSurp = null;
@@ -258,11 +298,13 @@ export class Glyph {
                 newRuleData = newRuleData.mergePatterns(glyph.associations);
                 newSurp = Surprise.merge(glyph.surprise, newSurp);
                 mergedCount += glyph.itemCount;
+                mergedDisplayedCount += glyph.displayedCount;
             }
             else {
                 newRuleData = glyph.associations;
                 newSurp = glyph.surprise;
                 mergedCount = glyph.itemCount;
+                mergedDisplayedCount = glyph.displayedCount;
             }
 
             avrgLat += glyph.lat;
@@ -277,7 +319,7 @@ export class Glyph {
 
         const mergedGlyph = new Glyph(name);
         mergedGlyph.deferUpdate();
-        mergedGlyph.setCount(mergedCount);
+        mergedGlyph.setCount(mergedCount, mergedDisplayedCount);
         mergedGlyph.setRuleTree(newRuleData);
         mergedGlyph.setSurprise(newSurp);
         mergedGlyph.setPosition(avrgLat, avrgLon);
@@ -285,19 +327,31 @@ export class Glyph {
         return mergedGlyph;
     }
 
+    stringToDate(dateString) {
+        return dayjs(dateString, this.dateFormat);
+    }
+
     updateChosenData() {
         this.chosenData = [];
-        if (this.rawData != null) {
+        if (this.rawData != null && this.rawData.length > 0) {
+            this.displayedCount = 0;
 
             for (let i = 0; i < this.rawData.length; i++) {
                 const entry = this.rawData[i];
                 this.chosenData[i] = {};
 
-                for (const category in entry) {
-                    if (this.group.chosenColumns.includes(category)) {
-                        const value = entry[category];
+                const passesDateFilter = this.dateColumn == null ||
+                    (this.stringToDate(entry[this.dateColumn]) >= this.startDate &&
+                        this.stringToDate(entry[this.dateColumn]) <= this.endDate);
 
-                        this.chosenData[i][category] = value;
+                if (passesDateFilter) {
+                    this.displayedCount++;
+
+                    for (const category in entry) {
+                        if (this.group.chosenColumns.includes(category)) {
+                            const value = entry[category];
+                            this.chosenData[i][category] = value;
+                        }
                     }
                 }
             }
@@ -417,7 +471,11 @@ export class Glyph {
     updatePosition() {
         if (this.marker) {
             const newLatLng = new L.LatLng(this.lat, this.lon);
-            this.marker.setLatLng(newLatLng);
+
+            const oldLatLng = this.marker.getLatLng();
+
+            if (oldLatLng.lat != newLatLng.lat || oldLatLng.lon != newLatLng.lon)
+                this.marker.setLatLng(newLatLng);
         }
     }
 
@@ -866,18 +924,18 @@ export class Glyph {
 
         this.countText
             .selectAll("text")
-            .data([this.itemCount])
+            .data([this.displayedCount])
             .join(
                 enter => enter.append("text")
                     .call(text => text.append("tspan")
                         .attr("font-weight", 900)
                         .attr("y", "20")
-                        .text(this.itemCount))
+                        .text(this.displayedCount))
                     .attr("stroke", "white")
                     .attr("stroke-width", 2)
                     .attr("paint-order", "stroke"),
                 update => update
-                    .select('tspan').text(this.itemCount),
+                    .select('tspan').text(this.displayedCount),
                 exit => exit.remove()
             );
 
