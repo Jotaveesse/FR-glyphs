@@ -55,10 +55,10 @@ function addGlyphGroup() {
     glyphGroup.setDateFormat(importData.dateFormat);
     glyphGroup.setChosenColumns([...importData.chosenColumns]);
 
-    glyphGroup.setSupport(initThreshVal.supportMin, initThreshVal.supportMax);
-    glyphGroup.setConfidence(initThreshVal.confidenceMin, initThreshVal.confidenceMax);
-    glyphGroup.setLift(initThreshVal.liftMin, initThreshVal.liftMax);
-    glyphGroup.setMaxCategories(initThreshVal.maxCategs);
+    glyphGroup.setSupport(controllers.supportRange.range.begin, controllers.supportRange.range.end);
+    glyphGroup.setConfidence(controllers.confidenceRange.range.begin, controllers.confidenceRange.range.end);
+    glyphGroup.setLift(controllers.liftRange.range.begin, controllers.liftRange.range.end);
+    glyphGroup.setMaxCategories(controllers.categSlider.value);
 
     glyphGroup.updateAll();
 

@@ -31,11 +31,13 @@ export class Glyph {
         this.needsDataUpdate = true;
         this.needsIconUpdate = true;
         this.needsPosUpdate = true;
+        this.needsDateUpdate = true;
         this.needsFilterUpdate = true;
 
         this.chosenData = [];
         this.transTable = [];
         this.frequentItemsets = [];
+        this.dates = [];
 
         this.associations = null;
         this.filteredRules = [];
@@ -83,6 +85,12 @@ export class Glyph {
         this.updateMarker();
     }
 
+    applyDateChanges() {
+        this.updateDates();
+
+        this.applyDataChanges();
+    }
+
     applyDataChanges() {
         this.updateChosenData();
 
@@ -116,7 +124,10 @@ export class Glyph {
     }
 
     applyUpdates() {
-        if (this.needsDataUpdate) {
+        if (this.needsDateUpdate) {
+            this.applyDateChanges();
+        }
+        else if (this.needsDataUpdate) {
             this.applyDataChanges();
         }
         else {
@@ -129,11 +140,13 @@ export class Glyph {
             if (this.needsPosUpdate) {
                 this.updatePosition();
             }
+            
         }
         this.deferredUpdate = false;
         this.needsDataUpdate = false;
         this.needsIconUpdate = false;
         this.needsPosUpdate = false;
+        this.needsDateUpdate = false;
         this.needsFilterUpdate = false;
     }
 
@@ -269,7 +282,7 @@ export class Glyph {
     setDateFormat(format) {
         this.dateFormat = format;
 
-        this.needsDataUpdate = true
+        this.needsDateUpdate = true
         this.markForUpdate();
     }
 
@@ -279,7 +292,7 @@ export class Glyph {
     setDateColumn(dateColumn) {
         this.dateColumn = dateColumn;
 
-        this.needsDataUpdate = true
+        this.needsDateUpdate = true
         this.markForUpdate();
     }
 
@@ -331,6 +344,18 @@ export class Glyph {
         return dayjs(dateString, this.dateFormat);
     }
 
+    updateDates() {
+        this.dates = [];
+
+        if (this.rawData != null && this.rawData.length > 0) {
+            for (let i = 0; i < this.rawData.length; i++) {
+                const entry = this.rawData[i];
+                this.dates[i] = dayjs(entry[this.dateColumn], this.dateFormat);;
+            }
+        }
+
+    }
+
     updateChosenData() {
         this.chosenData = [];
         if (this.rawData != null && this.rawData.length > 0) {
@@ -341,8 +366,8 @@ export class Glyph {
                 this.chosenData[i] = {};
 
                 const passesDateFilter = this.dateColumn == null ||
-                    (this.stringToDate(entry[this.dateColumn]) >= this.startDate &&
-                        this.stringToDate(entry[this.dateColumn]) <= this.endDate);
+                    (this.dates[i] >= this.startDate &&
+                        this.dates[i] <= this.endDate);
 
                 if (passesDateFilter) {
                     this.displayedCount++;
