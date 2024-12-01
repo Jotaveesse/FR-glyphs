@@ -33,6 +33,7 @@ export class SliderControl extends Control {
             .on('input', (event) => this.handleSliderInput(event))
             .on('change', () => this.update());
 
+        this.update();
     }
 
     handleSliderInput(event) {
@@ -55,7 +56,7 @@ export class SliderControl extends Control {
         }
     }
 
-    show(){
+    show() {
         super.show();
         this.updateTooltip();
     }

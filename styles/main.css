@@ -24,6 +24,8 @@ body {
 
 .collapsed {
     height: 0 !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
 }
 
 /* Menu Styles */
@@ -61,7 +63,7 @@ body {
 .menu-accordion-items {
     padding: 0px 8px;
     overflow-y: hidden;
-    transition: height 0.8s;
+    transition: background-color 0.2s, height 0.8s !important;
     height: calc-size(auto, size);
 }
 

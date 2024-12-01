@@ -3,7 +3,7 @@ import { RangeControl, createD3RangeSlider } from "./rangeControl.js"
 export class DateRangeControl extends RangeControl {
     constructor(selector, options) {
         super(selector, options);
-        this.wrapper.classed('range-control', true);
+        this.wrapper.classed('data-range-control', true);
     }
 
     addSlider() {

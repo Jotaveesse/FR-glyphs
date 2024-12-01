@@ -43,7 +43,7 @@ export class RangeControl extends Control {
 
         this.rangeSlider.onTouchEnd(function (newRange) {
             this.range = newRange;
-            this.updateToolTip();
+            this.updateTooltip();
             this.update();
         }.bind(this));
 
@@ -53,8 +53,8 @@ export class RangeControl extends Control {
     }
 
     updateThumb(){
-        this.rangeSlider.range(this.range.begin, this.range.end);
-
+        if(this.rangeSlider)
+            this.rangeSlider.range(this.range.begin, this.range.end);
     }
 
     updateTooltip() {

@@ -258,7 +258,7 @@ function loadMenu() {
 
     controllers.dateInput = new controls.TextInputControl('#import-area .menu-accordion-items', {
         labelText: 'Formato da Data',
-        initText: "DD/MM/YYYY",
+        initText: "DD/MM/YYYY, HH:mm:ss",
         optionsList: [],
         startHidden: true,
         onChange: (value) => {
@@ -297,9 +297,9 @@ function loadMenu() {
         position: 'topright',
         labelText: 'Número de categorias',
         rangeMin: 1,
-        rangeMax: 8,
+        rangeMax: 10,
         rangeStep: 1,
-        initValue: 8,
+        initValue: initThreshVal.maxCategs,
         startHidden: true,
         onChange: function (value) {
             for (const key in glyphGroups) {
@@ -367,7 +367,7 @@ function loadMenu() {
         rangeMin: new Date("1/1/2000"),
         rangeMax: new Date(),
         rangeStep: 1,
-        rangeTimeUnit: controls.DateRangeControl.TimeUnit.HOURS,
+        rangeTimeUnit: controls.DateRangeControl.TimeUnit.MONTHS,
         rangeInitMin: new Date("1/1/2000"),
         rangeInitMax: new Date(),
         startHidden: true,
@@ -381,7 +381,68 @@ function loadMenu() {
     });
 }
 
+function validateImportData() {
+    var valid = true;
+
+    //coluna de grupos
+    const uniqueGroups = [...new Set(
+        importData.data.map(
+            data => data[importData.groupColumn]
+        )
+    )];
+
+    if (uniqueGroups.length > 500) {
+        valid &&= confirm(`A coluna de agrupamento "${importData.groupColumn}" possui ${uniqueGroups.length} valores únicos, cada um irá ser representado por um glifo, isso pode causar travamentos. Quer continuar?`);
+        if (!valid) return valid;
+    }
+
+
+    //colunas escolhidas
+    for (let column of importData.chosenColumns) {
+        const uniqueGroups = [...new Set(
+            importData.data.map(
+                data => data[column]
+            )
+        )];
+
+        if (uniqueGroups.length > 100) {
+            valid &&= confirm(`A coluna "${column}" possui ${uniqueGroups.length} valores únicos. Esse é um número muito alto de categorias e pode causar demora no carregamento dos glifos, certifique-se que escolheu a coluna correta. Quer continuar?`);
+        }
+
+        if (!valid) return valid;
+    }
+
+    //colunas latitude e longitude
+    const latSample = parseFloat(importData.data[0][importData.latColumn]);
+    const lonSample = parseFloat(importData.data[0][importData.lonColumn]);
+
+    if (isNaN(latSample) || latSample < -90 || latSample > 90) {
+        alert("A coluna de latitude está no formato errado.");
+        return false;
+    }
+
+    if (isNaN(lonSample) || lonSample < -180 || latSample > 180) {
+        alert("A coluna de longitude está no formato errado.");
+        return false;
+    }
+
+    //coluna das datas
+    const dateSample = importData.data[0][importData.dateColumn];
+    const validDate = dayjs(dateSample, importData.dateFormat, true).isValid();
+
+    if (importData.dateColumn != null && !validDate) {
+        alert("O formato da data fornecido não corresponde ao valor das datas na coluna das datas.");
+        return false;
+    }
+
+    return valid;
+}
+
 function importFile() {
+    if (!validateImportData()) {
+        return;
+    }
+
     addGlyphGroup();
 
     controllers.categRankComboBox.show();
@@ -425,8 +486,8 @@ function loadOptions(data) {
         groupColumn: null,
         latColumn: null,
         lonColumn: null,
-        dateColumn: null,
-        dateFormat: "DD/MM/YYYY",
+        days: null,
+        dateFormat: "DD/MM/YYYY, HH:mm:ss",
     };
 
     const newOptions = [];

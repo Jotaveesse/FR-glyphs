@@ -259,6 +259,16 @@
     border-radius: 100%;
 }
 
+.data-range-control .EE {
+    right: -16px;
+    border-radius: 0px 100% 100% 0px;
+}
+
+.data-range-control .WW {
+    left: -16px;
+    border-radius: 100% 0px 0px 100%;
+}
+
 /* Combobox */
 .combobox-container {
     width: 100%;
