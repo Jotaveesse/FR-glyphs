@@ -456,7 +456,7 @@ function importFile() {
         var maxDate = new Date(0);
 
         for (let i = 0; i < importData.data.length; i++) {
-            const date = dayjs(importData.data[i][importData.dateColumn], importData.dateFormat).toDate();
+            const date = dayjs(importData.data[i][importData.dateColumn], importData.dateFormat);
 
             if (date < minDate)
                 minDate = date;
@@ -464,7 +464,10 @@ function importFile() {
                 maxDate = date;
             }
         }
-
+        
+        minDate = minDate.toDate();
+        maxDate = maxDate.toDate();
+        
         controllers.dateRange.options.rangeInitMin = minDate;
         controllers.dateRange.options.rangeInitMax = maxDate;
         controllers.dateRange.options.rangeMin = minDate;

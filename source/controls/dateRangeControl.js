@@ -6,9 +6,21 @@ export class DateRangeControl extends RangeControl {
         this.wrapper.classed('data-range-control', true);
     }
 
+    dateDiff(date1, date2, timeUnit) {
+        return Math.ceil(
+            dayjs(date1).diff(
+                dayjs(date2),
+                timeUnit,
+                true
+            )
+        );
+    }
+
     addSlider() {
         this.slider.node().innerHTML = "";
-        const timeUnitsCount = dayjs(this.options.rangeMax).diff(dayjs(this.options.rangeMin), this.options.rangeTimeUnit);
+        const timeUnitsCount = this.dateDiff(this.options.rangeMax,
+            this.options.rangeMin, this.options.rangeTimeUnit);
+
         const slider = createD3RangeSlider(0, timeUnitsCount, this.options.rangeStep, this.slider);
 
         slider.onChange(function (newRange) {
@@ -18,9 +30,9 @@ export class DateRangeControl extends RangeControl {
 
             const end = dayjs(this.options.rangeMin)
                 .add(newRange.end, this.options.rangeTimeUnit)
-                .startOf(this.options.rangeTimeUnit).toDate();
+                .endOf(this.options.rangeTimeUnit).toDate();
 
-            this.range = {begin: begin, end: end};
+            this.range = { begin: begin, end: end };
             this.updateTooltip();
         }.bind(this));
 
@@ -31,15 +43,18 @@ export class DateRangeControl extends RangeControl {
 
             const end = dayjs(this.options.rangeMin)
                 .add(newRange.end, this.options.rangeTimeUnit)
-                .startOf(this.options.rangeTimeUnit).toDate();
+                .endOf(this.options.rangeTimeUnit).toDate();
 
-            this.range = {begin: begin, end: end};
+            this.range = { begin: begin, end: end };
             this.updateTooltip();
             this.update();
         }.bind(this));
 
-        const initDate = dayjs(this.options.rangeInitMin).diff(dayjs(this.options.rangeMin), this.options.rangeTimeUnit);
-        const endDate = dayjs(this.options.rangeInitMax).diff(dayjs(this.options.rangeMin), this.options.rangeTimeUnit);
+        const initDate = this.dateDiff(this.options.rangeInitMin,
+            this.options.rangeMin, this.options.rangeTimeUnit);
+
+        const endDate = this.dateDiff(this.options.rangeInitMax,
+            this.options.rangeMin, this.options.rangeTimeUnit);
 
         slider.range(initDate, endDate);
 
@@ -50,7 +65,7 @@ export class DateRangeControl extends RangeControl {
         if (this.options.updateTooltip) {
             this.options.updateTooltip(this.tooltip, this.range);
         }
-        else{
+        else {
             const start = dayjs(this.range.begin)
                 .format("DD/MM/YYYY");
 
