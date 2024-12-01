@@ -1,3 +1,4 @@
+/* Animations */
 .expand {
     animation: expand-width 0.5s ease-in-out forwards;
 }
@@ -10,7 +11,6 @@
     from {
         width: 0;
     }
-
     to {
         width: 316px;
     }
@@ -20,12 +20,12 @@
     from {
         width: 316px;
     }
-
     to {
         width: 0;
     }
 }
 
+/* Controls */
 .control {
     background-color: white;
     border-radius: 0px;
@@ -42,6 +42,7 @@
     padding: 0px 0px 4px 0px;
 }
 
+/* Buttons */
 .map-button {
     background-color: white;
     border: 2px solid rgba(0, 0, 0, 0.2);
@@ -50,10 +51,6 @@
     cursor: pointer;
     width: fit-content;
     border-radius: 4px;
-}
-
-.map-button button:hover {
-    background-color: #f4f4f4;
 }
 
 .map-button button {
@@ -66,6 +63,28 @@
     border-radius: 2px;
 }
 
+.map-button button:hover {
+    background-color: #f4f4f4;
+}
+
+.button-control button {
+    font-size: 16px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    font-weight: 300;
+    background-color: white;
+    color: #222;
+    padding: 8px 12px;
+    cursor: pointer;
+    box-shadow: 1px 1px;
+    font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.button-control button:hover {
+    background-color: #f2f2f2;
+}
+
+/* Inputs */
 .file-control input {
     cursor: pointer;
     width: 100%;
@@ -81,10 +100,7 @@
     font-weight: 300;
     font-size: 14px;
     border-radius: 4px;
-
     border: 1px solid #444;
-    border-radius: 4px;
-
     font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -92,22 +108,27 @@
     background-color: #f2f2f2;
 }
 
-.input-container{
+.input-container {
     width: 100%;
     height: 30px;
     padding: 4px 8px;
     background: white;
-
     border: none;
     border-radius: 4px;
     outline: 1px #444 solid;
-
     color: #222;
     text-align: center;
     font-size: 16px;
     font-weight: 400;
     font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     box-sizing: border-box;
+}
+
+/* Slider */
+.slider-control {
+    position: relative;
+    z-index: 100;
+    padding-bottom: 20px;
 }
 
 .slider-control input[type="range"] {
@@ -122,19 +143,7 @@
     overflow: hidden;
 }
 
-.slider-control input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 32px;
-    height: 90px;
-    background: #444;
-    border: none;
-    border-radius: 50% 50% 0 0;
-    cursor: pointer;
-    position: relative;
-    outline: 1px #444 solid;
-}
-
+.slider-control input[type="range"]::-webkit-slider-thumb,
 .slider-control input[type="range"]::-moz-range-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -146,12 +155,6 @@
     cursor: pointer;
     position: relative;
     outline: 1px #444 solid;
-}
-
-.slider-control {
-    position: relative;
-    z-index: 100;
-    padding-bottom: 20px;
 }
 
 .slider-container {
@@ -172,7 +175,6 @@
     background: #444;
     color: white;
     outline: 1px #444 solid;
-
     padding: 2px 5px;
     border-radius: 0px 0px 8px 8px;
     text-align: center;
@@ -192,6 +194,7 @@
     font-weight: bold;
 }
 
+/* Range */
 .range-control {
     box-sizing: border-box;
 }
@@ -215,7 +218,6 @@
     width: 100%;
     height: 12px;
     outline: 1px #444 solid;
-
     margin: auto;
     position: relative;
     border-radius: 12px;
@@ -231,6 +233,10 @@
     cursor: move;
 }
 
+.range-slider:hover{
+    background: #333;
+}
+
 .range-slider .handle {
     position: absolute;
     height: 16px;
@@ -238,39 +244,31 @@
     top: -2px;
     background: white;
     border: 2px solid #444;
-
-
-    /* Support for bootstrap */
     box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
 }
 
 .range-slider .EE {
     right: -10px;
     cursor: e-resize;
-    border-radius: 0 100% 100% 0;
-    border-radius: 100%
+    border-radius: 100%;
 }
 
 .range-slider .WW {
-    cursor: w-resize;
     left: -10px;
-    border-radius: 100% 0 0 100%;
-    border-radius: 100%
+    cursor: w-resize;
+    border-radius: 100%;
 }
 
+/* Combobox */
 .combobox-container {
     width: 100%;
     height: 30px;
     padding: 4px 8px;
     background: white;
     cursor: pointer;
-
     border: none;
     border-radius: 4px;
     outline: 1px #444 solid;
-
     color: #222;
     text-align: center;
     font-size: 16px;
@@ -286,22 +284,4 @@
 select.combobox-container option {
     background-color: #ffffff;
     transform: translate(10px, 0);
-}
-
-.button-control button {
-    font-size: 16px;
-    border: 1px solid #444;
-    border-radius: 4px;
-    font-weight: 300;
-    background-color: white;
-    color: #222;
-    padding: 8px 12px;
-    cursor: pointer;
-    box-shadow: 1px 1px;
-
-    font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.button-control button:hover {
-    background-color: #f2f2f2;
 }

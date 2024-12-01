@@ -34,25 +34,30 @@ export class RangeControl extends Control {
 
     addSlider() {
         this.slider.node().innerHTML = "";
-        const slider = createD3RangeSlider(this.options.rangeMin, this.options.rangeMax, this.options.rangeStep, this.slider);
+        this.rangeSlider = createD3RangeSlider(this.options.rangeMin, this.options.rangeMax, this.options.rangeStep, this.slider);
 
-        slider.onChange(function (newRange) {
+        this.rangeSlider.onChange(function (newRange) {
             this.range = newRange;
-            this.updateToolTip();
+            this.updateTooltip();
         }.bind(this));
 
-        slider.onTouchEnd(function (newRange) {
+        this.rangeSlider.onTouchEnd(function (newRange) {
             this.range = newRange;
             this.updateToolTip();
             this.update();
         }.bind(this));
 
-        slider.range(this.options.rangeInitMin, this.options.rangeInitMax);
+        this.rangeSlider.range(this.options.rangeInitMin, this.options.rangeInitMax);
 
         this.update();
     }
 
-    updateToolTip() {
+    updateThumb(){
+        this.rangeSlider.range(this.range.begin, this.range.end);
+
+    }
+
+    updateTooltip() {
         if (this.options.updateTooltip) {
             this.options.updateTooltip(this.tooltip, this.range);
         }
@@ -65,6 +70,11 @@ export class RangeControl extends Control {
         if (this.options.onChange) {
             this.options.onChange(this.range);
         }
+    }
+
+    show(){
+        super.show();
+        this.updateThumb();
     }
 }
 

@@ -54,4 +54,9 @@ export class SliderControl extends Control {
             this.options.onChange(this.value);
         }
     }
+
+    show(){
+        super.show();
+        this.updateTooltip();
+    }
 }

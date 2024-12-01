@@ -21,7 +21,7 @@ export class DateRangeControl extends RangeControl {
                 .startOf(this.options.rangeTimeUnit).toDate();
 
             this.range = {begin: begin, end: end};
-            this.updateToolTip();
+            this.updateTooltip();
         }.bind(this));
 
         slider.onTouchEnd(function (newRange) {
@@ -34,7 +34,7 @@ export class DateRangeControl extends RangeControl {
                 .startOf(this.options.rangeTimeUnit).toDate();
 
             this.range = {begin: begin, end: end};
-            this.updateToolTip();
+            this.updateTooltip();
             this.update();
         }.bind(this));
 
@@ -46,7 +46,7 @@ export class DateRangeControl extends RangeControl {
         this.update();
     }
 
-    updateToolTip() {
+    updateTooltip() {
         if (this.options.updateTooltip) {
             this.options.updateTooltip(this.tooltip, this.range);
         }

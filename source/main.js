@@ -202,6 +202,7 @@ function loadMenu() {
         search: true,
         selectAll: false,
         listAll: true,
+        startHidden: true,
         onChange: function (value, text, element) {
             // console.log('Change:', value, text, element);
         },
@@ -216,6 +217,7 @@ function loadMenu() {
     controllers.groupComboBox = new controls.ComboBoxControl('#import-area .menu-accordion-items', {
         labelText: 'Coluna de Agrupamento',
         optionsList: [],
+        startHidden: true,
         onChange: (value) => {
             importData.groupColumn = value;
         },
@@ -224,6 +226,7 @@ function loadMenu() {
     controllers.latComboBox = new controls.ComboBoxControl('#import-area .menu-accordion-items', {
         labelText: 'Coluna da Latitude',
         optionsList: [],
+        startHidden: true,
         onChange: (value) => {
             importData.latColumn = value;
         },
@@ -232,6 +235,7 @@ function loadMenu() {
     controllers.lonComboBox = new controls.ComboBoxControl('#import-area .menu-accordion-items', {
         labelText: 'Coluna da Longitude',
         optionsList: [],
+        startHidden: true,
         onChange: (value) => {
             importData.lonColumn = value;
         },
@@ -240,6 +244,7 @@ function loadMenu() {
     controllers.dateComboBox = new controls.ComboBoxControl('#import-area .menu-accordion-items', {
         labelText: 'Coluna das Datas',
         optionsList: [],
+        startHidden: true,
         onChange: (value) => {
             importData.dateColumn = value == "" ? null : value;
             if (importData.dateColumn == null) {
@@ -255,6 +260,7 @@ function loadMenu() {
         labelText: 'Formato da Data',
         initText: "DD/MM/YYYY",
         optionsList: [],
+        startHidden: true,
         onChange: (value) => {
             importData.dateFormat = value;
         },
@@ -262,6 +268,7 @@ function loadMenu() {
 
     controllers.importButton = new controls.ButtonControl('#import-area .menu-accordion-items', {
         text: "Importar",
+        startHidden: true,
         onChange: () => {
             importFile();
         },
@@ -276,6 +283,7 @@ function loadMenu() {
             { text: 'Mais Regras No Grupo', value: 2 },
             { text: 'Mais Regras Geral', value: 3 },
         ],
+        startHidden: true,
         onChange: function (value) {
             for (const key in glyphGroups) {
                 const glyphGroup = glyphGroups[key];
@@ -291,7 +299,8 @@ function loadMenu() {
         rangeMin: 1,
         rangeMax: 8,
         rangeStep: 1,
-        initValue: 6,
+        initValue: 8,
+        startHidden: true,
         onChange: function (value) {
             for (const key in glyphGroups) {
                 const glyph = glyphGroups[key];
@@ -308,6 +317,7 @@ function loadMenu() {
         rangeStep: 0.05,
         rangeInitMin: initThreshVal.supportMin,
         rangeInitMax: initThreshVal.supportMax,
+        startHidden: true,
         onChange: function (range) {
             for (const key in glyphGroups) {
                 const glyphGroup = glyphGroups[key];
@@ -325,6 +335,7 @@ function loadMenu() {
         rangeStep: 0.05,
         rangeInitMin: initThreshVal.confidenceMin,
         rangeInitMax: initThreshVal.confidenceMax,
+        startHidden: true,
         onChange: function (range) {
             for (const key in glyphGroups) {
                 const glyphGroup = glyphGroups[key];
@@ -341,6 +352,7 @@ function loadMenu() {
         rangeStep: 0.05,
         rangeInitMin: initThreshVal.liftMin,
         rangeInitMax: initThreshVal.liftMax,
+        startHidden: true,
         onChange: function (range) {
             for (const key in glyphGroups) {
                 const glyphGroup = glyphGroups[key];
@@ -358,6 +370,7 @@ function loadMenu() {
         rangeTimeUnit: controls.DateRangeControl.TimeUnit.HOURS,
         rangeInitMin: new Date("1/1/2000"),
         rangeInitMax: new Date(),
+        startHidden: true,
         onChange: function (range) {
             for (const key in glyphGroups) {
                 const glyphGroup = glyphGroups[key];
@@ -370,6 +383,12 @@ function loadMenu() {
 
 function importFile() {
     addGlyphGroup();
+
+    controllers.categRankComboBox.show();
+    controllers.categSlider.show();
+    controllers.supportRange.show();
+    controllers.confidenceRange.show();
+    controllers.liftRange.show();
 
     if (importData.dateColumn != null) {
         var minDate = new Date(864000000000000);
@@ -418,6 +437,13 @@ function loadOptions(data) {
 
     newOptions.sort((a, b) => a.text.localeCompare(b.text));
 
+    controllers.groupComboBox.show();
+    controllers.latComboBox.show();
+    controllers.lonComboBox.show();
+    controllers.dateComboBox.show();
+    controllers.chosenMultiBox.show();
+    controllers.importButton.show();
+
     controllers.groupComboBox.removeOptions();
     controllers.latComboBox.removeOptions();
     controllers.lonComboBox.removeOptions();
@@ -435,11 +461,6 @@ function loadOptions(data) {
     controllers.latComboBox.setValue(latColumn);
     const lonColumn = common.findMostSimilar("longitude", controllers.lonComboBox.optionsList);
     controllers.lonComboBox.setValue(lonColumn);
-    const dateColumn = common.findMostSimilar("date", controllers.lonComboBox.optionsList);
-    const dateSimil = common.getSimilarity(dateColumn, "date")
-    if (dateSimil > 0.5)
-        controllers.dateComboBox.setValue(dateColumn);
-    else
-        controllers.dateComboBox.setValue("");
 
+    controllers.dateComboBox.setValue("");
 }

@@ -31,6 +31,9 @@ export class Control {
                 .text(this.options.labelText);
 
         this.createControl();
+
+        if(this.options.startHidden)
+            this.hide();
     }
 
     getId() {
