@@ -140,7 +140,7 @@ export class Glyph {
             if (this.needsPosUpdate) {
                 this.updatePosition();
             }
-            
+
         }
         this.deferredUpdate = false;
         this.needsDataUpdate = false;
@@ -296,6 +296,13 @@ export class Glyph {
         this.markForUpdate();
     }
 
+    setDates(dates){
+        this.dates = dates;
+
+        this.needsDataUpdate = true
+        this.markForUpdate();
+    }
+
     static merge(glyphs) {
         const name = `${glyphs.length}`;
         var mergedDisplayedCount = 0;
@@ -340,8 +347,27 @@ export class Glyph {
         return mergedGlyph;
     }
 
-    stringToDate(dateString) {
-        return dayjs(dateString, this.dateFormat);
+    /**
+     * @param {Date} format Data inicial da filtragem dos dados
+     * @param {Date} format Data final da filtragem dos dados
+     */
+    getRulesBetweenDates(dateStart, dateEnd) {
+        const newGlyph = new Glyph(this.name, this.group)
+
+        newGlyph.deferUpdate();
+        newGlyph.setData(this.rawData);
+        newGlyph.setDateRange(dateStart, dateEnd);
+        newGlyph.setDisplayMethod(-1);
+
+        newGlyph.setDateColumn(this.dateColumn)
+        newGlyph.setDates(this.dates);
+        newGlyph.updateChosenData();
+
+        newGlyph.updateTransTable();
+        newGlyph.updateFreqItems();
+        newGlyph.updateRules();
+        
+        return newGlyph.associations;
     }
 
     updateDates() {
@@ -363,19 +389,19 @@ export class Glyph {
 
             for (let i = 0; i < this.rawData.length; i++) {
                 const entry = this.rawData[i];
-                this.chosenData[i] = {};
 
                 const passesDateFilter = this.dateColumn == null ||
                     (this.dates[i] >= this.startDate &&
                         this.dates[i] <= this.endDate);
 
                 if (passesDateFilter) {
+                    this.chosenData.push({});
                     this.displayedCount++;
 
                     for (const category in entry) {
                         if (this.group.chosenColumns.includes(category)) {
                             const value = entry[category];
-                            this.chosenData[i][category] = value;
+                            this.chosenData[this.chosenData.length-1][category] = value;
                         }
                     }
                 }
@@ -429,8 +455,9 @@ export class Glyph {
         // tira apenas a quantidade necessaria e ordena alfabeticamente
         const slicedCategs = this.displayItems.slice(0, this.maxCategories);
 
-        this.displaySurprises = this.surprise.surprises.filter(surp =>
-            slicedCategs.includes(surp.name));
+        if (this.surprise.surprises)
+            this.displaySurprises = this.surprise.surprises.filter(surp =>
+                slicedCategs.includes(surp.name));
 
         //filtra somente as regras que possuem todos os seus antecessores
         //e consequentes nas categorias escolhidas
