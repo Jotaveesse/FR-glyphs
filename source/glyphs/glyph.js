@@ -38,6 +38,7 @@ export class Glyph {
         this.transTable = [];
         this.frequentItemsets = [];
         this.dates = [];
+        this.columnOrder = [];
 
         this.associations = null;
         this.filteredRules = [];
@@ -386,6 +387,7 @@ export class Glyph {
         this.chosenData = [];
         if (this.rawData != null && this.rawData.length > 0) {
             this.displayedCount = 0;
+            this.columnOrder = Object.keys(this.rawData[0]).sort();
 
             for (let i = 0; i < this.rawData.length; i++) {
                 const entry = this.rawData[i];
