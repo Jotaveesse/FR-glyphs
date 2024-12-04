@@ -146,7 +146,7 @@ class FPTree {
         transactions.forEach(transaction => {
             if (transaction.path) {
                 transaction.path.forEach(item => {
-                    if (item == "") return;
+                    if (isEmpty(item)) return;
                     if (!frequencyMap[item]) {
                         frequencyMap[item] = 0;
                     }
@@ -155,7 +155,7 @@ class FPTree {
             }
             else {
                 transaction.forEach(item => {
-                    if (item == "") return;
+                    if (isEmpty(item)) return;
                     if (!frequencyMap[item]) {
                         frequencyMap[item] = 0;
                     }
@@ -228,7 +228,7 @@ class FPTree {
         );
 
         items.forEach(item => {
-            if (item === "") return;
+            if (isEmpty(item)) return;
 
             const newPattern = [item, ...suffix];
             frequentPatterns.push(newPattern);
@@ -376,15 +376,19 @@ class FPNode {
         let itemsToFind = new Set(itemset);
         let currentNode = this;
 
-        // Traverse up the tree from the node and check each item against the itemset
         while (currentNode !== null && currentNode !== undefined && itemsToFind.size > 0) {
             if (itemsToFind.has(currentNode.item)) {
                 itemsToFind.delete(currentNode.item);
             }
-            currentNode = currentNode.parent; // Move up the tree
+            currentNode = currentNode.parent;
         }
 
-        // If itemsToFind is empty, it means we've found all items in the itemset along the path
         return itemsToFind.size === 0;
     }
+}
+
+export function isEmpty(string){
+    const regex = /^_\d+$/;
+
+    return regex.test(string); 
 }

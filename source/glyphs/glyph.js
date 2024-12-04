@@ -398,11 +398,13 @@ export class Glyph {
                     this.chosenData.push({});
                     this.displayedCount++;
 
-                    for (const category in entry) {
+                    let columnIndex=0;
+                    for (const category of Object.keys(entry).sort()) {
                         if (this.group.chosenColumns.includes(category)) {
                             const value = entry[category];
-                            this.chosenData[this.chosenData.length-1][category] = value;
+                            this.chosenData[this.chosenData.length-1][category] = value+"_"+columnIndex;
                         }
+                        columnIndex++;
                     }
                 }
             }
@@ -927,7 +929,7 @@ export class Glyph {
                     .call(text => text.append("tspan")
                         .attr("y", -this.textSize / 2)
                         .attr("font-weight", 900)
-                        .text(d => d.data.name.slice(0, 16)))
+                        .text(d => d.data.name.replace(/_\d+$/, "").slice(0, parseInt(128/this.maxCategories))))
                     .call(text => text.append("tspan")
                         .attr("x", 0)
                         .attr("y", this.textSize / 2)

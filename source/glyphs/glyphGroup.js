@@ -1,4 +1,5 @@
 import * as models from './models.js';
+import { isEmpty } from './association.js';
 import { Glyph } from './glyph.js';
 
 export class GlyphGroup {
@@ -81,7 +82,7 @@ export class GlyphGroup {
         for (const group of Object.values(this.filteredData)) {
             for (const entry of group) {
                 for (const value of Object.values(entry)) {
-                    if (value !== "") {
+                    if (!isEmpty(value)) {
                         if (!this.categFreq[value]) {
                             this.categFreq[value] = [0];
                             this.uniqueValues.push(value);
@@ -392,12 +393,13 @@ export class GlyphGroup {
                 const entry = group[i];
                 this.filteredData[groupKey][i] = {};
 
-                for (const category in entry) {
+                let columnIndex=0;
+                for (const category of Object.keys(entry).sort()) {
                     if (this.chosenColumns.includes(category)) {
                         const value = entry[category];
-
-                        this.filteredData[groupKey][i][category] = value;
+                        this.filteredData[groupKey][i][category] = value+"_"+columnIndex;
                     }
+                    columnIndex++;
                 }
             }
         }
@@ -418,7 +420,7 @@ export class GlyphGroup {
                 for (const category in entry) {
                     const value = entry[category];
 
-                    if (value != "") {
+                    if (!isEmpty(value)) {
                         if (!this.uniqueValues.includes(value))
                             this.uniqueValues.push(value)
                     }
@@ -442,7 +444,7 @@ export class GlyphGroup {
 
                     //incrementa a quantidade para esse valor, cria uma array de frequencias
                     //caso tenham dados de varias anos
-                    if (value != "") {
+                    if (!isEmpty(value)) {
                         this.freqData[groupKey][value][0] += 1;
                     }
                 }

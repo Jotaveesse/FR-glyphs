@@ -4,7 +4,7 @@ export class Surprise {
     this.frequencies = {};
     this.categSums = {};
 
-    this.surprises = {};
+    this.surprises = [];
     this.beliefs = {};
   }
 
@@ -22,6 +22,8 @@ export class Surprise {
   }
 
   setFrequency(data) {
+    const regex = /^_\d+$/;
+
     this.frequencies = {};
 
     for (let i = 0; i < data.length; i++) {
@@ -32,7 +34,7 @@ export class Surprise {
 
         //incrementa a quantidade para esse valor, cria uma array de frequencias
         //caso tenham dados de varios anos
-        if (value != "") {
+        if (!regex.test(value)) {
           if (!this.frequencies[value])
             this.frequencies[value] = [0];
 
