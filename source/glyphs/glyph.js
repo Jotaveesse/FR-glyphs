@@ -24,6 +24,12 @@ export class Glyph {
         this.minLift = 0;
         this.maxLift = 3;
 
+        this.minAntecedents = 0;
+        this.maxAntecedents = 4;
+        this.minConsequents = 0;
+        this.maxConsequents = 4;
+        this.maxRules = 4;
+
         this.displayMethod = 0;
 
         this.maxCategories = 4;
@@ -238,6 +244,29 @@ export class Glyph {
         this.markForUpdate();
     }
 
+    setAntecedentDisplayedRange(minAntecedents, maxAntecedents) {
+        this.minAntecedents = minAntecedents;
+        this.maxAntecedents = maxAntecedents;
+
+        this.needsFilterUpdate = true
+        this.markForUpdate();
+    }
+
+    setConsequentDisplayedRange(minConsequents, maxConsequents) {
+        this.minConsequents = minConsequents;
+        this.maxConsequents = maxConsequents;
+
+        this.needsFilterUpdate = true
+        this.markForUpdate();
+    }
+
+    setMaxRules(maxRules) {
+        this.maxRules = maxRules;
+
+        this.needsFilterUpdate = true
+        this.markForUpdate();
+    }
+
     setDisplayMethod(method) {
         this.displayMethod = method;
 
@@ -380,8 +409,6 @@ export class Glyph {
         mergedGlyph.deferUpdate();
         mergedGlyph.setCount(mergedCount, mergedDisplayedCount);
         mergedGlyph.setRuleTree(newRuleData);
-        mergedGlyph.setAntecedentFilter(glyphs[0].allowedAntecedents);
-        mergedGlyph.setConsequentFilter(glyphs[0].allowedConsequents);
         mergedGlyph.setSurprise(newSurp);
         mergedGlyph.setPosition(avrgLat, avrgLon);
 
@@ -422,7 +449,7 @@ export class Glyph {
         }
     }
 
-    updateCoordinates(){
+    updateCoordinates() {
         this.latitudes = [];
         this.longitudes = [];
         for (let i = 0; i < this.rawData.length; i++) {
@@ -521,7 +548,7 @@ export class Glyph {
             var isConse = rule.consequents.every(name => slicedCategs.includes(name));
 
             return isAnte && isConse;
-        }).slice(0, this.group.maxRules);
+        }).slice(0, this.maxRules);
     }
 
     updateDisplayItems() {
@@ -591,7 +618,12 @@ export class Glyph {
         for (let i = 0; i < this.associations.rules.length; i++) {
             const rule = this.associations.rules[i];
 
-            if (rule.antecedentSupport >= this.minSupport &&
+            if (
+                rule.antecedents.length >= this.minAntecedents &&
+                rule.antecedents.length <= this.maxAntecedents &&
+                rule.consequents.length >= this.minConsequents &&
+                rule.consequents.length <= this.maxConsequents &&
+                rule.antecedentSupport >= this.minSupport &&
                 rule.consequentSupport >= this.minSupport &&
                 rule.antecedentSupport <= this.maxSupport &&
                 rule.consequentSupport <= this.maxSupport &&
@@ -599,7 +631,6 @@ export class Glyph {
                 rule.confidence <= this.maxConfidence &&
                 rule.lift >= this.minLift &&
                 rule.lift <= this.maxLift &&
-                rule.antecedents.length + rule.consequents.length <= this.group.maxArrows &&
                 (this.allowedAntecedents.length == 0 || isSubset(rule.antecedents, this.allowedAntecedents)) &&
                 (this.allowedConsequents.length == 0 || isSubset(rule.consequents, this.allowedConsequents))
             ) {

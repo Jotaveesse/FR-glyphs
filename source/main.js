@@ -13,6 +13,11 @@ const initThreshVal = {
     confidenceMax: 1,
     liftMin: 1,
     liftMax: 2.5,
+    antecedentMin: 1,
+    antecedentMax: 4,
+    consequentMin: 1,
+    consequentMax: 4,
+    maxRules: 4,
     maxCategs: 6
 }
 
@@ -59,6 +64,9 @@ function addGlyphGroup() {
     glyphGroup.setSupport(controllers.supportRange.range.begin, controllers.supportRange.range.end);
     glyphGroup.setConfidence(controllers.confidenceRange.range.begin, controllers.confidenceRange.range.end);
     glyphGroup.setLift(controllers.liftRange.range.begin, controllers.liftRange.range.end);
+    glyphGroup.setMaxRules(controllers.maxRulesSlider.value);
+    glyphGroup.setAntecedentDisplayedRange(controllers.antecedentRange.range.begin, controllers.antecedentRange.range.end);
+    glyphGroup.setConsequentDisplayedRange(controllers.consequentRange.range.begin, controllers.consequentRange.range.end);
     glyphGroup.setMaxCategories(controllers.categSlider.value);
 
     glyphGroup.updateAll();
@@ -281,6 +289,111 @@ function loadMenu() {
         },
     });
 
+    //-------- menu de filtros ---------
+
+    controllers.supportRange = new controls.RangeControl('#options-area .menu-accordion-items', {
+        labelText: 'Suporte',
+        rangeMin: initThreshVal.supportMin,
+        rangeMax: initThreshVal.supportMax,
+        rangeStep: 0.05,
+        rangeInitMin: initThreshVal.supportMin,
+        rangeInitMax: initThreshVal.supportMax,
+        startHidden: true,
+        onChange: function (range) {
+            for (const key in glyphGroups) {
+                const glyphGroup = glyphGroups[key];
+                glyphGroup.setSupport(range.begin, range.end);
+                glyphGroup.update();
+            }
+        }
+    });
+
+    controllers.confidenceRange = new controls.RangeControl('#options-area .menu-accordion-items', {
+        labelText: 'Confiança',
+        rangeMin: initThreshVal.confidenceMin,
+        rangeMax: initThreshVal.confidenceMax,
+        rangeStep: 0.05,
+        rangeInitMin: initThreshVal.confidenceMin,
+        rangeInitMax: initThreshVal.confidenceMax,
+        startHidden: true,
+        onChange: function (range) {
+            for (const key in glyphGroups) {
+                const glyphGroup = glyphGroups[key];
+                glyphGroup.setConfidence(range.begin, range.end);
+                glyphGroup.update();
+            }
+        }
+    });
+
+    controllers.liftRange = new controls.RangeControl('#options-area .menu-accordion-items', {
+        labelText: 'Lift',
+        rangeMin: initThreshVal.liftMin,
+        rangeMax: initThreshVal.liftMax,
+        rangeStep: 0.05,
+        rangeInitMin: initThreshVal.liftMin,
+        rangeInitMax: initThreshVal.liftMax,
+        startHidden: true,
+        onChange: function (range) {
+            for (const key in glyphGroups) {
+                const glyphGroup = glyphGroups[key];
+                glyphGroup.setLift(range.begin, range.end);
+                glyphGroup.update();
+            }
+        }
+    });
+
+    
+    controllers.categSlider = new controls.SliderControl('#options-area .menu-accordion-items', {
+        labelText: 'Número de classes',
+        rangeMin: 1,
+        rangeMax: 10,
+        rangeStep: 1,
+        initValue: initThreshVal.maxCategs,
+        startHidden: true,
+        onChange: function (value) {
+            for (const key in glyphGroups) {
+                const glyph = glyphGroups[key];
+                glyph.setMaxCategories(value);
+                glyph.update();
+            }
+        }
+    });
+
+    controllers.maxRulesSlider = new controls.SliderControl('#options-area .menu-accordion-items', {
+        labelText: 'Quantidade máxima de regras',
+        rangeMin: 1,
+        rangeMax: 10,
+        rangeStep: 1,
+        initValue: initThreshVal.maxCategs,
+        startHidden: true,
+        onChange: function (value) {
+            for (const key in glyphGroups) {
+                const glyph = glyphGroups[key];
+                glyph.setMaxRules(value);
+                glyph.update();
+            }
+        }
+    });
+
+    controllers.categRankComboBox = new controls.ComboBoxControl('#options-area .menu-accordion-items', {
+        labelText: 'Escolha das classes',
+        initValue: 0,
+        optionsList: [
+            { text: 'Maior Surpresa No Grupo', value: 0 },
+            { text: 'Maior Surpresa Geral', value: 1 },
+            { text: 'Mais Regras No Grupo', value: 2 },
+            { text: 'Mais Regras Geral', value: 3 },
+        ],
+        startHidden: true,
+        onChange: function (value) {
+            for (const key in glyphGroups) {
+                const glyphGroup = glyphGroups[key];
+                glyphGroup.setDisplayMethod(parseInt(value));
+                glyphGroup.update();
+            }
+        }
+    });
+
     controllers.antecedentsMultiBox = new controls.MultiBoxControl('#options-area .menu-accordion-items', {
         data: [],
         labelText: 'Classes Permitidas nos Antecedentes',
@@ -317,94 +430,41 @@ function loadMenu() {
         }
     });
 
-    controllers.categRankComboBox = new controls.ComboBoxControl('#options-area .menu-accordion-items', {
-        labelText: 'Escolha das categorias',
-        initValue: 0,
-        optionsList: [
-            { text: 'Maior Surpresa No Grupo', value: 0 },
-            { text: 'Maior Surpresa Geral', value: 1 },
-            { text: 'Mais Regras No Grupo', value: 2 },
-            { text: 'Mais Regras Geral', value: 3 },
-        ],
-        startHidden: true,
-        onChange: function (value) {
-            for (const key in glyphGroups) {
-                const glyphGroup = glyphGroups[key];
-                glyphGroup.setDisplayMethod(parseInt(value));
-                glyphGroup.update();
-            }
-        }
-    });
 
-    controllers.categSlider = new controls.SliderControl('#options-area .menu-accordion-items', {
-        position: 'topright',
-        labelText: 'Número de categorias',
-        rangeMin: 1,
-        rangeMax: 10,
+    controllers.antecedentRange = new controls.RangeControl('#options-area .menu-accordion-items', {
+        labelText: 'Quantidade de antecedentes nas regras',
+        rangeMin: initThreshVal.antecedentMin,
+        rangeMax: initThreshVal.antecedentMax,
         rangeStep: 1,
-        initValue: initThreshVal.maxCategs,
-        startHidden: true,
-        onChange: function (value) {
-            for (const key in glyphGroups) {
-                const glyph = glyphGroups[key];
-                glyph.setMaxCategories(value);
-                glyph.update();
-            }
-        }
-    });
-
-    controllers.supportRange = new controls.RangeControl('#options-area .menu-accordion-items', {
-        labelText: 'Suporte',
-        rangeMin: initThreshVal.supportMin,
-        rangeMax: initThreshVal.supportMax,
-        rangeStep: 0.05,
-        rangeInitMin: initThreshVal.supportMin,
-        rangeInitMax: initThreshVal.supportMax,
+        rangeInitMin: initThreshVal.antecedentMin,
+        rangeInitMax: initThreshVal.antecedentMax,
         startHidden: true,
         onChange: function (range) {
             for (const key in glyphGroups) {
                 const glyphGroup = glyphGroups[key];
-                glyphGroup.setSupport(range.begin, range.end);
+                glyphGroup.setAntecedentDisplayedRange(range.begin, range.end);
                 glyphGroup.update();
             }
         }
     });
 
-    controllers.confidenceRange = new controls.RangeControl('#options-area .menu-accordion-items', {
-        position: 'topright',
-        labelText: 'Confiança',
-        rangeMin: initThreshVal.confidenceMin,
-        rangeMax: initThreshVal.confidenceMax,
-        rangeStep: 0.05,
-        rangeInitMin: initThreshVal.confidenceMin,
-        rangeInitMax: initThreshVal.confidenceMax,
+    controllers.consequentRange = new controls.RangeControl('#options-area .menu-accordion-items', {
+        labelText: 'Quantidade de consequentes nas regras',
+        rangeMin: initThreshVal.consequentMin,
+        rangeMax: initThreshVal.consequentMax,
+        rangeStep: 1,
+        rangeInitMin: initThreshVal.consequentMin,
+        rangeInitMax: initThreshVal.consequentMax,
         startHidden: true,
         onChange: function (range) {
             for (const key in glyphGroups) {
                 const glyphGroup = glyphGroups[key];
-                glyphGroup.setConfidence(range.begin, range.end);
+                glyphGroup.setConsequentDisplayedRange(range.begin, range.end);
                 glyphGroup.update();
             }
         }
     });
-
-    controllers.liftRange = new controls.RangeControl('#options-area .menu-accordion-items', {
-        labelText: 'Lift',
-        rangeMin: initThreshVal.liftMin,
-        rangeMax: initThreshVal.liftMax,
-        rangeStep: 0.05,
-        rangeInitMin: initThreshVal.liftMin,
-        rangeInitMax: initThreshVal.liftMax,
-        startHidden: true,
-        onChange: function (range) {
-            for (const key in glyphGroups) {
-                const glyphGroup = glyphGroups[key];
-                glyphGroup.setLift(range.begin, range.end);
-                glyphGroup.update();
-            }
-        }
-    });
-
+    
     controllers.dateRange = new controls.DateRangeControl('#options-area .menu-accordion-items', {
         labelText: 'Data',
         rangeMin: new Date("1/1/2000"),
@@ -422,8 +482,6 @@ function loadMenu() {
             }
         }
     });
-
-
 
 }
 
@@ -496,6 +554,9 @@ function importFile() {
     controllers.supportRange.show();
     controllers.confidenceRange.show();
     controllers.liftRange.show();
+    controllers.antecedentRange.show();
+    controllers.consequentRange.show();
+    controllers.maxRulesSlider.show();
 
     controllers.antecedentsMultiBox.show();
     controllers.consequentsMultiBox.show();
