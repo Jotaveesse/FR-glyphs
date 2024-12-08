@@ -36,6 +36,7 @@ export class GlyphGroup {
             maxClusterRadius: this.glyphSize,
             spiderfyOnMaxZoom: true,
             showCoverageOnHover: false,
+            zoomToBoundsOnClick: false,
             iconCreateFunction: (cluster) => {
 
                 this.clusterMarkers.push(cluster);
@@ -60,7 +61,7 @@ export class GlyphGroup {
             }
         });
 
-        this.markers.on('clustermouseover', function (ev) {
+        this.markers.on('clusterclick', function (ev) {
             const childGlyph = ev.layer.getAllChildMarkers()[0].options.glyph;
 
             ev.layer.setIcon(ev.layer.glyph.hoverIcon);

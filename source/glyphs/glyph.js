@@ -825,7 +825,7 @@ export class Glyph {
             .attr("r", this.width / 2)
             .style("pointer-events", "auto")
             .style("fill", "rgba(0, 0, 0, 0.0)")
-            .on("mouseover", this.hoverBegin.bind(this))
+            .on("click", this.hoverBegin.bind(this))
             .on("mouseout", this.hoverEnd.bind(this));
 
         // this.updateMarker();

@@ -93,6 +93,11 @@ export function loadMap() {
         style: 'light_all'
     }).addTo(leafletMap);
 
+    //desativa o click com botao direito no mapa
+    leafletMap._container.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+    });
+
     L.control.scale().addTo(leafletMap);
 
     //coloca todos os glifos no tamanho normal,
