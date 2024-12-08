@@ -1,4 +1,4 @@
-import {Control} from "./control.js"
+import { Control } from "./control.js"
 
 export class MultiBoxControl extends Control {
     constructor(element, options = {}) {
@@ -8,6 +8,7 @@ export class MultiBoxControl extends Control {
             max: null,
             search: true,
             selectAll: true,
+            unselectAll: true,
             listAll: true,
             closeListOnItemSelect: false,
             name: '',
@@ -18,11 +19,13 @@ export class MultiBoxControl extends Control {
             data: [],
             onChange: function () { },
             onSelect: function () { },
-            onUnselect: function () { }
+            onUnselect: function () { },
+            onSelectAll: function () { },
+            onUnselectAll: function () { },
         };
         this.options = Object.assign(defaults, options);
-
         this.wrapper.classed('multibox-control', true);
+        this.value = options.initValue || new Set();;
 
     }
 
@@ -72,52 +75,40 @@ export class MultiBoxControl extends Control {
     }
 
     updateOptions(data) {
-        // Update the options by binding data to existing elements
         const options = this.optionsContainer.selectAll('.multi-select-option')
-            .data(data, d => d.value);  // Using 'd.value' as the unique key to track each option
+            .data(data, d => d.value);
 
-        // ENTER: Add new options
         options.enter()
             .append('div')
             .attr('class', d => `multi-select-option${this.selectedValues.includes(d.value) ? ' multi-select-selected' : ''}`)
             .attr('data-value', d => d.value)
             .each(function (d) {
-                // Append the first span
                 d3.select(this).append('span')
                     .attr('class', 'multi-select-option-radio');
 
-                // Append the second span
                 d3.select(this).append('span')
                     .attr('class', 'multi-select-option-text')
                     .text(d.html ? d.html : d.text);
             });
 
-        // UPDATE: Update existing options if needed
         options
             .attr('class', d => `multi-select-option${this.selectedValues.includes(d.value) ? ' multi-select-selected' : ''}`)
             .attr('data-value', d => d.value)
             .select('.multi-select-option-text')
             .text(d => d.html ? d.html : d.text);
 
-        // EXIT: Remove options that are no longer in the data
         options.exit().remove();
 
-        // Handle "Select all" logic dynamically
-        const selectAllOption = this.optionsContainer.selectAll('.multi-select-all')
-            .data(this.options.selectAll === true || this.options.selectAll === 'true' ? [true] : []); // Ensure it's conditional
-
-        d3.select(this.element) // Select the parent element
-            .selectAll('.multi-select-header-option') // Select all elements with the class `.multi-select-header-option`
+        d3.select(this.element)
+            .selectAll('.multi-select-header-option')
             .remove();
 
-        selectAllOption.exit().remove();
     }
 
     _template() {
         let element = d3.select(document.createElement('div'));
         let template = element.append('div');
 
-        // Set up the main container and style
         template.attr('class', `multi-select ${this.name}`)
             .style('width', this.width ? this.width : null)
             .style('height', this.height ? this.height : null)
@@ -156,7 +147,31 @@ export class MultiBoxControl extends Control {
             this.optionsContainer.append('input')
                 .attr('type', 'text')
                 .attr('class', 'multi-select-search')
-                .attr('placeholder', 'Search...');
+                .attr('placeholder', 'Pesquisar...');
+        }
+
+        if (this.options.selectAll === true || this.options.selectAll === 'true') {
+            const selectAll = this.optionsContainer.append('div')
+                .attr('class', 'multi-select-all');
+
+            selectAll.append('span')
+                .attr('class', 'multi-select-option-radio');
+
+            selectAll.append('span')
+                .attr('class', 'multi-select-option-text')
+                .text('Selecionar Todos');
+        }
+
+        if (this.options.unselectAll === true || this.options.unselectAll === 'true') {
+            const unselectAll = this.optionsContainer.append('div')
+                .attr('class', 'multi-unselect-all');
+
+            unselectAll.append('span')
+                .attr('class', 'multi-select-option-radio');
+
+            unselectAll.append('span')
+                .attr('class', 'multi-select-option-text')
+                .text('Desmarcar Todos');
         }
 
         this.updateOptions(this.data)
@@ -212,12 +227,15 @@ export class MultiBoxControl extends Control {
                 if (this.options.closeListOnItemSelect === true || this.options.closeListOnItemSelect === 'true') {
                     headerElement.classList.remove('multi-select-header-active');
                 }
-                this.options.onChange(option.dataset.value, option.querySelector('.multi-select-option-text').innerHTML, option);
                 if (selected) {
+                    this.value.add(option.dataset.value);
                     this.options.onSelect(option.dataset.value, option.querySelector('.multi-select-option-text').innerHTML, option);
                 } else {
+                    this.value.delete(option.dataset.value);
                     this.options.onUnselect(option.dataset.value, option.querySelector('.multi-select-option-text').innerHTML, option);
                 }
+                if (!this.chunkSelect)
+                    this.options.onChange(option.dataset.value, option.querySelector('.multi-select-option-text').innerHTML, option);
             };
         });
         headerElement.onclick = () => headerElement.classList.toggle('multi-select-header-active');
@@ -229,19 +247,49 @@ export class MultiBoxControl extends Control {
                 });
             };
         }
+
         if (this.options.selectAll === true || this.options.selectAll === 'true') {
             let selectAllButton = this.element.querySelector('.multi-select-all');
             selectAllButton.onclick = () => {
                 let allSelected = selectAllButton.classList.contains('multi-select-selected');
+                
+                this.chunkSelect = true;
                 this.element.querySelectorAll('.multi-select-option').forEach(option => {
                     let dataItem = this.data.find(data => data.value == option.dataset.value);
                     if (dataItem && ((allSelected && dataItem.selected) || (!allSelected && !dataItem.selected))) {
                         option.click();
                     }
                 });
+                this.chunkSelect = false;
+
+                this.options.onSelectAll(this.value);
+                this.options.onChange(this.value);
+
                 selectAllButton.classList.toggle('multi-select-selected');
             };
         }
+
+        if (this.options.unselectAll === true || this.options.unselectAll === 'true') {
+            let unselectAllButton = this.element.querySelector('.multi-unselect-all');
+            unselectAllButton.onclick = () => {
+                let allUnselected = unselectAllButton.classList.contains('multi-select-selected');
+                
+                this.chunkSelect = true;
+                this.element.querySelectorAll('.multi-select-option').forEach(option => {
+                    let dataItem = this.data.find(data => data.value == option.dataset.value);
+                    if (dataItem && ((allUnselected && !dataItem.selected) || (!allUnselected && dataItem.selected))) {
+                        option.click();
+                    }
+                });
+                this.chunkSelect = false;
+
+                this.options.onUnselectAll(this.value);
+                this.options.onChange(this.value);
+
+                unselectAllButton.classList.toggle('multi-select-selected');
+            };
+        }
+
         if (this.selectElement.id && document.querySelector('label[for="' + this.selectElement.id + '"]')) {
             document.querySelector('label[for="' + this.selectElement.id + '"]').onclick = () => {
                 headerElement.classList.toggle('multi-select-header-active');

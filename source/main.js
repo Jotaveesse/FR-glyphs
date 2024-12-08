@@ -25,6 +25,7 @@ var importData = {
     lonColumn: null,
     dateColumn: null,
     dateFormat: null,
+    columnsImported: [],
 };
 
 var leafletMap = null;
@@ -201,6 +202,7 @@ function loadMenu() {
         placeholder: 'Escolha as colunas',
         search: true,
         selectAll: false,
+        unselectAll: false,
         listAll: true,
         startHidden: true,
         onChange: function (value, text, element) {
@@ -272,6 +274,42 @@ function loadMenu() {
         onChange: () => {
             importFile();
         },
+    });
+
+    controllers.antecedentsMultiBox = new controls.MultiBoxControl('#options-area .menu-accordion-items', {
+        data: [],
+        labelText: 'Classes Permitidas nos Antecedentes',
+        placeholder: 'Permitir Todas',
+        search: true,
+        selectAll: false,
+        unselectAll: true,
+        listAll: true,
+        startHidden: true,
+        onChange: function (value, text, element) {
+            for (const key in glyphGroups) {
+                const glyphGroup = glyphGroups[key];
+                glyphGroup.setAntecedentFilter(Array.from(controllers.antecedentsMultiBox.value));
+                glyphGroup.update();
+            }
+        }
+    });
+
+    controllers.consequentsMultiBox = new controls.MultiBoxControl('#options-area .menu-accordion-items', {
+        data: [],
+        labelText: 'Classes Permitidas nos Consequentes',
+        placeholder: 'Permitir Todas',
+        search: true,
+        selectAll: false,
+        unselectAll: true,
+        listAll: true,
+        startHidden: true,
+        onChange: function (value, text, element) {
+            for (const key in glyphGroups) {
+                const glyphGroup = glyphGroups[key];
+                glyphGroup.setConsequentFilter(Array.from(controllers.consequentsMultiBox.value));
+                glyphGroup.update();
+            }
+        }
     });
 
     controllers.categRankComboBox = new controls.ComboBoxControl('#options-area .menu-accordion-items', {
@@ -379,6 +417,9 @@ function loadMenu() {
             }
         }
     });
+
+
+
 }
 
 function validateImportData() {
@@ -451,6 +492,29 @@ function importFile() {
     controllers.confidenceRange.show();
     controllers.liftRange.show();
 
+    controllers.antecedentsMultiBox.show();
+    controllers.consequentsMultiBox.show();
+
+    const uniqueItems = common.getUniqueItems(importData.data, importData.chosenColumns);
+
+    const classOptions = [];
+    let columnIndex = 0;
+    for (const column of importData.columnsImported) {
+        if (importData.chosenColumns.has(column)) {
+            const uniqueItemsInColumn = Array.from(uniqueItems[column]);
+
+            for (let index = 0; index < uniqueItemsInColumn.length; index++) {
+                const value = uniqueItemsInColumn[index] + "_" + columnIndex;
+                const text = uniqueItemsInColumn[index] + " - " + column;
+                classOptions.push({ value: value, text: text });
+            }
+        }
+
+        columnIndex++;
+    }
+    controllers.antecedentsMultiBox.addOptions(classOptions);
+    controllers.consequentsMultiBox.addOptions(classOptions);
+
     if (importData.dateColumn != null) {
         var minDate = new Date(864000000000000);
         var maxDate = new Date(0);
@@ -464,10 +528,10 @@ function importFile() {
                 maxDate = date;
             }
         }
-        
+
         minDate = minDate.toDate();
         maxDate = maxDate.toDate();
-        
+
         controllers.dateRange.options.rangeInitMin = minDate;
         controllers.dateRange.options.rangeInitMax = maxDate;
         controllers.dateRange.options.rangeMin = minDate;
@@ -491,15 +555,17 @@ function loadOptions(data) {
         lonColumn: null,
         days: null,
         dateFormat: "DD/MM/YYYY, HH:mm:ss",
+        columnsImported: [],
     };
 
-    const newOptions = [];
-
+    const columnsImported = [];
     for (const key in data[0]) {
-        newOptions.push({ value: key, text: key });
+        columnsImported.push({ value: key, text: key });
+        importData.columnsImported.push(key);
     }
 
-    newOptions.sort((a, b) => a.text.localeCompare(b.text));
+    columnsImported.sort((a, b) => a.text.localeCompare(b.text));
+    importData.columnsImported.sort((a, b) => a.localeCompare(b));
 
     controllers.groupComboBox.show();
     controllers.latComboBox.show();
@@ -513,13 +579,13 @@ function loadOptions(data) {
     controllers.lonComboBox.removeOptions();
     controllers.dateComboBox.removeOptions();
 
-    controllers.groupComboBox.addOptions(newOptions);
-    controllers.latComboBox.addOptions(newOptions);
-    controllers.lonComboBox.addOptions(newOptions);
-    controllers.chosenMultiBox.addOptions(newOptions);
+    controllers.groupComboBox.addOptions(columnsImported);
+    controllers.latComboBox.addOptions(columnsImported);
+    controllers.lonComboBox.addOptions(columnsImported);
+    controllers.chosenMultiBox.addOptions(columnsImported);
 
-    newOptions.unshift({ value: "", text: "Sem data" })
-    controllers.dateComboBox.addOptions(newOptions);
+    columnsImported.unshift({ value: "", text: "Sem data" })
+    controllers.dateComboBox.addOptions(columnsImported);
 
     const latColumn = common.findMostSimilar("latitude", controllers.latComboBox.optionsList);
     controllers.latComboBox.setValue(latColumn);

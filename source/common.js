@@ -55,3 +55,48 @@ export function findMostSimilar(target, array) {
 
     return mostSimilar;
 }
+
+export function isSubset(arr1, arr2) {
+    return arr1.every(item => arr2.includes(item));
+}
+
+export function arraysHaveSameItems(arr1, arr2) {
+    if (arr1.length !== arr2.length) return false;
+    const sorted1 = [...arr1].sort();
+    const sorted2 = [...arr2].sort();
+    return sorted1.every((item, index) => item === sorted2[index]);
+}
+
+export function getUniqueItems(data, columns=[]) {
+    const uniqueSets = {};
+    
+    data.forEach(row => {
+        if(columns==[]){
+            for (const key in row) {
+                if (row[key] == undefined || row[key] == "")
+                    return;
+
+                const cell = row[key];
+                
+                if(uniqueSets[key] == undefined)
+                    uniqueSets[key] = new Set();
+
+                uniqueSets[key].add(cell);
+            }
+        }
+        else{
+            for (const key of columns) {
+                if (row[key] == undefined || row[key] == "")
+                    return;
+
+                const cell = row[key];
+                
+                if(uniqueSets[key] == undefined)
+                    uniqueSets[key] = new Set();
+
+                uniqueSets[key].add(cell);
+            }
+        }
+    });
+    return uniqueSets;
+}

@@ -1,6 +1,7 @@
 import { Surprise } from './surprise.js';
 import { FPGrowth } from './association.js';
 import * as models from './models.js';
+import { isSubset } from '../common.js';
 
 const RADIANS = 180 / Math.PI;
 
@@ -38,6 +39,8 @@ export class Glyph {
         this.transTable = [];
         this.frequentItemsets = [];
         this.dates = [];
+        this.latitudes = [];
+        this.longitudes = [];
         this.columnOrder = [];
 
         this.associations = null;
@@ -50,6 +53,13 @@ export class Glyph {
         this.startDate = new Date(0);
         this.endDate = new Date(864000000000000);
         this.dateFormat = "DD/MM/YYYY, HH:mm:ss";
+
+        this.dateColumn = null;
+        this.latColumn = null;
+        this.lonColumn = null;
+
+        this.allowedAntecedents = [];
+        this.allowedConsequents = [];
 
         this.surprise = new Surprise();
 
@@ -101,6 +111,7 @@ export class Glyph {
         this.updateFreqItems();
         this.updateRules();
 
+        this.updateCoordinates();
         this.updateDefaultPosition();
         this.updatePosition();
         this.updateProportions();
@@ -139,6 +150,7 @@ export class Glyph {
                 this.applyFilterChanges();
             }
             if (this.needsPosUpdate) {
+                this.updateCoordinates();
                 this.updatePosition();
             }
 
@@ -288,7 +300,7 @@ export class Glyph {
     }
 
     /**
-     * @param {string} format Formato da data que será usada
+     * @param {string} format Coluna da data que será usada
      */
     setDateColumn(dateColumn) {
         this.dateColumn = dateColumn;
@@ -297,7 +309,33 @@ export class Glyph {
         this.markForUpdate();
     }
 
-    setDates(dates){
+    /**
+     * @param {string} latColumn Coluna da latitude que será usada
+     * @param {string} lonColumn Coluna da longitude que será usada
+     */
+    setCoordsColumns(latColumn, lonColumn) {
+        this.latColumn = latColumn;
+        this.lonColumn = lonColumn;
+
+        this.needsPosUpdate = true
+        this.markForUpdate();
+    }
+
+    setAntecedentFilter(allowedClasses) {
+        this.allowedAntecedents = allowedClasses;
+
+        this.needsFilterUpdate = true;
+        this.markForUpdate();
+    }
+
+    setConsequentFilter(allowedClasses) {
+        this.allowedConsequents = allowedClasses;
+
+        this.needsFilterUpdate = true;
+        this.markForUpdate();
+    }
+
+    setDates(dates) {
         this.dates = dates;
 
         this.needsDataUpdate = true
@@ -342,6 +380,8 @@ export class Glyph {
         mergedGlyph.deferUpdate();
         mergedGlyph.setCount(mergedCount, mergedDisplayedCount);
         mergedGlyph.setRuleTree(newRuleData);
+        mergedGlyph.setAntecedentFilter(glyphs[0].allowedAntecedents);
+        mergedGlyph.setConsequentFilter(glyphs[0].allowedConsequents);
         mergedGlyph.setSurprise(newSurp);
         mergedGlyph.setPosition(avrgLat, avrgLon);
 
@@ -367,7 +407,7 @@ export class Glyph {
         newGlyph.updateTransTable();
         newGlyph.updateFreqItems();
         newGlyph.updateRules();
-        
+
         return newGlyph.associations;
     }
 
@@ -380,7 +420,18 @@ export class Glyph {
                 this.dates[i] = dayjs(entry[this.dateColumn], this.dateFormat);;
             }
         }
+    }
 
+    updateCoordinates(){
+        this.latitudes = [];
+        this.longitudes = [];
+        for (let i = 0; i < this.rawData.length; i++) {
+            const entry = this.rawData[i];
+            let lat, lon;
+            [lat, lon] = [parseFloat(entry[this.latColumn]), parseFloat(entry[this.lonColumn])];
+            this.latitudes.push(lat);
+            this.longitudes.push(lon);
+        }
     }
 
     updateChosenData() {
@@ -400,11 +451,11 @@ export class Glyph {
                     this.chosenData.push({});
                     this.displayedCount++;
 
-                    let columnIndex=0;
+                    let columnIndex = 0;
                     for (const category of Object.keys(entry).sort()) {
                         if (this.group.chosenColumns.includes(category)) {
                             const value = entry[category];
-                            this.chosenData[this.chosenData.length-1][category] = value+"_"+columnIndex;
+                            this.chosenData[this.chosenData.length - 1][category] = value + "_" + columnIndex;
                         }
                         columnIndex++;
                     }
@@ -513,8 +564,8 @@ export class Glyph {
             var avrgLon = 0;
 
             for (let index = 0; index < this.rawData.length; index++) {
-                avrgLat += this.rawData[index].lat;
-                avrgLon += this.rawData[index].lon;
+                avrgLat += this.latitudes[index];
+                avrgLon += this.longitudes[index];
             }
             avrgLat /= this.rawData.length;
             avrgLon /= this.rawData.length;
@@ -548,7 +599,10 @@ export class Glyph {
                 rule.confidence <= this.maxConfidence &&
                 rule.lift >= this.minLift &&
                 rule.lift <= this.maxLift &&
-                rule.antecedents.length + rule.consequents.length <= this.group.maxArrows) {
+                rule.antecedents.length + rule.consequents.length <= this.group.maxArrows &&
+                (this.allowedAntecedents.length == 0 || isSubset(rule.antecedents, this.allowedAntecedents)) &&
+                (this.allowedConsequents.length == 0 || isSubset(rule.consequents, this.allowedConsequents))
+            ) {
                 this.filteredRules.push(rule);
             }
         }
@@ -931,7 +985,7 @@ export class Glyph {
                     .call(text => text.append("tspan")
                         .attr("y", -this.textSize / 2)
                         .attr("font-weight", 900)
-                        .text(d => d.data.name.replace(/_\d+$/, "").slice(0, parseInt(128/this.maxCategories))))
+                        .text(d => d.data.name.replace(/_\d+$/, "").slice(0, parseInt(128 / this.maxCategories))))
                     .call(text => text.append("tspan")
                         .attr("x", 0)
                         .attr("y", this.textSize / 2)
@@ -955,7 +1009,7 @@ export class Glyph {
                         return `${100 / 3 + startOffset * 100 / 3}%`;   //texto é colocado na 2° volta pra evitar cortes
                     })
                     .call(text => text.selectAll("tspan")
-                        .data(d => [d.data.name.slice(0, 16), d.data.value.toLocaleString("pt-BR")])
+                        .data(d => [d.data.name.replace(/_\d+$/, "").slice(0, parseInt(128 / this.maxCategories))])
                         .join("tspan")
                         .attr("y", (d, i) => i === 0 ? -this.textSize / 2 : this.textSize / 2)
                         .text(d => d)),

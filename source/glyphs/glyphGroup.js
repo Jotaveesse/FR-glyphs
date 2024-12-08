@@ -145,8 +145,6 @@ export class GlyphGroup {
 
         this.groupByColumn();
 
-        this.getCoords();
-
         this.filterCategories();
 
         this.getFrequencies();
@@ -175,6 +173,7 @@ export class GlyphGroup {
             glyph.setDateFormat(this.dateFormat);
             glyph.setDateColumn(this.dateColumn);
             glyph.setDateRange(this.startDate, this.endDate);
+            glyph.setCoordsColumns(this.latColumn, this.lonColumn);
             glyph.applyUpdates();
 
             this.glyphs[groupKey] = glyph;
@@ -332,6 +331,24 @@ export class GlyphGroup {
         }
     }
 
+    setAntecedentFilter(allowedClasses) {
+        this.allowedAntecedents = allowedClasses;
+
+        for (const groupName of this.groupNames) {
+            this.glyphs[groupName].deferUpdate();
+            this.glyphs[groupName].setAntecedentFilter(allowedClasses);
+        }
+    }
+
+    setConsequentFilter(allowedClasses) {
+        this.allowedConsequents = allowedClasses;
+
+        for (const groupName of this.groupNames) {
+            this.glyphs[groupName].deferUpdate();
+            this.glyphs[groupName].setConsequentFilter(allowedClasses);
+        }
+    }
+
     setDateRange(startDate, endDate) {
         this.startDate = startDate;
         this.endDate = endDate;
@@ -342,20 +359,13 @@ export class GlyphGroup {
         }
     }
 
-    setCoordsColumns(latColumn, lonColumn, coordFunct = this.defaultCoords) {
+    setCoordsColumns(latColumn, lonColumn) {
         this.latColumn = latColumn;
         this.lonColumn = lonColumn;
-        this.coordFunct = coordFunct
-    }
 
-    getCoords() {
-        for (const groupKey in this.groupedData) {
-            const group = this.groupedData[groupKey];
-
-            for (let i = 0; i < group.length; i++) {
-                const entry = group[i];
-                [entry.lat, entry.lon] = this.coordFunct(entry[this.latColumn], entry[this.lonColumn]);
-            }
+        for (const groupName of this.groupNames) {
+            this.glyphs[groupName].deferUpdate();
+            this.glyphs[groupName].setCoordsColumns(latColumn, lonColumn);
         }
     }
 

@@ -12,13 +12,13 @@
         width: 0;
     }
     to {
-        width: 316px;
+        width: 400px;
     }
 }
 
 @keyframes retract-width {
     from {
-        width: 316px;
+        width: 400px;
     }
     to {
         width: 0;
