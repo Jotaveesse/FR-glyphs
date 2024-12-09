@@ -167,9 +167,6 @@ export class MultiBoxControl extends Control {
                 .attr('class', 'multi-unselect-all');
 
             unselectAll.append('span')
-                .attr('class', 'multi-select-option-radio');
-
-            unselectAll.append('span')
                 .attr('class', 'multi-select-option-text')
                 .text('Desmarcar Todos');
         }
@@ -271,13 +268,13 @@ export class MultiBoxControl extends Control {
 
         if (this.options.unselectAll === true || this.options.unselectAll === 'true') {
             let unselectAllButton = this.element.querySelector('.multi-unselect-all');
-            unselectAllButton.onclick = () => {
-                let allUnselected = unselectAllButton.classList.contains('multi-select-selected');
+            unselectAllButton.onclick = (() => {
+                // let allUnselected = unselectAllButton.classList.contains('multi-select-selected');
                 
                 this.chunkSelect = true;
                 this.element.querySelectorAll('.multi-select-option').forEach(option => {
                     let dataItem = this.data.find(data => data.value == option.dataset.value);
-                    if (dataItem && ((allUnselected && !dataItem.selected) || (!allUnselected && dataItem.selected))) {
+                    if (dataItem && dataItem.selected) {
                         option.click();
                     }
                 });
@@ -286,8 +283,8 @@ export class MultiBoxControl extends Control {
                 this.options.onUnselectAll(this.value);
                 this.options.onChange(this.value);
 
-                unselectAllButton.classList.toggle('multi-select-selected');
-            };
+                // unselectAllButton.classList.toggle('multi-select-selected');
+            }).bind(this);
         }
 
         if (this.selectElement.id && document.querySelector('label[for="' + this.selectElement.id + '"]')) {
