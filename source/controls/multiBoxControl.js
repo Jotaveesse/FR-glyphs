@@ -57,7 +57,7 @@ export class MultiBoxControl extends Control {
     }
 
     addDefaultOptions() {
-        this.addOptions(this.options.data);
+        this.addOptions(structuredClone(this.options.data));
     }
 
     removeAllOptions() {
@@ -68,8 +68,8 @@ export class MultiBoxControl extends Control {
     }
 
     addOptions(optionsData) {
-        this.options.data = optionsData;
-        this.updateOptions(optionsData);
+        this.options.data = structuredClone(optionsData);
+        this.updateOptions(this.options.data);
         this._eventHandlers();
         this._updateSelected();
     }
@@ -249,7 +249,7 @@ export class MultiBoxControl extends Control {
             let selectAllButton = this.element.querySelector('.multi-select-all');
             selectAllButton.onclick = () => {
                 let allSelected = selectAllButton.classList.contains('multi-select-selected');
-                
+
                 this.chunkSelect = true;
                 this.element.querySelectorAll('.multi-select-option').forEach(option => {
                     let dataItem = this.data.find(data => data.value == option.dataset.value);
@@ -270,7 +270,7 @@ export class MultiBoxControl extends Control {
             let unselectAllButton = this.element.querySelector('.multi-unselect-all');
             unselectAllButton.onclick = (() => {
                 // let allUnselected = unselectAllButton.classList.contains('multi-select-selected');
-                
+
                 this.chunkSelect = true;
                 this.element.querySelectorAll('.multi-select-option').forEach(option => {
                     let dataItem = this.data.find(data => data.value == option.dataset.value);

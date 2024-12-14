@@ -399,8 +399,8 @@ function loadMenu() {
         labelText: 'Classes Permitidas nos Antecedentes',
         placeholder: 'Permitir Todas',
         search: true,
-        selectAll: false,
-        unselectAll: true,
+        selectAll: true,
+        unselectAll: false,
         listAll: true,
         startHidden: true,
         onChange: function (value, text, element) {
@@ -417,8 +417,8 @@ function loadMenu() {
         labelText: 'Classes Permitidas nos Consequentes',
         placeholder: 'Permitir Todas',
         search: true,
-        selectAll: false,
-        unselectAll: true,
+        selectAll: true,
+        unselectAll: false,
         listAll: true,
         startHidden: true,
         onChange: function (value, text, element) {
