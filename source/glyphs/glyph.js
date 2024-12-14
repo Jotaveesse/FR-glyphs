@@ -716,24 +716,27 @@ export class Glyph {
                 const antecedent = rule.antecedents[anteIndex];
                 const dpAnteIndex = this.surprisesIndex[antecedent];
 
-                for (let consIndex = 0; consIndex < rule.consequents.length; consIndex++) {
-                    const consequent = rule.consequents[consIndex];
-                    const dpConsIndex = this.surprisesIndex[consequent];
-
-                    this.displaySurprises[dpAnteIndex].consCount++;
-                    this.displaySurprises[dpConsIndex].anteCount++;
-                }
+                this.displaySurprises[dpAnteIndex].consCount++;
+            }
+            for (let consIndex = 0; consIndex < rule.consequents.length; consIndex++) {
+                const consequent = rule.consequents[consIndex];
+                const dpConsIndex = this.surprisesIndex[consequent];
+                
+                this.displaySurprises[dpConsIndex].anteCount++;
             }
         });
 
         this.arrowData = [];
 
         //calcula a posição de partida e chegada das setas com base nas regras de associação
-        this.displayRules.forEach((rule, ruleIndex) => {
+        this.displayRules.forEach((rule, ruleIndex) => {            
             for (let anteIndex = 0; anteIndex < rule.antecedents.length; anteIndex++) {
                 const antecedent = rule.antecedents[anteIndex];
                 const dpAnteIndex = this.surprisesIndex[antecedent];
                 const dpAnte = this.displaySurprises[dpAnteIndex];
+                
+                var anteArrowIndex = dpAnte.consCalc++;
+
 
                 for (let consIndex = 0; consIndex < rule.consequents.length; consIndex++) {
                     const consequent = rule.consequents[consIndex];
@@ -744,7 +747,6 @@ export class Glyph {
 
                     //calcula qual o angulo em que a seta vai se originar, levando em conta as outras setas
                     var anteArrowCount = dpAnte.consCount + dpAnte.anteCount;
-                    var anteArrowIndex = dpAnte.consCalc++;
                     // dpCons.anteCalc++;
 
                     var anteAngleStep = (this.pieData[dpAnteIndex].endAngle - this.pieData[dpAnteIndex].startAngle) / (anteArrowCount + 1);
@@ -754,7 +756,12 @@ export class Glyph {
 
                     //calcula qual o ponto em que a seta ira apontar, levando em conta as outras setas
                     var consArrowCount = dpCons.consCount + dpCons.anteCount;
-                    var consArrowIndex = dpCons.consCount + dpCons.anteCalc++;
+
+                    
+                    var consArrowIndex = dpCons.consCount + dpCons.anteCalc
+                    if(anteIndex == rule.antecedents.length - 1){
+                        dpCons.anteCalc++;
+                    }
 
                     var consAngleStep = (this.pieData[dpConsIndex].endAngle - this.pieData[dpConsIndex].startAngle) / (consArrowCount + 1);
                     var consAngle = this.pieData[dpConsIndex].startAngle + (consArrowIndex + 1) * consAngleStep;
@@ -763,6 +770,7 @@ export class Glyph {
 
                     this.arrowData.push(arrowPos);
                 }
+
             }
         });
     }
