@@ -74,7 +74,7 @@ export class Glyph {
             "#D62C2C", //vermelho
             "#EAEA3C", //amarelo
             "#4CE685", //verde claro
-            "#FFFFFF", //branco
+            "#222222", //preto
             "#4C85E0", //azul
             "#452CA6",  //roxo
             "#3CD6D6", //ciano
@@ -790,12 +790,13 @@ export class Glyph {
 
         //criação das outlines das setas
         this.arrowOutlines = this.svgGroup.append("g")
-            .attr("class", "glyph-arrow-outlines");
+            .attr("class", "glyph-arrow-outlines")
+            .attr("visibility", "hidden");
 
         //criação das outlines das barras
         this.barOutlines = this.svgGroup.append("g")
-            .attr("class", "glyph-bar-outlines");
-
+            .attr("class", "glyph-bar-outlines")
+            .attr("visibility", "hidden");
 
         //criação da borda circular
         this.circleBorder = this.svgGroup.append("g")
@@ -829,8 +830,8 @@ export class Glyph {
             .attr("font-family", "Trebuchet MS, monospace")
             .attr("font-size", this.textSize)
             .attr("text-anchor", "middle")                      //centraliza horizontalmente
-            .attr("dominant-baseline", "middle");           //centraliza verticalmente
-
+            .attr("dominant-baseline", "middle")           //centraliza verticalmente
+            .attr("visibility", "hidden");                              //inicialmente não é mostrado
         //texto principal
         this.mainText = this.svgGroup.append("g")
             .attr("class", "glyph-title")
@@ -846,7 +847,7 @@ export class Glyph {
             .attr("class", "glyph-count")
             .attr("fill", "black")
             .attr("font-family", "Trebuchet MS, monospace")
-            .attr("font-size", this.width / 12)
+            .attr("font-size", this.width / 10)
             .attr("text-anchor", "middle")                      //centraliza horizontalmente
             .attr("dominant-baseline", "middle")            //centraliza verticalmente
             .attr("visibility", "");
@@ -929,7 +930,7 @@ export class Glyph {
                 enter => enter.append("path")
                     .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
                     .attr("stroke", this.outlineColor)
-                    .attr("stroke-width", this.outlineWidth)
+                    .attr("stroke-width", 0)
                     .attr("d", this.borderArc),
                 update => update
                     .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
@@ -949,14 +950,14 @@ export class Glyph {
                         .attr("transform", d => `translate(0,${-this.innerRadius + this.arrowPointSize + this.outlineWidth + this.circleBorderWidth / 2}) rotate(${d.cons[0] * RADIANS}, 0, ${this.innerRadius - this.arrowPointSize - this.outlineWidth - this.circleBorderWidth / 2})`)
                         .attr("fill", d => this.colorScale(d.rule))
                         .attr("stroke", this.outlineColor)
-                        .attr("stroke-width", this.outlineWidth);
+                        .attr("stroke-width", 0);
 
                     //criação das linhas
                     arrowGroup.append("path")
                         .attr("d", (d) => this.radialLine([d.ante, d.center, d.cons]))
                         .attr("fill", "none")
                         .attr("stroke", d => this.colorScale(d.rule))
-                        .attr("stroke-width", this.arrowWidth);
+                        .attr("stroke-width", this.arrowWidth * 2);
 
                     return arrowGroup;
                 },
@@ -1043,7 +1044,12 @@ export class Glyph {
                         .data(d => [d.data.name.replace(/_\d+$/, "").slice(0, parseInt(128 / this.maxCategories))])
                         .join("tspan")
                         .attr("y", (d, i) => i === 0 ? -this.textSize / 2 : this.textSize / 2)
-                        .text(d => d)),
+                        .text(d => d))
+                    .call(text => text.append("tspan")
+                        .attr("x", 0)
+                        .attr("y", this.textSize / 2)
+                        .attr("font-weight", 200)
+                        .text(d => d.data.value.toLocaleString("pt-BR"))),
                 exit => exit.remove()
             );
 
@@ -1054,6 +1060,7 @@ export class Glyph {
                 enter => enter.append("text")
                     .call(text => text.append("tspan")
                         .attr("font-weight", 900)
+                        .attr("y", "80")
                         .text(this.name))
                     .attr("stroke", "white")
                     .attr("stroke-width", 2)
@@ -1070,7 +1077,7 @@ export class Glyph {
                 enter => enter.append("text")
                     .call(text => text.append("tspan")
                         .attr("font-weight", 900)
-                        .attr("y", "20")
+                        .attr("y", "-70")
                         .text(this.displayedCount))
                     .attr("stroke", "white")
                     .attr("stroke-width", 2)
@@ -1086,6 +1093,19 @@ export class Glyph {
     hoverBegin() {
         this.mainText.attr("visibility", "hidden");
         this.countText.attr("visibility", "hidden");
+        this.barOutlines.attr("visibility", "");
+        this.barTexts.attr("visibility", "");
+        this.arrowOutlines.attr("visibility", "");
+
+        this.circleBorder.selectAll("path")
+            .attr("stroke-width", this.outlineWidth);
+
+        this.arrows.selectAll("polygon")
+            .attr("stroke-width", this.outlineWidth);
+        
+        this.arrows.selectAll("path")
+            .attr("stroke-width", this.arrowWidth);
+
         this.marker.setIcon(this.hoverIcon);
         this.background.style("opacity", 0.6);
         this.svg.node().parentElement.style.zIndex = 9000;
@@ -1094,6 +1114,19 @@ export class Glyph {
     hoverEnd() {
         this.mainText.attr("visibility", "");
         this.countText.attr("visibility", "");
+        this.barTexts.attr("visibility", "hidden");
+        this.barOutlines.attr("visibility", "hidden");
+        this.arrowOutlines.attr("visibility", "hidden");
+
+        this.circleBorder.selectAll("path")
+            .attr("stroke-width", 0);
+
+        this.arrows.selectAll("polygon")
+            .attr("stroke-width", 0);
+
+        this.arrows.selectAll("path")
+            .attr("stroke-width", this.arrowWidth * 2);
+
         this.marker.setIcon(this.icon);
         this.background.style("opacity", 0);
         if (this.svg.node().parentElement)
