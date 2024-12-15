@@ -7,8 +7,8 @@ export class RangeControl extends Control {
         this.addSlider();
     }
 
-    reload(){
-        this.wrapper.node().innerHTML="";
+    reload() {
+        this.wrapper.node().innerHTML = "";
         this.createControl();
         this.addSlider();
     }
@@ -52,8 +52,8 @@ export class RangeControl extends Control {
         this.update();
     }
 
-    updateThumb(){
-        if(this.rangeSlider)
+    updateThumb() {
+        if (this.rangeSlider)
             this.rangeSlider.range(this.range.begin, this.range.end);
     }
 
@@ -61,7 +61,7 @@ export class RangeControl extends Control {
         if (this.options.updateTooltip) {
             this.options.updateTooltip(this.tooltip, this.range);
         }
-        else{
+        else {
             this.tooltip.text(this.range.begin + " - " + this.range.end);
         }
     }
@@ -72,7 +72,7 @@ export class RangeControl extends Control {
         }
     }
 
-    show(){
+    show() {
         super.show();
         this.updateThumb();
     }
@@ -106,7 +106,7 @@ export function createD3RangeSlider(rangeMin, rangeMax, rangeStep, container, pl
     if (container instanceof Element)
         container = d3.select(container);
 
-    var minWidth = 10;
+    var minWidth = 16;
 
     var sliderRange = { begin: rangeMin, end: rangeMin };
     var changeListeners = [];
@@ -126,7 +126,10 @@ export function createD3RangeSlider(rangeMin, rangeMax, rangeStep, container, pl
     //Create elements in container
     var slider = sliderBox
         .append("div")
-        .attr("class", "range-slider");
+        .attr("class", "range-slider")
+        .attr("realWidth", sliderBox.node().clientWidth)
+        .attr("realLeft", 0);
+
     var handleW = slider.append("div").attr("class", "handle WW");
     var handleE = slider.append("div").attr("class", "handle EE");
 
@@ -143,17 +146,18 @@ export function createD3RangeSlider(rangeMin, rangeMax, rangeStep, container, pl
         var uirangeL = ratio * (conW - uirangeW);
 
         slider
-            .style("left", uirangeL + "px")
-            .style("width", uirangeW + "px");
+            .style("left", uirangeL - minWidth / 2 + "px")
+            .style("width", uirangeW + minWidth + "px");
     }
 
     /** Update the `sliderRange` based on the `left` and `width` attributes of `slider` */
     function updateRangeFromUI() {
-        var uirangeL = parseFloat(slider.style("left"));
-        var uirangeW = parseFloat(slider.style("width"));
+        var uirangeL = parseFloat(slider.style("left")) + minWidth/2;
+        var uirangeW = parseFloat(slider.style("width"))-minWidth;
+        
         var conW = sliderBox.node().clientWidth; //parseFloat(container.style("width"));
-        var slope = (conW - minWidth) / (rangeMax - rangeMin);
-        var rangeW = (uirangeW - minWidth) / slope;
+        var slope = (conW) / (rangeMax - rangeMin);
+        var rangeW = (uirangeW) / slope;
         if (conW == uirangeW) {
             var uislope = 0;
         } else {
@@ -190,22 +194,41 @@ export function createD3RangeSlider(rangeMin, rangeMax, rangeStep, container, pl
             });
         })
         .on("drag", function (event) {
-            var dx = event.dx;
-            if (dx == 0) return;
+            if (event.dx == 0) return;
 
-            var conWidth = sliderBox.node().clientWidth; //parseFloat(container.style("width"));
-            var newLeft = parseInt(slider.style("left"));
-            var newWidth = parseFloat(slider.style("width")) + dx;
-            newWidth = Math.max(newWidth, minWidth);
-            newWidth = Math.min(newWidth, conWidth - newLeft);
-            slider.style("width", newWidth + "px");
+            const conWidth = sliderBox.node().clientWidth; //parseFloat(container.style("width"));
+            const conLeft = sliderBox.node().clientLeft;
+            const realWidth = parseFloat(slider.attr("realWidth"));
+            const realLeft = parseFloat(slider.attr("realLeft"));
+
+
+            var currentLeft = parseInt(slider.style("left"));
+
+            var newWidth = event.x - conLeft;
+            newWidth = Math.min(newWidth, conWidth - realLeft );
+            newWidth = Math.max(newWidth, 0);
+
+            slider.attr("realWidth", newWidth);
+
+            var newStep = (rangeStep * conWidth) / (rangeMax - rangeMin);
+            var snapLeft = roundToStep(realLeft, newStep);
+            snapLeft -= minWidth;
+            snapLeft = snapLeft - currentLeft
+            var snapWidth = roundToStep(newWidth, newStep);
+            snapWidth -= snapLeft;
+            snapWidth += minWidth / 2;
+            // snapWidth = Math.max(newWidth, minWidth);
+
+
+            // console.log(slider.node().attributes["realWidth"].value)
+            slider.style("width", snapWidth + "px");
             updateRangeFromUI();
         });
 
     var dragResizeW = d3.drag()
         .on("start", function (event) {
 
-            this.startX = d3.pointer(event, this)[0];
+            this.startX = sliderBox.node().getBoundingClientRect().left;
             event.sourceEvent.stopPropagation();
             resumePlaying = playing;
             playing = false;
@@ -219,34 +242,55 @@ export function createD3RangeSlider(rangeMin, rangeMax, rangeStep, container, pl
             });
         })
         .on("drag", function (ev) {
-            var dx = d3.pointer(ev, this)[0] - this.startX;
+            const conLeft = sliderBox.node().clientLeft;
+            var dx = ev.sourceEvent.clientX - this.startX;
 
-            if (dx == 0) return;
-            var newLeft = parseFloat(slider.style("left")) + dx;
-            var newWidth = parseFloat(slider.style("width")) - dx;
+            if (dx === 0) return;
 
-            if (newLeft < 0) {
-                newWidth += newLeft;
-                newLeft = 0;
-            }
-            if (newWidth < minWidth) {
-                newLeft -= minWidth - newWidth;
-                newWidth = minWidth;
-            }
+            const conWidth = sliderBox.node().clientWidth; //parseFloat(container.style("width"));
+            const realLeft = parseFloat(slider.attr("realLeft"));
+            const realWidth = parseFloat(slider.attr("realWidth"));
+            const currentLeft = parseFloat(slider.style("left"));
+            const currentWidth = parseFloat(slider.style("width"));
 
-            slider.style("left", newLeft + "px");
-            slider.style("width", newWidth + "px");
+            var newLeft = dx;
+            newLeft = Math.min(newLeft, currentLeft + realWidth+minWidth/2);
+
+            newLeft = Math.max(newLeft, 0);
+
+
+            slider.attr("realLeft", newLeft);
+
+            var newStep = (rangeStep * conWidth) / (rangeMax - rangeMin);
+
+            var snapLeft = roundToStep(newLeft, newStep);
+            snapLeft -= minWidth / 2;
+
+            var newWidth = realWidth - snapLeft + currentLeft;
+            newWidth = Math.min(newWidth, conWidth - snapLeft);
+            newWidth = Math.max(newWidth, 0);
+
+            slider.attr("realWidth", newWidth);
+
+            var snapWidth = roundToStep(newWidth, newStep);
+            snapWidth += minWidth;
+
+            slider.style("left", snapLeft + "px");
+            slider.style("width", snapWidth + "px");
 
             updateRangeFromUI();
         });
 
     var dragMove = d3.drag()
         .on("start", function (event) {
+            this.startX = d3.pointer(event, this)[0];
+
             event.sourceEvent.stopPropagation();
             resumePlaying = playing;
             playing = false;
         })
         .on("end", function () {
+
             if (resumePlaying) {
                 startPlaying();
             }
@@ -254,15 +298,33 @@ export function createD3RangeSlider(rangeMin, rangeMax, rangeStep, container, pl
                 callback({ begin: sliderRange.begin, end: sliderRange.end });
             });
         })
-        .on("drag", function (event) {
-            var dx = event.dx;
-            var conWidth = sliderBox.node().clientWidth; //parseInt(container.style("width"));
-            var newLeft = parseInt(slider.style("left")) + dx;
-            var newWidth = parseInt(slider.style("width"));
+        .on("drag", function (ev) {
+            var dx = d3.pointer(ev, this)[0] - this.startX;
 
-            newLeft = Math.max(newLeft, 0);
-            newLeft = Math.min(newLeft, conWidth - newWidth);
-            slider.style("left", newLeft + "px");
+            if (dx === 0) return;
+
+            var conWidth = sliderBox.node().clientWidth;
+
+            var currentLeft = parseFloat(slider.style("left"));
+            const realLeft = parseFloat(slider.attr("realLeft"));
+            const currentWidth = parseFloat(slider.style("width"));
+
+
+            var newLeft = currentLeft + dx;
+
+            if (newLeft + currentWidth >= conWidth + minWidth) {
+                newLeft = conWidth + minWidth - currentWidth 
+            }
+            if (newLeft <0){
+                newLeft = 0;
+            }
+
+            slider.attr("realLeft", newLeft);
+
+            var snapLeft = roundToStep(newLeft / conWidth * (rangeMax - rangeMin), rangeStep) / (rangeMax - rangeMin) * conWidth;
+            snapLeft -= minWidth / 2;
+            
+            slider.style("left", snapLeft + "px");
 
             updateRangeFromUI();
         });

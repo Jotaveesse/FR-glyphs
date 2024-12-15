@@ -123,7 +123,7 @@ border: none;
   background-color: #40c979;
 }
 .multi-select .multi-select-options .multi-select-option.multi-select-selected .multi-select-option-radio::after,
-.multi-select .multi-select-options .multi-select-all.multi-select-selected .multi-select-option-radio::after
+.multi-select .multi-select-options .multi-select-all.multi-select-selected .multi-select-option-radio::after,
 .multi-select .multi-select-options .multi-unselect-all.multi-select-selected .multi-select-option-radio::after{
   content: "";
   display: block;

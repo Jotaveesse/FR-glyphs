@@ -11,6 +11,7 @@
     from {
         width: 0;
     }
+
     to {
         width: 400px;
     }
@@ -20,6 +21,7 @@
     from {
         width: 400px;
     }
+
     to {
         width: 0;
     }
@@ -159,7 +161,7 @@
 
 .slider-container {
     position: relative;
-    width: 100%;
+    width: calc(100% - 32px);
     height: min-content;
     display: flex;
     margin: auto;
@@ -215,7 +217,7 @@
 
 .range-slider-container {
     background-color: white;
-    width: 100%;
+    width: calc(100% - 32px);
     height: 12px;
     outline: 1px #444 solid;
     margin: auto;
@@ -233,7 +235,7 @@
     cursor: move;
 }
 
-.range-slider:hover{
+.range-slider:hover {
     background: #333;
 }
 
@@ -241,22 +243,22 @@
     position: absolute;
     height: 16px;
     width: 16px;
-    top: -2px;
+    top: -2.5px;
     background: white;
     border: 2px solid #444;
     box-sizing: border-box;
 }
 
 .range-slider .EE {
-    right: -10px;
+    right: -16px;
     cursor: e-resize;
-    border-radius: 100%;
+    border-radius: 0px 100% 100% 0px;
 }
 
 .range-slider .WW {
-    left: -10px;
+    left: -16px;
     cursor: w-resize;
-    border-radius: 100%;
+    border-radius: 100% 0 0 100%;
 }
 
 .data-range-control .EE {
