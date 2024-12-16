@@ -2,6 +2,7 @@ import { Surprise } from './surprise.js';
 import { FPGrowth } from './association.js';
 import * as models from './models.js';
 import { isSubset } from '../common.js';
+import { CompareGlyphControl } from '../controls/compareGlyphControl.js';
 
 const RADIANS = 180 / Math.PI;
 
@@ -721,7 +722,7 @@ export class Glyph {
             for (let consIndex = 0; consIndex < rule.consequents.length; consIndex++) {
                 const consequent = rule.consequents[consIndex];
                 const dpConsIndex = this.surprisesIndex[consequent];
-                
+
                 this.displaySurprises[dpConsIndex].anteCount++;
             }
         });
@@ -729,12 +730,12 @@ export class Glyph {
         this.arrowData = [];
 
         //calcula a posição de partida e chegada das setas com base nas regras de associação
-        this.displayRules.forEach((rule, ruleIndex) => {            
+        this.displayRules.forEach((rule, ruleIndex) => {
             for (let anteIndex = 0; anteIndex < rule.antecedents.length; anteIndex++) {
                 const antecedent = rule.antecedents[anteIndex];
                 const dpAnteIndex = this.surprisesIndex[antecedent];
                 const dpAnte = this.displaySurprises[dpAnteIndex];
-                
+
                 var anteArrowIndex = dpAnte.consCalc++;
 
 
@@ -757,9 +758,9 @@ export class Glyph {
                     //calcula qual o ponto em que a seta ira apontar, levando em conta as outras setas
                     var consArrowCount = dpCons.consCount + dpCons.anteCount;
 
-                    
+
                     var consArrowIndex = dpCons.consCount + dpCons.anteCalc
-                    if(anteIndex == rule.antecedents.length - 1){
+                    if (anteIndex == rule.antecedents.length - 1) {
                         dpCons.anteCalc++;
                     }
 
@@ -789,6 +790,7 @@ export class Glyph {
             .attr("class", "svg-group");
 
         this.background = this.svgGroup.append("circle")
+            .attr("class", "glyph-background")
             .attr("r", this.width / 2)
             .style("pointer-events", "auto")
             .style("fill", "rgba(255, 255, 255)")
@@ -827,6 +829,7 @@ export class Glyph {
         this.circleTextPath.arc(0, 0, this.textRadius, -0.5 * Math.PI, 1.5 * Math.PI);
 
         this.textPath = this.svgGroup.append("path")
+            .attr("class", "glyph-text-circle")
             .attr("id", `text-circle-${this.name}`)
             .attr("d", this.circleTextPath.toString())
             .attr("fill", "none")
@@ -834,12 +837,14 @@ export class Glyph {
 
         //criação dos textos de cada barra
         this.barTexts = this.svgGroup.append("g")
+            .attr("class", "glyph-bar-texts")
             .attr("fill", this.textColor)
             .attr("font-family", "Trebuchet MS, monospace")
             .attr("font-size", this.textSize)
             .attr("text-anchor", "middle")                      //centraliza horizontalmente
             .attr("dominant-baseline", "middle")           //centraliza verticalmente
             .attr("visibility", "hidden");                              //inicialmente não é mostrado
+
         //texto principal
         this.mainText = this.svgGroup.append("g")
             .attr("class", "glyph-title")
@@ -862,9 +867,11 @@ export class Glyph {
 
         //hitbox do svg para detectar hover
         this.hitbox = this.svgGroup.append("circle")
+            .attr("class", "glyph-hitbox")
             .attr("r", this.width / 2)
             .style("pointer-events", "auto")
             .style("fill", "rgba(0, 0, 0, 0.0)")
+            .on("contextmenu", this.rightClick.bind(this))
             .on("click", this.hoverBegin.bind(this))
             .on("mouseout", this.hoverEnd.bind(this));
 
@@ -1110,7 +1117,7 @@ export class Glyph {
 
         this.arrows.selectAll("polygon")
             .attr("stroke-width", this.outlineWidth);
-        
+
         this.arrows.selectAll("path")
             .attr("stroke-width", this.arrowWidth);
 
@@ -1139,6 +1146,17 @@ export class Glyph {
         this.background.style("opacity", 0);
         if (this.svg.node().parentElement)
             this.svg.node().parentElement.style.zIndex = -9000;
+    }
+
+    rightClick() {
+        const iconClone = this.icon.options.html.cloneNode(true);
+
+        this.compareGlyph = new CompareGlyphControl('#compare-area .menu-accordion-items', {
+            labelText: this.name,
+            icon: iconClone,
+            glyph: this,
+            startHidden: false,
+        });
     }
 
     static getRuleScore(rule) {

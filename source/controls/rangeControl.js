@@ -48,7 +48,8 @@ export class RangeControl extends Control {
         }.bind(this));
 
         this.rangeSlider.range(this.options.rangeInitMin, this.options.rangeInitMax);
-
+        this.slider.select(".range-slider").attr("realWidth", this.slider.select(".range-slider-container").node().clientWidth);
+        
         this.update();
     }
 
@@ -75,6 +76,7 @@ export class RangeControl extends Control {
     show() {
         super.show();
         this.updateThumb();
+        this.slider.select(".range-slider").attr("realWidth", this.slider.select(".range-slider-container").node().clientWidth);
     }
 }
 

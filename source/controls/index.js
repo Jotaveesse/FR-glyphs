@@ -8,3 +8,4 @@ export * from './dateRangeControl.js';
 export * from './multiBoxControl.js';
 export * from './textInputControl.js';
 export * from './menuAccordionControl.js';
+export * from './compareGlyphControl.js';

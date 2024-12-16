@@ -13,6 +13,7 @@ export class Control {
 
     init() {
         const container = d3.select(this.selector);
+        this.container = container;
 
         if (this.options.insertBefore) {
             const nextSib = d3.select(this.options.insertBefore);
@@ -49,6 +50,10 @@ export class Control {
     reload() {
         this.wrapper.node().innerHTML = "";
         this.createControl();
+    }
+
+    remove(){
+        this.wrapper.remove();
     }
 
     show() {

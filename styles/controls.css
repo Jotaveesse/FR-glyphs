@@ -243,7 +243,7 @@
     position: absolute;
     height: 16px;
     width: 16px;
-    top: -2.5px;
+    top: -2px;
     background: white;
     border: 2px solid #444;
     box-sizing: border-box;
@@ -296,4 +296,80 @@
 select.combobox-container option {
     background-color: #ffffff;
     transform: translate(10px, 0);
+}
+
+.compare-glyph-control {
+    position: relative;
+}
+
+.compare-glyph-control {
+    border-bottom: 0px black solid;
+    border-radius:12px;
+    box-shadow: 0px 2px 6px #888;
+    margin-bottom: 12px;
+    margin-top:2px
+}
+
+.compare-glyph-control .control-label{
+    font-size:16px;
+    background-color:#444;
+    width:fit-content;
+    margin:auto;
+    color:white;
+    height:24px;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 24px;
+    padding:0px 6px;
+    border-radius:4px;
+}
+
+.compare-glyph-control .glyph-control-button-area {
+    position: absolute;
+    display:flex;
+    right: 4px;
+    top: 4px;
+    height: fit-content;
+}
+
+.compare-glyph-control .glyph-control-button{
+    display:flex;
+    height: 24px;
+    width: 24px;
+    margin: 2px;
+    background-color: #444;
+    justify-content:space-evenly;
+    align-items: center;
+    cursor: pointer;
+    border-radius:4px;
+}
+
+.compare-glyph-control .glyph-control-button:hover {
+    background-color: #333;
+}
+
+.compare-glyph-control .glyph-control-button button{
+    height: 16px;
+    width: 16px;
+    background-color: white;
+    cursor: pointer;
+}
+
+.compare-glyph-control .glyph-control-up-button button{
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 13l-6-6 1.5-1.5L8 10.5l4.5-4.5L14 7z'/%3E%3C/svg%3E") no-repeat center;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 1 16 16'%3E%3Cpath d='M8 13l-6-6 1.5-1.5L8 10.5l4.5-4.5L14 7z'/%3E%3C/svg%3E") no-repeat center;
+    transform: translateY(0%) rotate(180deg) !important;
+
+}
+
+.compare-glyph-control .glyph-control-down-button button{
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 13l-6-6 1.5-1.5L8 10.5l4.5-4.5L14 7z'/%3E%3C/svg%3E") no-repeat center;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 1 16 16'%3E%3Cpath d='M8 13l-6-6 1.5-1.5L8 10.5l4.5-4.5L14 7z'/%3E%3C/svg%3E") no-repeat center;
+    transform: translateY(0%) rotate(0deg);
+}
+
+.compare-glyph-control .glyph-control-remove-button button {
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 4l8 8M4 12L12 4' stroke='currentColor' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 4l8 8M4 12L12 4' stroke='currentColor' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
+    transform: translateY(0%) rotate(0deg);
 }
