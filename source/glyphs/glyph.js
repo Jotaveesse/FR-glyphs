@@ -526,11 +526,37 @@ export class Glyph {
     updateRules() {
         this.associations.generateRules();
 
-        this.filteredRules = structuredClone(this.associations.rules);
+        this.filteredRules = this.associations.rules;
         //ordena as regras por maior score
         this.associations.rules = this.associations.rules.sort((a, b) => {
-            return Glyph.getRuleScore(b) - Glyph.getRuleScore(a);
+            return b.interestingness - a.interestingness;
         });
+    }
+
+    updateFilteredRules() {    //filtra as regras que estao dentro dos limites dos limiares
+        this.filteredRules = [];
+        for (let i = 0; i < this.associations.rules.length; i++) {
+            const rule = this.associations.rules[i];
+
+            if (
+                rule.antecedents.length >= this.minAntecedents &&
+                rule.antecedents.length <= this.maxAntecedents &&
+                rule.consequents.length >= this.minConsequents &&
+                rule.consequents.length <= this.maxConsequents &&
+                rule.antecedentSupport >= this.minSupport &&
+                rule.consequentSupport >= this.minSupport &&
+                rule.antecedentSupport <= this.maxSupport &&
+                rule.consequentSupport <= this.maxSupport &&
+                rule.confidence >= this.minConfidence &&
+                rule.confidence <= this.maxConfidence &&
+                rule.lift >= this.minLift &&
+                rule.lift <= this.maxLift &&
+                (this.allowedAntecedents.length == 0 || isSubset(rule.antecedents, this.allowedAntecedents)) &&
+                (this.allowedConsequents.length == 0 || isSubset(rule.consequents, this.allowedConsequents))
+            ) {
+                this.filteredRules.push(rule);
+            }
+        }
     }
 
     updateDisplayRules() {
@@ -613,31 +639,6 @@ export class Glyph {
         }
     }
 
-    updateFilteredRules() {    //filtra as regras que estao dentro dos limites dos limiares
-        this.filteredRules = [];
-        for (let i = 0; i < this.associations.rules.length; i++) {
-            const rule = this.associations.rules[i];
-
-            if (
-                rule.antecedents.length >= this.minAntecedents &&
-                rule.antecedents.length <= this.maxAntecedents &&
-                rule.consequents.length >= this.minConsequents &&
-                rule.consequents.length <= this.maxConsequents &&
-                rule.antecedentSupport >= this.minSupport &&
-                rule.consequentSupport >= this.minSupport &&
-                rule.antecedentSupport <= this.maxSupport &&
-                rule.consequentSupport <= this.maxSupport &&
-                rule.confidence >= this.minConfidence &&
-                rule.confidence <= this.maxConfidence &&
-                rule.lift >= this.minLift &&
-                rule.lift <= this.maxLift &&
-                (this.allowedAntecedents.length == 0 || isSubset(rule.antecedents, this.allowedAntecedents)) &&
-                (this.allowedConsequents.length == 0 || isSubset(rule.consequents, this.allowedConsequents))
-            ) {
-                this.filteredRules.push(rule);
-            }
-        }
-    }
 
     updateProportions() {
         this.startAngle = 0;
@@ -1156,11 +1157,6 @@ export class Glyph {
             glyph: this,
             startHidden: false,
         });
-    }
-
-    static getRuleScore(rule) {
-        const base = rule.confidence + rule.antecedentSupport + rule.consequentSupport - (rule.antecedents.length + rule.consequents.length) * 2;
-        return base * rule.lift * rule.lift;
     }
 
     removeMarker() {

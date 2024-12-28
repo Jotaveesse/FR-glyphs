@@ -42,8 +42,8 @@ export class FPGrowth extends Association {
 
         newGrowth.tree = newTree;
         newGrowth.transactionCount = this.transactionCount + otherFPGrowth.transactionCount;
-        
-        if(updatePatterns)
+
+        if (updatePatterns)
             newGrowth.patterns = newTree.minePatterns();
 
         return newGrowth;
@@ -84,6 +84,10 @@ export class FPGrowth extends Association {
                         const lift = confidence / consequentSupport;
 
                         if (lift >= minLift) {
+                            const interestingness = FPGrowth.getInterestingness(
+                                antecedentSupport, consequentSupport, confidence, lift,
+                                antecedents.length, consequents.length
+                            );
 
                             this.rules.push({
                                 antecedents: ante,
@@ -91,7 +95,8 @@ export class FPGrowth extends Association {
                                 confidence: confidence,
                                 lift: lift,
                                 antecedentSupport: antecedentSupport,
-                                consequentSupport: consequentSupport
+                                consequentSupport: consequentSupport,
+                                interestingness: interestingness
                             });
                         }
                     }
@@ -100,6 +105,20 @@ export class FPGrowth extends Association {
         });
 
         return this.rules;
+    }
+
+    static getInterestingness(anteSupport, consSupport, confidence, lift, anteLength, consLength) {
+        function liftClamp(lift) {
+            let sigmoid = 1 / (1 + Math.exp(-4 * (lift - 1)));
+            sigmoid = (sigmoid - 0.5) * 2;
+            return sigmoid;
+        }
+
+        return confidence +
+            anteSupport / 2 +
+            consSupport / 2 +
+            liftClamp(lift) * 2 -
+            (anteLength + consLength - 2) / 4;
     }
 
     // gera todos os subconjuntos de um conjunto de itens
@@ -393,8 +412,8 @@ class FPNode {
     }
 }
 
-export function isEmpty(string){
+export function isEmpty(string) {
     const regex = /^_\d+$/;
 
-    return regex.test(string); 
+    return regex.test(string);
 }
