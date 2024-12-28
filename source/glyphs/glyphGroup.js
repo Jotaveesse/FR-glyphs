@@ -43,33 +43,7 @@ export class GlyphGroup {
             spiderfyOnMaxZoom: true,
             showCoverageOnHover: false,
             zoomToBoundsOnClick: false,
-            iconCreateFunction: (cluster) => {
-
-                this.clusterMarkers.push(cluster);
-                const clusterMarkers = cluster.getAllChildMarkers();
-                const clusterGlyphs = clusterMarkers.map(cl => cl.options.glyph);
-
-                const mergedGlyph = Glyph.merge(clusterGlyphs);
-                mergedGlyph.group = this;
-                mergedGlyph.setSupport(this.minSupport, this.maxSupport);
-                mergedGlyph.setConfidence(this.minConfidence, this.maxConfidence);
-                mergedGlyph.setLift(this.minLift, this.maxLift);
-                mergedGlyph.setAntecedentFilter(this.allowedAntecedents);
-                mergedGlyph.setConsequentFilter(this.allowedConsequents);
-                mergedGlyph.setAntecedentDisplayedRange(this.minAntecedents, this.maxAntecedents);
-                mergedGlyph.setConsequentDisplayedRange(this.minConsequents, this.maxConsequents);
-                mergedGlyph.setMaxRules(this.maxRules);
-                mergedGlyph.setSize(this.glyphSize);
-                mergedGlyph.setDisplayMethod(this.displayMethod);
-                mergedGlyph.setHoverSize(this.glyphHoverSize);
-                mergedGlyph.setMaxCategories(this.maxCategories);
-                mergedGlyph.applyUpdates();
-
-                cluster.glyph = mergedGlyph;
-
-                return mergedGlyph.icon;
-
-            }
+            iconCreateFunction: this.createClusterIcon.bind(this)
         });
 
         this.markers.on('clusterclick', function (ev) {
@@ -85,54 +59,6 @@ export class GlyphGroup {
             ev.layer.setIcon(ev.layer.glyph.icon);
             ev.layer.glyph.svg.node().parentElement.style.zIndex = -9000;
         });
-    }
-
-    setTotals() {
-        this.categFreq = {};
-        this.uniqueValues = [];
-
-        for (const group of Object.values(this.filteredData)) {
-            for (const entry of group) {
-                for (const value of Object.values(entry)) {
-                    if (!isEmpty(value)) {
-                        if (!this.categFreq[value]) {
-                            this.categFreq[value] = [0];
-                            this.uniqueValues.push(value);
-                        }
-
-                        this.categFreq[value][0] += 1;
-                    }
-                }
-            }
-        }
-    }
-
-    transformModels(models) {
-        const transformed = {};
-
-        for (let modelInd = 0; modelInd < models.length; modelInd++) {
-            const model = models[modelInd];
-
-            for (const group in model) {
-                const groupData = model[group];
-
-                if (!transformed[group]) {
-                    transformed[group] = [];
-                }
-
-                for (const categ in groupData) {
-                    const categoryData = groupData[categ];
-
-                    if (!transformed[group][modelInd]) {
-                        transformed[group][modelInd] = {};
-                    }
-
-                    transformed[group][modelInd][categ] = categoryData;
-                }
-            }
-        }
-
-        return transformed;
     }
 
     remove() {
@@ -213,7 +139,11 @@ export class GlyphGroup {
             glyph.applyUpdates();
         };
 
-        this.markers.refreshClusters();
+        this.clusterMarkers.forEach(marker => {
+            marker.glyph.applyUpdates();
+        })
+
+        // this.markers.refreshClusters();
 
         const endTime = performance.now();
         console.log(`update total time: ${(endTime - startTime).toFixed(2)} ms`);
@@ -221,152 +151,103 @@ export class GlyphGroup {
         console.log("===== Finished Update =====")
     }
 
-    logExecutionTime(fn, label) {
-        const t0 = performance.now();
-        fn();
-        const t1 = performance.now();
-        console.log(`${label}: ${(t1 - t0).toFixed(2)} ms`);
+    updateClusterList() {
+        var visibleClusterMarkers = [];
+        var foundIds = [];
+        this.markers.eachLayer((marker) => {
+            const parent = this.markers.getVisibleParent(marker);
+            if (parent && !isNaN(parent._childCount) && !foundIds.includes(parent._leaflet_id)) {
+                visibleClusterMarkers.push(parent);
+                foundIds.push(parent._leaflet_id);
+            }
+        });
+
+        this.clusters = visibleClusterMarkers;
     }
 
-    setDisplayMethod(method) {
-        this.displayMethod = method;
+    createClusterIcon(cluster) {
+        this.clusterMarkers.push(cluster);
+        const clusterMarkers = cluster.getAllChildMarkers();
+        const clusterGlyphs = clusterMarkers.map(cl => cl.options.glyph);
 
+        const mergedGlyph = Glyph.merge(clusterGlyphs);
+        mergedGlyph.group = this;
+        mergedGlyph.setSupport(this.minSupport, this.maxSupport);
+        mergedGlyph.setConfidence(this.minConfidence, this.maxConfidence);
+        mergedGlyph.setLift(this.minLift, this.maxLift);
+        mergedGlyph.setAntecedentFilter(this.allowedAntecedents);
+        mergedGlyph.setConsequentFilter(this.allowedConsequents);
+        mergedGlyph.setAntecedentDisplayedRange(this.minAntecedents, this.maxAntecedents);
+        mergedGlyph.setConsequentDisplayedRange(this.minConsequents, this.maxConsequents);
+        mergedGlyph.setMaxRules(this.maxRules);
+        mergedGlyph.setSize(this.glyphSize);
+        mergedGlyph.setDisplayMethod(this.displayMethod);
+        mergedGlyph.setHoverSize(this.glyphHoverSize);
+        mergedGlyph.setMaxCategories(this.maxCategories);
+        mergedGlyph.applyUpdates();
+
+        cluster.glyph = mergedGlyph;
+
+        return mergedGlyph.icon;
+    }
+
+    setTotals() {
+        this.categFreq = {};
+        this.uniqueValues = [];
+
+        for (const group of Object.values(this.filteredData)) {
+            for (const entry of group) {
+                for (const value of Object.values(entry)) {
+                    if (!isEmpty(value)) {
+                        if (!this.categFreq[value]) {
+                            this.categFreq[value] = [0];
+                            this.uniqueValues.push(value);
+                        }
+
+                        this.categFreq[value][0] += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    transformModels(models) {
+        const transformed = {};
+
+        for (let modelInd = 0; modelInd < models.length; modelInd++) {
+            const model = models[modelInd];
+
+            for (const group in model) {
+                const groupData = model[group];
+
+                if (!transformed[group]) {
+                    transformed[group] = [];
+                }
+
+                for (const categ in groupData) {
+                    const categoryData = groupData[categ];
+
+                    if (!transformed[group][modelInd]) {
+                        transformed[group][modelInd] = {};
+                    }
+
+                    transformed[group][modelInd][categ] = categoryData;
+                }
+            }
+        }
+
+        return transformed;
+    }
+
+    getAllGlyphs() {
+        const allGlyphs = this.clusterMarkers.map(marker => marker.glyph);
         for (const groupKey in this.groupedData) {
             const glyph = this.glyphs[groupKey];
 
-            glyph.setDisplayMethod(method);
+            allGlyphs.push(glyph);
         };
-    }
 
-    setChosenColumns(categsChosen) {
-        this.chosenColumns = categsChosen;
-    }
-
-    setAntecedentDisplayedRange(minAntecedents, maxAntecedents) {
-        this.minAntecedents = minAntecedents;
-        this.maxAntecedents = maxAntecedents;
-
-        for (const groupKey in this.groupedData) {
-            const glyph = this.glyphs[groupKey];
-
-            glyph.setAntecedentDisplayedRange(minAntecedents, maxAntecedents);
-        }
-    }
-
-    setConsequentDisplayedRange(minConsequents, maxConsequents) {
-        this.minConsequents = minConsequents;
-        this.maxConsequents = maxConsequents;
-
-        for (const groupKey in this.groupedData) {
-            const glyph = this.glyphs[groupKey];
-
-            glyph.setConsequentDisplayedRange(minConsequents, maxConsequents);
-        }
-    }
-
-    setMaxRules(maxRules) {
-        this.maxRules = maxRules;
-
-        for (const groupKey in this.groupedData) {
-            const glyph = this.glyphs[groupKey];
-
-            glyph.setMaxRules(maxRules);
-        }
-    }
-
-    setMaxCategories(maxCategs) {
-        this.maxCategories = maxCategs;
-
-        for (const groupKey in this.groupedData) {
-            const glyph = this.glyphs[groupKey];
-
-            glyph.setMaxCategories(maxCategs);
-        }
-    }
-
-    setGroupColumn(groupColumn) {
-        this.groupColumn = groupColumn;
-    }
-
-    setDateColumn(dateColumn) {
-        this.dateColumn = dateColumn;
-
-        for (const groupName of this.groupNames) {
-            this.glyphs[groupName].setDateColumn(dateColumn);
-        }
-    }
-
-    setSupport(minSupport, maxSupport = Infinity) {
-        this.minSupport = minSupport;
-        this.maxSupport = maxSupport;
-
-        for (const groupName of this.groupNames) {
-            this.glyphs[groupName].setSupport(minSupport, maxSupport);
-        }
-    }
-
-    setConfidence(minConfidence, maxConfidence = Infinity) {
-        this.minConfidence = minConfidence;
-        this.maxConfidence = maxConfidence;
-
-        for (const groupName of this.groupNames) {
-            this.glyphs[groupName].setConfidence(minConfidence, maxConfidence);
-        }
-    }
-
-    setLift(minLift, maxLift = Infinity) {
-        this.minLift = minLift;
-        this.maxLift = maxLift;
-
-        for (const groupName of this.groupNames) {
-            this.glyphs[groupName].setLift(minLift, maxLift);
-        }
-    }
-
-    setDateFormat(format) {
-        this.dateFormat = format;
-
-        for (const groupName of this.groupNames) {
-            this.glyphs[groupName].setDateFormat(format);
-        }
-    }
-
-    setAntecedentFilter(allowedClasses) {
-        this.allowedAntecedents = allowedClasses;
-
-        for (const groupName of this.groupNames) {
-            this.glyphs[groupName].deferUpdate();
-            this.glyphs[groupName].setAntecedentFilter(allowedClasses);
-        }
-    }
-
-    setConsequentFilter(allowedClasses) {
-        this.allowedConsequents = allowedClasses;
-
-        for (const groupName of this.groupNames) {
-            this.glyphs[groupName].deferUpdate();
-            this.glyphs[groupName].setConsequentFilter(allowedClasses);
-        }
-    }
-
-    setDateRange(startDate, endDate) {
-        this.startDate = startDate;
-        this.endDate = endDate;
-
-        for (const groupName of this.groupNames) {
-            this.glyphs[groupName].deferUpdate();
-            this.glyphs[groupName].setDateRange(startDate, endDate);
-        }
-    }
-
-    setCoordsColumns(latColumn, lonColumn) {
-        this.latColumn = latColumn;
-        this.lonColumn = lonColumn;
-
-        for (const groupName of this.groupNames) {
-            this.glyphs[groupName].deferUpdate();
-            this.glyphs[groupName].setCoordsColumns(latColumn, lonColumn);
-        }
+        return allGlyphs;
     }
 
     groupByColumn() {
@@ -485,4 +366,135 @@ export class GlyphGroup {
         return allRules;
     }
 
+    setDisplayMethod(method) {
+        this.displayMethod = method;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.setDisplayMethod(method);
+        });
+
+    }
+
+    setChosenColumns(categsChosen) {
+        this.chosenColumns = categsChosen;
+    }
+
+    setAntecedentDisplayedRange(minAntecedents, maxAntecedents) {
+        this.minAntecedents = minAntecedents;
+        this.maxAntecedents = maxAntecedents;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.setAntecedentDisplayedRange(minAntecedents, maxAntecedents);
+        });
+    }
+
+    setConsequentDisplayedRange(minConsequents, maxConsequents) {
+        this.minConsequents = minConsequents;
+        this.maxConsequents = maxConsequents;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.setConsequentDisplayedRange(minConsequents, maxConsequents);
+        });
+    }
+
+    setMaxRules(maxRules) {
+        this.maxRules = maxRules;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.setMaxRules(maxRules);
+        });
+    }
+
+    setMaxCategories(maxCategs) {
+        this.maxCategories = maxCategs;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.setMaxCategories(maxCategs);
+        });
+    }
+
+    setGroupColumn(groupColumn) {
+        this.groupColumn = groupColumn;
+    }
+
+    setDateColumn(dateColumn) {
+        this.dateColumn = dateColumn;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyphs.setDateColumn(dateColumn);
+        });
+    }
+
+    setSupport(minSupport, maxSupport = Infinity) {
+        this.minSupport = minSupport;
+        this.maxSupport = maxSupport;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.setSupport(minSupport, maxSupport);
+        });
+    }
+
+    setConfidence(minConfidence, maxConfidence = Infinity) {
+        this.minConfidence = minConfidence;
+        this.maxConfidence = maxConfidence;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.setConfidence(minConfidence, maxConfidence);
+        });
+    }
+
+    setLift(minLift, maxLift = Infinity) {
+        this.minLift = minLift;
+        this.maxLift = maxLift;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.setLift(minLift, maxLift);
+        });
+    }
+
+    setDateFormat(format) {
+        this.dateFormat = format;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.setDateFormat(format);
+        });
+    }
+
+    setAntecedentFilter(allowedClasses) {
+        this.allowedAntecedents = allowedClasses;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.deferUpdate();
+            glyph.setAntecedentFilter(allowedClasses);
+        });
+    }
+
+    setConsequentFilter(allowedClasses) {
+        this.allowedConsequents = allowedClasses;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.deferUpdate();
+            glyph.setConsequentFilter(allowedClasses);
+        });
+    }
+
+    setDateRange(startDate, endDate) {
+        this.startDate = startDate;
+        this.endDate = endDate;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.deferUpdate();
+            glyph.setDateRange(startDate, endDate);
+        });
+    }
+
+    setCoordsColumns(latColumn, lonColumn) {
+        this.latColumn = latColumn;
+        this.lonColumn = lonColumn;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.deferUpdate();
+            glyph.setCoordsColumns(latColumn, lonColumn);
+        });
+    }
 }

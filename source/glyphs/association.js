@@ -32,15 +32,21 @@ export class FPGrowth extends Association {
         return this.patterns;
     }
 
-    mergePatterns(otherTree) {
-        const newGroup = new FPGrowth(null);
-        var newTree = this.tree.merge(otherTree.tree);
+    updatePatterns() {
+        this.patterns = this.tree.minePatterns();
+    }
 
-        newGroup.tree = newTree;
-        newGroup.patterns = newTree.minePatterns();
-        newGroup.transactionCount = this.transactionCount + otherTree.transactionCount;
+    mergePatterns(otherFPGrowth, updatePatterns = true) {
+        const newGrowth = new FPGrowth(null);
+        var newTree = this.tree.merge(otherFPGrowth.tree);
 
-        return newGroup;
+        newGrowth.tree = newTree;
+        newGrowth.transactionCount = this.transactionCount + otherFPGrowth.transactionCount;
+        
+        if(updatePatterns)
+            newGrowth.patterns = newTree.minePatterns();
+
+        return newGrowth;
     }
 
     generateRules(minConfidence = 0, minLift = 0) {

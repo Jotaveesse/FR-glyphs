@@ -384,7 +384,7 @@ export class Glyph {
         glyphs.forEach(glyph => {
             //merge cada associação, uma por uma
             if (newRuleData) {
-                newRuleData = newRuleData.mergePatterns(glyph.associations);
+                newRuleData = newRuleData.mergePatterns(glyph.associations, false);
                 newSurp = Surprise.merge(glyph.surprise, newSurp);
                 mergedCount += glyph.itemCount;
                 mergedDisplayedCount += glyph.displayedCount;
@@ -398,13 +398,12 @@ export class Glyph {
 
             avrgLat += glyph.lat;
             avrgLon += glyph.lon;
-
-
         });
 
         avrgLat /= glyphs.length;
         avrgLon /= glyphs.length;
 
+        newRuleData.updatePatterns();
 
         const mergedGlyph = new Glyph(name);
         mergedGlyph.deferUpdate();

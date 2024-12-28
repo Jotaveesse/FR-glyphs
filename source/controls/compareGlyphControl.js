@@ -70,7 +70,7 @@ export class CompareGlyphControl extends Control {
 
     upClick() {
         const prevSibling = this.wrapper.node().previousElementSibling;
-        console.log(prevSibling);
+
         if (prevSibling != null) {
             this.container.node().insertBefore(this.wrapper.node(), prevSibling)
         }
@@ -81,7 +81,7 @@ export class CompareGlyphControl extends Control {
     
     downClick() {
         const nextSibling = this.wrapper.node().nextElementSibling;
-        console.log(nextSibling);
+
         if (nextSibling != null) {
             nextSibling.insertAdjacentElement('afterend', this.wrapper.node());
         }
