@@ -56,30 +56,36 @@ export class FPGrowth extends Association {
         this.patterns.forEach(itemset => {
             if (itemset.length > 1) {
 
-                //checa se o valor ja esta na cache
-                if (!supportCache[itemset])
-                    supportCache[itemset] = this.tree.getItemsetCount(itemset) / this.transactionCount;
+                const itemsetKey = itemset.join();
 
-                const itemsetSupport = supportCache[itemset];
+                //checa se o valor ja esta na cache
+                if (!supportCache[itemsetKey])
+                    supportCache[itemsetKey] = this.tree.getItemsetCount(itemset) / this.transactionCount;
+
+                const itemsetSupport = supportCache[itemsetKey];
 
                 const { subsets: antecedents, remainings: consequents } = FPGrowth.getSubsets(itemset);
 
                 antecedents.forEach((ante, i) => {
+                    const anteKey = ante.join();
+                    
                     const cons = consequents[i];
+                    
+                    if (!supportCache[anteKey])
+                        supportCache[anteKey] = this.tree.getItemsetCount(ante) / this.transactionCount;
 
-                    if (!supportCache[ante])
-                        supportCache[ante] = this.tree.getItemsetCount(ante) / this.transactionCount;
-
-                    const antecedentSupport = supportCache[ante];
+                    const antecedentSupport = supportCache[anteKey];
 
                     const confidence = itemsetSupport / antecedentSupport;
-
-
+                    
+                    
                     if (confidence >= minConfidence) {
-                        if (!supportCache[cons])
-                            supportCache[cons] = this.tree.getItemsetCount(cons) / this.transactionCount;
+                        const consKey = cons.join();
 
-                        const consequentSupport = supportCache[cons];
+                        if (!supportCache[consKey])
+                            supportCache[consKey] = this.tree.getItemsetCount(cons) / this.transactionCount;
+
+                        const consequentSupport = supportCache[consKey];
 
                         const lift = confidence / consequentSupport;
 
@@ -150,6 +156,7 @@ class FPTree {
     constructor() {
         this.header = {};
         this.root = new FPNode(null);
+        this.sortedKeys = [];
     }
 
     build(transactions, minFrequency = 0) {
@@ -195,6 +202,10 @@ class FPTree {
                 this.header[item] = new FPHeaderNode(frequencyMap[item], null);
             }
         });
+
+        this.sortedKeys =  Object.keys(this.header).sort(
+            (a, b) => this.header[a].count - this.header[b].count
+        );
     }
 
     insertTransaction(transaction, amount = 1) {
@@ -248,9 +259,7 @@ class FPTree {
     minePatterns(suffix = []) {
         const frequentPatterns = [];
 
-        const items = Object.keys(this.header).sort(
-            (a, b) => this.header[a].count - this.header[b].count
-        );
+        const items = this.sortedKeys;
 
         items.forEach(item => {
             if (isEmpty(item)) return;
@@ -260,7 +269,7 @@ class FPTree {
 
             const conditionalPatternBase = this.header[item].getConditionalPatternBase();
 
-            var condition = new FPTree();
+            const condition = new FPTree();
             condition.build(conditionalPatternBase);
 
             if (Object.keys(condition.header).length > 0) {
@@ -397,18 +406,18 @@ class FPNode {
         return pathsWithCounts;
     }
 
-    isPathContainsItemset(itemset) {
-        let itemsToFind = new Set(itemset);
+    isPathContainsItemset(itemsToFind) {
         let currentNode = this;
+        var itemsLeft = itemsToFind.length;
 
-        while (currentNode !== null && currentNode !== undefined && itemsToFind.size > 0) {
-            if (itemsToFind.has(currentNode.item)) {
-                itemsToFind.delete(currentNode.item);
+        while (currentNode !== null && currentNode !== undefined && itemsLeft > 0) {
+            if (itemsToFind[itemsLeft-1]==currentNode.item) {
+                itemsLeft-=1;
             }
             currentNode = currentNode.parent;
         }
 
-        return itemsToFind.size === 0;
+        return itemsLeft === 0;
     }
 }
 

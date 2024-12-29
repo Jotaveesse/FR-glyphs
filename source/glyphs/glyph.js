@@ -441,7 +441,7 @@ export class Glyph {
     updateDates() {
         this.dates = [];
 
-        if (this.rawData != null && this.rawData.length > 0) {
+        if (this.rawData != null && this.rawData.length > 0 && this.dateColumn != null) {
             for (let i = 0; i < this.rawData.length; i++) {
                 const entry = this.rawData[i];
                 this.dates[i] = dayjs(entry[this.dateColumn], this.dateFormat);;

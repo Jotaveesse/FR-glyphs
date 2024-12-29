@@ -99,11 +99,16 @@ export class GlyphGroup {
             const glyph = new Glyph(groupKey, this, this.groupedData[groupKey]);
 
             glyph.deferUpdate();
+
+            glyph.setSize(this.glyphSize);
+            glyph.setHoverSize(this.glyphHoverSize);
             glyph.setSupport(this.minSupport, this.maxSupport);
             glyph.setConfidence(this.minConfidence, this.maxConfidence);
             glyph.setLift(this.minLift, this.maxLift);
-            glyph.setSize(this.glyphSize);
-            glyph.setHoverSize(this.glyphHoverSize);
+            glyph.setAntecedentFilter(this.allowedAntecedents);
+            glyph.setConsequentFilter(this.allowedConsequents);
+            glyph.setAntecedentDisplayedRange(this.minAntecedents, this.maxAntecedents);
+            glyph.setConsequentDisplayedRange(this.minConsequents, this.maxConsequents);
             glyph.setDisplayMethod(this.displayMethod);
             glyph.setMaxCategories(this.maxCategories);
             glyph.setModels(transformedModels[groupKey]);
@@ -112,6 +117,7 @@ export class GlyphGroup {
             glyph.setDateColumn(this.dateColumn);
             glyph.setDateRange(this.startDate, this.endDate);
             glyph.setCoordsColumns(this.latColumn, this.lonColumn);
+
             glyph.applyUpdates();
 
             this.glyphs[groupKey] = glyph;
@@ -134,14 +140,9 @@ export class GlyphGroup {
 
         const startTime = performance.now();
 
-        for (const groupKey in this.groupedData) {
-            const glyph = this.glyphs[groupKey]
+        this.getAllGlyphs().forEach(glyph => {
             glyph.applyUpdates();
-        };
-
-        this.clusterMarkers.forEach(marker => {
-            marker.glyph.applyUpdates();
-        })
+        });
 
         // this.markers.refreshClusters();
 
@@ -172,6 +173,9 @@ export class GlyphGroup {
 
         const mergedGlyph = Glyph.merge(clusterGlyphs);
         mergedGlyph.group = this;
+
+        mergedGlyph.setSize(this.glyphSize);
+        mergedGlyph.setHoverSize(this.glyphHoverSize);
         mergedGlyph.setSupport(this.minSupport, this.maxSupport);
         mergedGlyph.setConfidence(this.minConfidence, this.maxConfidence);
         mergedGlyph.setLift(this.minLift, this.maxLift);
@@ -179,11 +183,10 @@ export class GlyphGroup {
         mergedGlyph.setConsequentFilter(this.allowedConsequents);
         mergedGlyph.setAntecedentDisplayedRange(this.minAntecedents, this.maxAntecedents);
         mergedGlyph.setConsequentDisplayedRange(this.minConsequents, this.maxConsequents);
-        mergedGlyph.setMaxRules(this.maxRules);
-        mergedGlyph.setSize(this.glyphSize);
         mergedGlyph.setDisplayMethod(this.displayMethod);
-        mergedGlyph.setHoverSize(this.glyphHoverSize);
+        mergedGlyph.setMaxRules(this.maxRules);
         mergedGlyph.setMaxCategories(this.maxCategories);
+
         mergedGlyph.applyUpdates();
 
         cluster.glyph = mergedGlyph;
@@ -464,7 +467,6 @@ export class GlyphGroup {
         this.allowedAntecedents = allowedClasses;
 
         this.getAllGlyphs().forEach(glyph => {
-            glyph.deferUpdate();
             glyph.setAntecedentFilter(allowedClasses);
         });
     }
@@ -473,7 +475,6 @@ export class GlyphGroup {
         this.allowedConsequents = allowedClasses;
 
         this.getAllGlyphs().forEach(glyph => {
-            glyph.deferUpdate();
             glyph.setConsequentFilter(allowedClasses);
         });
     }
@@ -482,10 +483,12 @@ export class GlyphGroup {
         this.startDate = startDate;
         this.endDate = endDate;
 
-        this.getAllGlyphs().forEach(glyph => {
-            glyph.deferUpdate();
+        for (const groupKey in this.groupedData) {
+            const glyph = this.glyphs[groupKey]
             glyph.setDateRange(startDate, endDate);
-        });
+        };
+
+        this.markers.refreshClusters();
     }
 
     setCoordsColumns(latColumn, lonColumn) {
