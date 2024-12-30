@@ -1,4 +1,12 @@
-@keyframes expand-width {
+:root {
+    --dark-gray: #444;
+    --darker-gray: #333;
+    --snow: #eee;
+    --white: #fff;
+    color-scheme: light dark;
+  }
+  
+  @keyframes expand-width {
     from {
         width: 0;
     }
@@ -17,7 +25,6 @@
         width: 0;
     }
 }
-
 
 @keyframes expand-height {
     from {
@@ -66,6 +73,7 @@ body {
     display: grid;
     height: 100%;
     width: 100%;
+    background-color: light-dark(var(--white), var(--dark-gray));
     grid-template-columns: min-content auto min-content;
     grid-template-rows: min-content auto min-content;
 }
@@ -91,7 +99,7 @@ body {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    background-color: white;
+    background-color: light-dark(var(--white), var(--dark-gray));
     font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow: scroll;
     scrollbar-width: none;
@@ -119,7 +127,7 @@ body {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    background-color: white;
+    background-color: light-dark(var(--white), var(--dark-gray));
     font-family: 'Roboto', 'Parkinsans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow: scroll;
     scrollbar-width: none;
@@ -132,7 +140,7 @@ body {
 
 #left-menu > * {
     width: 400px;
-    border: 0px solid #444;
+    border: 0px solid light-dark(var(--dark-gray), var(--white));
     border-bottom-width: 1px;
 }
 
@@ -145,6 +153,7 @@ body {
 }
 
 .menu-accordion-items {
+    color:light-dark(var(--dark-gray), var(--white));
     padding: 0px 8px;
     overflow-y: hidden;
     transition: background-color 0.2s, height 0.8s !important;
@@ -156,7 +165,7 @@ body {
     position: relative;
     height: 44px;
     width: 100%;
-    background-color: white;
+    background-color: light-dark(var(--white), var(--dark-gray));
     cursor: pointer;
     color: #222;
     box-sizing: border-box;
@@ -168,8 +177,13 @@ body {
 }
 
 #left-menu > *:nth-child(even) .menu-accordion {
-    color: white;
-    background-color: #444;
+    color: light-dark(var(--white), var(--dark-gray));
+    background-color: light-dark(var(--dark-gray), var(--white));
+}
+
+#left-menu > *:nth-child(odd) .menu-accordion {
+    color: light-dark(var(--dark-gray), var(--white));
+    background-color: light-dark(var(--white), var(--dark-gray));
 }
 
 .menu-accordion:hover {
@@ -177,7 +191,11 @@ body {
 }
 
 #left-menu > *:nth-child(even) .menu-accordion:hover {
-    background-color: #333;
+    background-color: light-dark(var(--dark-gray), var(--snow));
+}
+
+#left-menu > *:nth-child(odd) .menu-accordion:hover {
+    background-color: light-dark(var(--snow), var(--darker-gray));
 }
 
 #compare-area{

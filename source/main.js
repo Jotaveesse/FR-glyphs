@@ -123,16 +123,18 @@ function toggleMenu(chosenMenu, direction = "width") {
 function toggleTheme() {
     if (main.currTheme != THEMES.light) {
         L.tileLayer(THEMES.light).addTo(main.leafletMap);
+        document.body.style.colorScheme= "light";
         main.currTheme = THEMES.light;
     }
     else {
         L.tileLayer(THEMES.dark).addTo(main.leafletMap);
+        document.body.style.colorScheme= "dark";
         main.currTheme = THEMES.dark;
     }
 }
 
 export function loadMap() {
-    main.leafletMap = L.map('map').setView([-15.793889, -47.882778], 4); // brasilia
+    main.leafletMap = L.map('map',{attributionControl: false}).setView([-15.793889, -47.882778], 4); // brasilia
     
     toggleTheme();
     
@@ -190,27 +192,27 @@ function loadMenu() {
     });
     compareButton.addTo(main.leafletMap);
     
-    // const rightMenuButton = new L.Control.Button({
-        //     position: 'bottomleft',
-        //     text: '≠',
-    //     onChange: function () {
-    //         const rightMenu = document.getElementById("right-menu");
+    const rightMenuButton = new L.Control.Button({
+            position: 'bottomright',
+            text: '≠',
+        onChange: function () {
+            const rightMenu = document.getElementById("right-menu");
 
-    //         toggleMenu(rightMenu, 'width');
-    //     }
-    // });
-    // rightMenuButton.addTo(main.leafletMap);
+            toggleMenu(rightMenu, 'width');
+        }
+    });
+    rightMenuButton.addTo(main.leafletMap);
 
-    // const topMenuButton = new L.Control.Button({
-    //     position: 'bottomleft',
-    //     text: '≠',
-    //     onChange: function () {
-    //         const topMenu = document.getElementById("top-menu");
+    const topMenuButton = new L.Control.Button({
+        position: 'topright',
+        text: '≠',
+        onChange: function () {
+            const topMenu = document.getElementById("top-menu");
 
-    //         toggleMenu(topMenu, 'height');
-    //     }
-    // });
-    // topMenuButton.addTo(main.leafletMap);
+            toggleMenu(topMenu, 'height');
+        }
+    });
+    topMenuButton.addTo(main.leafletMap);
 
     const themeButton = new L.Control.Button({
         position: 'topright',
