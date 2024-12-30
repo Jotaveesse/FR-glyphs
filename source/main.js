@@ -33,34 +33,41 @@ var importData = {
     columnsImported: [],
 };
 
-var leafletMap = null;
+const THEMES = {
+    light: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+}
 
-const glyphGroups = {};
+const main = {
+    leafletMap: null,
+    currTheme: null,
+    glyphGroups: {},
+};
 
 window.onload = function () {
-    loadMap(glyphGroups);
+    loadMap(main.glyphGroups);
     loadMenu();
 }
 
 window.controllers = controllers;
 window.importData = importData;
-window.glyphGroups = glyphGroups;
+window.main = main;
 
 function addGlyphGroup() {
-    for (const groupKey in glyphGroups) {
-        const group = glyphGroups[groupKey];
+    for (const groupKey in main.glyphGroups) {
+        const group = main.glyphGroups[groupKey];
 
         group.remove();
     }
 
-    var glyphGroup = new GlyphGroup(importData.data, leafletMap);
+    var glyphGroup = new GlyphGroup(importData.data, main.leafletMap);
 
     glyphGroup.setGroupColumn(importData.groupColumn);
     glyphGroup.setDateColumn(importData.dateColumn);
     glyphGroup.setCoordsColumns(importData.latColumn, importData.lonColumn);
     glyphGroup.setDateFormat(importData.dateFormat);
     glyphGroup.setChosenColumns([...importData.chosenColumns]);
-    
+
     glyphGroup.setDisplayMethod([controllers.categRankComboBox.value]);
     glyphGroup.setSupport(controllers.supportRange.range.begin, controllers.supportRange.range.end);
     glyphGroup.setConfidence(controllers.confidenceRange.range.begin, controllers.confidenceRange.range.end);
@@ -74,74 +81,147 @@ function addGlyphGroup() {
 
     console.log("glyph group", glyphGroup)
 
-    glyphGroups[importData.name] = glyphGroup;
+    main.glyphGroups[importData.name] = glyphGroup;
     const firstKey = Object.keys(glyphGroup.glyphs)[0];
     const firstGlyph = glyphGroup.glyphs[firstKey];
-    leafletMap.panTo([firstGlyph.lat, firstGlyph.lon]);
+    main.leafletMap.panTo([firstGlyph.lat, firstGlyph.lon]);
 }
 
-function toggleMenu() {
-    const box = document.getElementById("menu");
-    const isExpanded = box.classList.contains("expand")
+function toggleMenu(chosenMenu, direction = "width") {
+    const isExpanded = chosenMenu.classList.contains("expand-" + direction)
 
-    box.classList.remove('expand', 'retract');
+    const oppositeDir = (direction.localeCompare("width") ? "width" : "height");
+    Array.from(document.getElementsByClassName("menu")).forEach(menu => {
 
-    void box.offsetWidth;
+        if (menu.classList.contains("expand-height") && menu != chosenMenu) {
+            menu.classList.remove("expand-height");
+
+            void menu.offsetHeight;
+
+            menu.classList.add("retract-height");
+        }
+        if (menu.classList.contains("expand-width") && menu != chosenMenu) {
+            menu.classList.remove("expand-width");
+
+            void menu.offsetWidth;
+
+            menu.classList.add("retract-width");
+        }
+    });
+
+    chosenMenu.classList.remove("expand-" + direction, "retract-" + direction);
+
+    void chosenMenu.offsetWidth;
 
     if (isExpanded) {
-        box.classList.add('retract');
+        chosenMenu.classList.add("retract-" + direction);
     } else {
-        box.classList.add('expand');
+        chosenMenu.classList.add("expand-" + direction);
+    }
+}
+
+function toggleTheme() {
+    if (main.currTheme != THEMES.light) {
+        L.tileLayer(THEMES.light).addTo(main.leafletMap);
+        main.currTheme = THEMES.light;
+    }
+    else {
+        L.tileLayer(THEMES.dark).addTo(main.leafletMap);
+        main.currTheme = THEMES.dark;
     }
 }
 
 export function loadMap() {
-    leafletMap = L.map('map').setView([-15.793889, -47.882778], 4); // brasilia
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}{r}.png', {
-        style: 'light_all'
-    }).addTo(leafletMap);
-
+    main.leafletMap = L.map('map').setView([-15.793889, -47.882778], 4); // brasilia
+    
+    toggleTheme();
+    
     //desativa o click com botao direito no mapa
-    leafletMap._container.addEventListener('contextmenu', (event) => {
+    main.leafletMap._container.addEventListener('contextmenu', (event) => {
         event.preventDefault();
     });
-
-    L.control.scale().addTo(leafletMap);
-
+    
+    
     //coloca todos os glifos no tamanho normal,
     //para evitar que eles continuem grandes mesmo quando o mouse não está em cima
-    leafletMap.on('zoomend', function () {
-        const zoomLevel = leafletMap.getZoom();
-
-        for (const groupKey in glyphGroups) {
-            const group = glyphGroups[groupKey];
+    main.leafletMap.on('zoomend', function () {
+        const zoomLevel = main.leafletMap.getZoom();
+        
+        for (const groupKey in main.glyphGroups) {
+            const group = main.glyphGroups[groupKey];
             for (const glyphKey in group.glyphs) {
                 const glyph = group.glyphs[glyphKey];
-
+                
                 glyph.hoverEnd();
             }
-
+            
             group.clusterMarkers.forEach(function (marker) {
                 const glyph = marker.glyph;
-
+                
                 glyph.hoverEnd();
-
+                
             });
         }
     });
 };
 
 function loadMenu() {
+    L.control.scale({ position: 'bottomleft', }).addTo(main.leafletMap);
+    
     const menuButton = new L.Control.Button({
         position: 'topleft',
         text: '≡',
         onChange: function () {
-            toggleMenu()
+            const leftMenu = document.getElementById("left-menu");
+            
+            toggleMenu(leftMenu, 'width');
         }
     });
+    menuButton.addTo(main.leafletMap);
+    
+    const compareButton = new L.Control.Button({
+        position: 'bottomleft',
+        text: '≠',
+        onChange: function () {
+            const bottomMenu = document.getElementById("bottom-menu");
+            
+            toggleMenu(bottomMenu, 'height');
+        }
+    });
+    compareButton.addTo(main.leafletMap);
+    
+    // const rightMenuButton = new L.Control.Button({
+        //     position: 'bottomleft',
+        //     text: '≠',
+    //     onChange: function () {
+    //         const rightMenu = document.getElementById("right-menu");
 
-    menuButton.addTo(leafletMap);
+    //         toggleMenu(rightMenu, 'width');
+    //     }
+    // });
+    // rightMenuButton.addTo(main.leafletMap);
+
+    // const topMenuButton = new L.Control.Button({
+    //     position: 'bottomleft',
+    //     text: '≠',
+    //     onChange: function () {
+    //         const topMenu = document.getElementById("top-menu");
+
+    //         toggleMenu(topMenu, 'height');
+    //     }
+    // });
+    // topMenuButton.addTo(main.leafletMap);
+
+    const themeButton = new L.Control.Button({
+        position: 'topright',
+        text: '☼',
+        onChange: function () {
+            toggleTheme();
+        }
+    });
+    themeButton.addTo(main.leafletMap);
+
+
 
     controllers.importAreaAccordion = new controls.MenuAccordionControl('#import-area', {
         text: 'Importar',
@@ -176,25 +256,6 @@ function loadMenu() {
             const accordionIcon = d3.select('#options-area .menu-accordion-icon');
             accordionIcon.classed('upside-down', self.opened);
             const accordion = d3.select('#options-area .menu-accordion-items');
-            accordion.classed('collapsed', !self.opened);
-        },
-    });
-
-    controllers.optionsAreaAccordion = new controls.MenuAccordionControl('#compare-area', {
-        text: 'Comparar',
-        insertBefore: '#compare-area .menu-accordion-items',
-        onChange: async (self) => {
-            if (self.opened) {
-                self.opened = false;
-            }
-            else {
-                self.opened = true;
-            }
-
-            const accordionIcon = d3.select('#compare-area .menu-accordion-icon');
-            accordionIcon.classed('upside-down', self.opened);
-
-            const accordion = d3.select('#compare-area .menu-accordion-items');
             accordion.classed('collapsed', !self.opened);
         },
     });
@@ -301,8 +362,8 @@ function loadMenu() {
         rangeInitMax: initThreshVal.supportMax,
         startHidden: true,
         onChange: function (range) {
-            for (const key in glyphGroups) {
-                const glyphGroup = glyphGroups[key];
+            for (const key in main.glyphGroups) {
+                const glyphGroup = main.glyphGroups[key];
                 glyphGroup.setSupport(range.begin, range.end);
                 glyphGroup.update();
             }
@@ -318,8 +379,8 @@ function loadMenu() {
         rangeInitMax: initThreshVal.confidenceMax,
         startHidden: true,
         onChange: function (range) {
-            for (const key in glyphGroups) {
-                const glyphGroup = glyphGroups[key];
+            for (const key in main.glyphGroups) {
+                const glyphGroup = main.glyphGroups[key];
                 glyphGroup.setConfidence(range.begin, range.end);
                 glyphGroup.update();
             }
@@ -335,15 +396,15 @@ function loadMenu() {
         rangeInitMax: initThreshVal.liftMax,
         startHidden: true,
         onChange: function (range) {
-            for (const key in glyphGroups) {
-                const glyphGroup = glyphGroups[key];
+            for (const key in main.glyphGroups) {
+                const glyphGroup = main.glyphGroups[key];
                 glyphGroup.setLift(range.begin, range.end);
                 glyphGroup.update();
             }
         }
     });
 
-    
+
     controllers.categSlider = new controls.SliderControl('#options-area .menu-accordion-items', {
         labelText: 'Número de classes',
         rangeMin: 1,
@@ -352,8 +413,8 @@ function loadMenu() {
         initValue: initThreshVal.maxCategs,
         startHidden: true,
         onChange: function (value) {
-            for (const key in glyphGroups) {
-                const glyph = glyphGroups[key];
+            for (const key in main.glyphGroups) {
+                const glyph = main.glyphGroups[key];
                 glyph.setMaxCategories(value);
                 glyph.update();
             }
@@ -368,8 +429,8 @@ function loadMenu() {
         initValue: initThreshVal.maxCategs,
         startHidden: true,
         onChange: function (value) {
-            for (const key in glyphGroups) {
-                const glyph = glyphGroups[key];
+            for (const key in main.glyphGroups) {
+                const glyph = main.glyphGroups[key];
                 glyph.setMaxRules(value);
                 glyph.update();
             }
@@ -387,8 +448,8 @@ function loadMenu() {
         ],
         startHidden: true,
         onChange: function (value) {
-            for (const key in glyphGroups) {
-                const glyphGroup = glyphGroups[key];
+            for (const key in main.glyphGroups) {
+                const glyphGroup = main.glyphGroups[key];
                 glyphGroup.setDisplayMethod(parseInt(value));
                 glyphGroup.update();
             }
@@ -405,8 +466,8 @@ function loadMenu() {
         listAll: true,
         startHidden: true,
         onChange: function (value, text, element) {
-            for (const key in glyphGroups) {
-                const glyphGroup = glyphGroups[key];
+            for (const key in main.glyphGroups) {
+                const glyphGroup = main.glyphGroups[key];
                 glyphGroup.setAntecedentFilter(Array.from(controllers.antecedentsMultiBox.value));
                 glyphGroup.update();
             }
@@ -423,8 +484,8 @@ function loadMenu() {
         listAll: true,
         startHidden: true,
         onChange: function (value, text, element) {
-            for (const key in glyphGroups) {
-                const glyphGroup = glyphGroups[key];
+            for (const key in main.glyphGroups) {
+                const glyphGroup = main.glyphGroups[key];
                 glyphGroup.setConsequentFilter(Array.from(controllers.consequentsMultiBox.value));
                 glyphGroup.update();
             }
@@ -441,8 +502,8 @@ function loadMenu() {
         rangeInitMax: initThreshVal.antecedentMax,
         startHidden: true,
         onChange: function (range) {
-            for (const key in glyphGroups) {
-                const glyphGroup = glyphGroups[key];
+            for (const key in main.glyphGroups) {
+                const glyphGroup = main.glyphGroups[key];
                 glyphGroup.setAntecedentDisplayedRange(range.begin, range.end);
                 glyphGroup.update();
             }
@@ -458,14 +519,14 @@ function loadMenu() {
         rangeInitMax: initThreshVal.consequentMax,
         startHidden: true,
         onChange: function (range) {
-            for (const key in glyphGroups) {
-                const glyphGroup = glyphGroups[key];
+            for (const key in main.glyphGroups) {
+                const glyphGroup = main.glyphGroups[key];
                 glyphGroup.setConsequentDisplayedRange(range.begin, range.end);
                 glyphGroup.update();
             }
         }
     });
-    
+
     controllers.dateRange = new controls.DateRangeControl('#options-area .menu-accordion-items', {
         labelText: 'Data',
         rangeMin: new Date("1/1/2000"),
@@ -476,8 +537,8 @@ function loadMenu() {
         rangeInitMax: new Date(),
         startHidden: true,
         onChange: function (range) {
-            for (const key in glyphGroups) {
-                const glyphGroup = glyphGroups[key];
+            for (const key in main.glyphGroups) {
+                const glyphGroup = main.glyphGroups[key];
                 glyphGroup.setDateRange(range.begin, range.end);
                 glyphGroup.update();
             }

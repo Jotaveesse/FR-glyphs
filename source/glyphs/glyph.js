@@ -1151,7 +1151,7 @@ export class Glyph {
     rightClick() {
         const iconClone = this.icon.options.html.cloneNode(true);
 
-        this.compareGlyph = new CompareGlyphControl('#compare-area .menu-accordion-items', {
+        this.compareGlyph = new CompareGlyphControl('#compare-area', {
             labelText: this.name,
             icon: iconClone,
             glyph: this,
