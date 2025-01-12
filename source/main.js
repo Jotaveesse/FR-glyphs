@@ -6,6 +6,12 @@ dayjs.extend(dayjs_plugin_customParseFormat);
 
 const controllers = {};
 
+var layoutData = {
+    menusOpen: {},
+    importData: {},
+    theme: null
+};
+
 const initThreshVal = {
     supportMin: 0,
     supportMax: 1,
@@ -40,13 +46,22 @@ const THEMES = {
 
 const main = {
     leafletMap: null,
+    leftMenu: document.getElementById("left-menu"),
+    rightMenu: document.getElementById("right-menu"),
+    topMenu: document.getElementById("top-menu"),
+    bottomMenu: document.getElementById("bottom-menu"),
     currTheme: null,
     glyphGroups: {},
 };
 
 window.onload = function () {
+    const loadedLayoutData = common.retrieveObject("layoutData");
+    if (loadedLayoutData != null)
+        layoutData = loadedLayoutData;
+
     loadMap(main.glyphGroups);
     loadMenu();
+    console.log(layoutData);
 }
 
 window.controllers = controllers;
@@ -90,62 +105,79 @@ function addGlyphGroup() {
     main.leafletMap.panTo([firstGlyph.lat, firstGlyph.lon]);
 }
 
-function toggleMenu(chosenMenu, direction = "width") {
+function toggleMenu(chosenMenu, direction = "width", expand = null) {
     const isExpanded = chosenMenu.classList.contains("expand-" + direction)
 
     const oppositeDir = (direction.localeCompare("width") ? "width" : "height");
-    Array.from(document.getElementsByClassName("menu")).forEach(menu => {
 
-        if (menu.classList.contains("expand-height") && menu != chosenMenu) {
-            menu.classList.remove("expand-height");
+    //fecha os outros menus
+    if (expand == true || (expand == null && !isExpanded)) {
+        Array.from(document.getElementsByClassName("menu")).forEach(menu => {
 
-            void menu.offsetHeight;
+            if (menu.classList.contains("expand-height") && menu != chosenMenu) {
+                menu.classList.remove("expand-height");
 
-            menu.classList.add("retract-height");
-        }
-        if (menu.classList.contains("expand-width") && menu != chosenMenu) {
-            menu.classList.remove("expand-width");
+                void menu.offsetHeight;
 
-            void menu.offsetWidth;
+                menu.classList.add("retract-height");
+            }
+            if (menu.classList.contains("expand-width") && menu != chosenMenu) {
+                menu.classList.remove("expand-width");
 
-            menu.classList.add("retract-width");
-        }
-    });
+                void menu.offsetWidth;
+
+                menu.classList.add("retract-width");
+            }
+        });
+
+        layoutData.menusOpen.leftMenuOpen = false;
+        layoutData.menusOpen.rightMenuOpen = false;
+        layoutData.menusOpen.topMenuOpen = false;
+        layoutData.menusOpen.bottomMenuOpen = false;
+    }
 
     chosenMenu.classList.remove("expand-" + direction, "retract-" + direction);
 
     void chosenMenu.offsetWidth;
 
-    if (isExpanded) {
-        chosenMenu.classList.add("retract-" + direction);
-    } else {
-        chosenMenu.classList.add("expand-" + direction);
+    if (expand != null) {
+        chosenMenu.classList.add((expand ? "expand-" : "retract-") + direction);
+        return expand;
     }
+    else {
+        chosenMenu.classList.add((isExpanded ? "retract-" : "expand-") + direction);
+        return !isExpanded;
+    }
+
 }
 
-function toggleTheme() {
-    if (main.currTheme != THEMES.light) {
+function toggleTheme(theme = null) {
+
+    if (theme == THEMES.light || (theme == null && main.currTheme != THEMES.light)) {
         L.tileLayer(THEMES.light).addTo(main.leafletMap);
         document.body.style.colorScheme = "light";
         main.currTheme = THEMES.light;
     }
-    else {
+    else if (theme == THEMES.dark || (theme == null && main.currTheme != THEMES.dark)){
         L.tileLayer(THEMES.dark).addTo(main.leafletMap);
         document.body.style.colorScheme = "dark";
         main.currTheme = THEMES.dark;
     }
+
+    layoutData.theme = main.currTheme;
+    saveLayout();
 }
 
 export function loadMap() {
     main.leafletMap = L.map('map', { attributionControl: false }).setView([-15.793889, -47.882778], 4); // brasilia
 
-    toggleTheme();
+    toggleTheme(layoutData.theme);
 
     //coloca todos os glifos no tamanho normal,
     //para evitar que eles continuem grandes mesmo quando o mouse não está em cima
     main.leafletMap.on('zoomend', function () {
         const zoomLevel = main.leafletMap.getZoom();
-        if(focusedGlyph != null){
+        if (focusedGlyph != null) {
             focusedGlyph.showSmallIcon();
             focusedGlyph = null;
         }
@@ -166,13 +198,19 @@ function loadMenu() {
         contextMenu.style.display = 'none';
     });
 
+    toggleMenu(main.leftMenu, 'width', layoutData.menusOpen.leftMenuOpen);
+    toggleMenu(main.rightMenu, 'width', layoutData.menusOpen.rightMenuOpen);
+    toggleMenu(main.topMenu, 'height', layoutData.menusOpen.topMenuOpen);
+    toggleMenu(main.bottomMenu, 'height', layoutData.menusOpen.bottomMenuOpen);
+
     const menuButton = new L.Control.Button({
         position: 'topleft',
         text: '≡',
         onChange: function () {
-            const leftMenu = document.getElementById("left-menu");
+            const expanded = toggleMenu(main.leftMenu, 'width');
 
-            toggleMenu(leftMenu, 'width');
+            layoutData.menusOpen.leftMenuOpen = expanded;
+            saveLayout();
         }
     });
     menuButton.addTo(main.leafletMap);
@@ -181,9 +219,10 @@ function loadMenu() {
         position: 'bottomleft',
         text: '≠',
         onChange: function () {
-            const bottomMenu = document.getElementById("bottom-menu");
+            const expanded = toggleMenu(main.bottomMenu, 'height');
 
-            toggleMenu(bottomMenu, 'height');
+            layoutData.menusOpen.bottomMenuOpen = expanded;
+            saveLayout();
         }
     });
     compareButton.addTo(main.leafletMap);
@@ -192,9 +231,10 @@ function loadMenu() {
         position: 'bottomright',
         text: '≠',
         onChange: function () {
-            const rightMenu = document.getElementById("right-menu");
+            const expanded = toggleMenu(main.rightMenu, 'width');
 
-            toggleMenu(rightMenu, 'width');
+            layoutData.menusOpen.rightMenuOpen = expanded;
+            saveLayout();
         }
     });
     rightMenuButton.addTo(main.leafletMap);
@@ -203,9 +243,10 @@ function loadMenu() {
         position: 'topright',
         text: '≠',
         onChange: function () {
-            const topMenu = document.getElementById("top-menu");
+            const expanded = toggleMenu(main.topMenu, 'height');
 
-            toggleMenu(topMenu, 'height');
+            layoutData.menusOpen.topMenuOpen = expanded;
+            saveLayout();
         }
     });
     topMenuButton.addTo(main.leafletMap);
@@ -264,8 +305,7 @@ function loadMenu() {
 
         onChange: async (value) => {
             const readFile = await common.readCsv(value);
-            importData.data = readFile;
-            loadOptions(readFile);
+            loadOptions(value, readFile);
         },
     });
 
@@ -607,6 +647,11 @@ function importFile() {
         return;
     }
 
+    const { data, ...clonedImportData } = importData;
+    layoutData.importData = clonedImportData;
+
+    saveLayout();
+
     addGlyphGroup();
 
     controllers.categRankComboBox.show();
@@ -625,6 +670,7 @@ function importFile() {
 
     const classOptions = [];
     let columnIndex = 0;
+    //cria os nomes para os filtros de ante e consequentes
     for (const column of importData.columnsImported) {
         if (importData.chosenColumns.has(column)) {
             const uniqueItemsInColumn = Array.from(uniqueItems[column]);
@@ -640,6 +686,7 @@ function importFile() {
     }
     controllers.antecedentsMultiBox.addOptions(classOptions);
     controllers.consequentsMultiBox.addOptions(classOptions);
+
 
     if (importData.dateColumn != null) {
         var minDate = new Date(864000000000000);
@@ -671,15 +718,15 @@ function importFile() {
 
 }
 
-function loadOptions(data) {
+function loadOptions(file, data) {
     importData = {
-        name: "crimes",
+        name: file.name,
         data: data,
         chosenColumns: new Set(),
         groupColumn: null,
         latColumn: null,
         lonColumn: null,
-        days: null,
+        dateColumn: null,
         dateFormat: "DD/MM/YYYY, HH:mm:ss",
         columnsImported: [],
     };
@@ -690,14 +737,15 @@ function loadOptions(data) {
         importData.columnsImported.push(key);
     }
 
+    //ordena alfabeticamente
     columnsImported.sort((a, b) => a.text.localeCompare(b.text));
     importData.columnsImported.sort((a, b) => a.localeCompare(b));
 
+    controllers.chosenMultiBox.show();
     controllers.groupComboBox.show();
     controllers.latComboBox.show();
     controllers.lonComboBox.show();
     controllers.dateComboBox.show();
-    controllers.chosenMultiBox.show();
     controllers.importButton.show();
 
     controllers.groupComboBox.removeOptions();
@@ -705,20 +753,30 @@ function loadOptions(data) {
     controllers.lonComboBox.removeOptions();
     controllers.dateComboBox.removeOptions();
 
+    controllers.chosenMultiBox.addOptions(columnsImported);
     controllers.groupComboBox.addOptions(columnsImported);
     controllers.latComboBox.addOptions(columnsImported);
     controllers.lonComboBox.addOptions(columnsImported);
-    controllers.chosenMultiBox.addOptions(columnsImported);
 
     columnsImported.unshift({ value: "", text: "Sem data" })
     controllers.dateComboBox.addOptions(columnsImported);
 
-    const latColumn = common.findMostSimilar("latitude", controllers.latComboBox.optionsList);
-    controllers.latComboBox.setValue(latColumn);
-    const lonColumn = common.findMostSimilar("longitude", controllers.lonComboBox.optionsList);
-    controllers.lonComboBox.setValue(lonColumn);
+    if (layoutData.importData.name == file.name) {
+        controllers.chosenMultiBox.toggleSelectSet(layoutData.importData.chosenColumns);
+        controllers.groupComboBox.setValue(layoutData.importData.groupColumn);
+        controllers.latComboBox.setValue(layoutData.importData.latColumn);
+        controllers.lonComboBox.setValue(layoutData.importData.lonColumn);
+        controllers.dateComboBox.setValue(layoutData.importData.dateColumn);
+        controllers.dateInput.setValue(layoutData.importData.dateFormat);
+    }
+    else {
+        const latColumn = common.findMostSimilar("latitude", controllers.latComboBox.optionsList);
+        controllers.latComboBox.setValue(latColumn);
+        const lonColumn = common.findMostSimilar("longitude", controllers.lonComboBox.optionsList);
+        controllers.lonComboBox.setValue(lonColumn);
 
-    controllers.dateComboBox.setValue("");
+        controllers.dateComboBox.setValue("");
+    }
 }
 
 const contextMenu = document.getElementById('contextMenu');
@@ -761,4 +819,9 @@ function focusOnGlyph(e, glyph) {
         glyph.showSmallIcon();
         focusedGlyph = null;
     }
+}
+
+function saveLayout() {
+    console.log(layoutData);
+    common.storeObject("layoutData", layoutData);
 }

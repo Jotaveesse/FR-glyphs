@@ -16,16 +16,20 @@ export class TextInputControl extends Control {
 
         this.input.node().value = this.options.initText;
         this.input.on('change', () => {
-            this.update();
+            this.setValue(this.input.node().value);
         });
 
         this.update();
     }
 
     update() {
-        this.value = this.input.node().value;
         if (this.options.onChange) {
             this.options.onChange(this.value);
         }
+    }
+
+    setValue(value){
+        this.value = value;
+        this.update();
     }
 }

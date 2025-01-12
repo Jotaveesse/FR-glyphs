@@ -67,31 +67,31 @@ export function arraysHaveSameItems(arr1, arr2) {
     return sorted1.every((item, index) => item === sorted2[index]);
 }
 
-export function getUniqueItems(data, columns=[]) {
+export function getUniqueItems(data, columns = []) {
     const uniqueSets = {};
-    
+
     data.forEach(row => {
-        if(columns==[]){
+        if (columns == []) {
             for (const key in row) {
                 if (row[key] == undefined || row[key] == "")
                     return;
 
                 const cell = row[key];
-                
-                if(uniqueSets[key] == undefined)
+
+                if (uniqueSets[key] == undefined)
                     uniqueSets[key] = new Set();
 
                 uniqueSets[key].add(cell);
             }
         }
-        else{
+        else {
             for (const key of columns) {
                 if (row[key] == undefined || row[key] == "")
                     return;
 
                 const cell = row[key];
-                
-                if(uniqueSets[key] == undefined)
+
+                if (uniqueSets[key] == undefined)
                     uniqueSets[key] = new Set();
 
                 uniqueSets[key].add(cell);
@@ -99,4 +99,31 @@ export function getUniqueItems(data, columns=[]) {
         }
     });
     return uniqueSets;
+}
+
+export function storeObject(key, obj) {
+    if (typeof obj === "object") {
+        const serializedObject = JSON.stringify(obj, (key, value) => {
+            if (value instanceof Set) {
+                return { __type: "Set", values: Array.from(value) }; // Mark it as a Set
+            }
+            return value;
+        });
+        localStorage.setItem(key, serializedObject);
+    } else {
+        console.error("Não é um objeto");
+    }
+}
+
+export function retrieveObject(key) {
+    const serializedData = localStorage.getItem(key);
+    if (serializedData) {
+        return JSON.parse(serializedData, (key, value) => {
+            if (value && value.__type === "Set") {
+                return new Set(value.values); // Convert back to a Set
+            }
+            return value;
+        });
+    }
+    return null;
 }
