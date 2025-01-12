@@ -77,6 +77,9 @@ function addGlyphGroup() {
     glyphGroup.setConsequentDisplayedRange(controllers.consequentRange.range.begin, controllers.consequentRange.range.end);
     glyphGroup.setMaxCategories(controllers.categSlider.value);
 
+    glyphGroup.setRightClickFunction(openGlyphOption);
+    glyphGroup.setLeftClickFunction(focusOnGlyph);
+
     glyphGroup.updateAll();
 
     console.log("glyph group", glyphGroup)
@@ -123,78 +126,71 @@ function toggleMenu(chosenMenu, direction = "width") {
 function toggleTheme() {
     if (main.currTheme != THEMES.light) {
         L.tileLayer(THEMES.light).addTo(main.leafletMap);
-        document.body.style.colorScheme= "light";
+        document.body.style.colorScheme = "light";
         main.currTheme = THEMES.light;
     }
     else {
         L.tileLayer(THEMES.dark).addTo(main.leafletMap);
-        document.body.style.colorScheme= "dark";
+        document.body.style.colorScheme = "dark";
         main.currTheme = THEMES.dark;
     }
 }
 
 export function loadMap() {
-    main.leafletMap = L.map('map',{attributionControl: false}).setView([-15.793889, -47.882778], 4); // brasilia
-    
+    main.leafletMap = L.map('map', { attributionControl: false }).setView([-15.793889, -47.882778], 4); // brasilia
+
     toggleTheme();
-    
-    //desativa o click com botao direito no mapa
-    main.leafletMap._container.addEventListener('contextmenu', (event) => {
-        event.preventDefault();
-    });
-    
-    
+
     //coloca todos os glifos no tamanho normal,
     //para evitar que eles continuem grandes mesmo quando o mouse não está em cima
     main.leafletMap.on('zoomend', function () {
         const zoomLevel = main.leafletMap.getZoom();
-        
-        for (const groupKey in main.glyphGroups) {
-            const group = main.glyphGroups[groupKey];
-            for (const glyphKey in group.glyphs) {
-                const glyph = group.glyphs[glyphKey];
-                
-                glyph.hoverEnd();
-            }
-            
-            group.clusterMarkers.forEach(function (marker) {
-                const glyph = marker.glyph;
-                
-                glyph.hoverEnd();
-                
-            });
+        if(focusedGlyph != null){
+            focusedGlyph.showSmallIcon();
+            focusedGlyph = null;
         }
     });
 };
 
 function loadMenu() {
     L.control.scale({ position: 'bottomleft', }).addTo(main.leafletMap);
-    
+
+    document.getElementById("compare-button").addEventListener("click", addToCompare);
+
+    document.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        contextMenu.style.display = 'none';
+    });
+
+    document.addEventListener('click', (event) => {
+        contextMenu.style.display = 'none';
+    });
+
     const menuButton = new L.Control.Button({
         position: 'topleft',
         text: '≡',
         onChange: function () {
             const leftMenu = document.getElementById("left-menu");
-            
+
             toggleMenu(leftMenu, 'width');
         }
     });
     menuButton.addTo(main.leafletMap);
-    
+
     const compareButton = new L.Control.Button({
         position: 'bottomleft',
         text: '≠',
         onChange: function () {
             const bottomMenu = document.getElementById("bottom-menu");
-            
+
             toggleMenu(bottomMenu, 'height');
         }
     });
     compareButton.addTo(main.leafletMap);
-    
+
     const rightMenuButton = new L.Control.Button({
-            position: 'bottomright',
-            text: '≠',
+        position: 'bottomright',
+        text: '≠',
         onChange: function () {
             const rightMenu = document.getElementById("right-menu");
 
@@ -723,4 +719,46 @@ function loadOptions(data) {
     controllers.lonComboBox.setValue(lonColumn);
 
     controllers.dateComboBox.setValue("");
+}
+
+const contextMenu = document.getElementById('contextMenu');
+
+function addToCompare(e) {
+    const glyph = contextMenu.glyph;
+    const iconClone = glyph.icon.options.html.cloneNode(true);
+
+    new controls.CompareGlyphControl('#compare-area', {
+        labelText: glyph.name,
+        icon: iconClone,
+        glyph: glyph,
+        startHidden: false,
+    });
+}
+
+function openGlyphOption(e, glyph) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const { clientX: mouseX, clientY: mouseY } = e;
+
+    contextMenu.glyph = glyph;
+    contextMenu.style.top = `${mouseY}px`;
+    contextMenu.style.left = `${mouseX}px`;
+    contextMenu.style.display = 'block';
+}
+
+var focusedGlyph = null;
+
+function focusOnGlyph(e, glyph) {
+    if (focusedGlyph != null) {
+        focusedGlyph.showSmallIcon();
+    }
+
+    if (focusedGlyph != glyph) {
+        glyph.showBigIcon();
+        focusedGlyph = glyph;
+    }
+    else {
+        glyph.showSmallIcon();
+        focusedGlyph = null;
+    }
 }

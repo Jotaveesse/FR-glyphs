@@ -2,7 +2,6 @@ import { Surprise } from './surprise.js';
 import { FPGrowth } from './association.js';
 import * as models from './models.js';
 import { isSubset } from '../common.js';
-import { CompareGlyphControl } from '../controls/compareGlyphControl.js';
 
 const RADIANS = 180 / Math.PI;
 
@@ -69,6 +68,11 @@ export class Glyph {
         this.allowedConsequents = [];
 
         this.surprise = new Surprise();
+
+        this.rightClickFunction = null;
+        this.leftClickFunction = null;
+
+        this.isSmall = true;
 
         this.colorRange = [
             "#8F8F3C", //laranja
@@ -348,6 +352,20 @@ export class Glyph {
         this.lonColumn = lonColumn;
 
         this.needsPosUpdate = true
+        this.markForUpdate();
+    }
+
+    setLeftClickFunction(leftClickFunction) {
+        this.leftClickFunction = leftClickFunction;
+
+        this.needsIconUpdate = true;
+        this.markForUpdate();
+    }
+
+    setRightClickFunction(rightClickFunction) {
+        this.rightClickFunction = rightClickFunction;
+
+        this.needsIconUpdate = true;
         this.markForUpdate();
     }
 
@@ -639,7 +657,6 @@ export class Glyph {
         }
     }
 
-
     updateProportions() {
         this.startAngle = 0;
         this.width = this.size;
@@ -801,12 +818,12 @@ export class Glyph {
         //criação das outlines das setas
         this.arrowOutlines = this.svgGroup.append("g")
             .attr("class", "glyph-arrow-outlines")
-            .attr("visibility", "hidden");
+            .attr("visibility", this.isSmall ? "hidden": "visible");
 
         //criação das outlines das barras
         this.barOutlines = this.svgGroup.append("g")
             .attr("class", "glyph-bar-outlines")
-            .attr("visibility", "hidden");
+            .attr("visibility", this.isSmall ? "hidden": "visible");
 
         //criação da borda circular
         this.circleBorder = this.svgGroup.append("g")
@@ -871,9 +888,15 @@ export class Glyph {
             .attr("r", this.width / 2)
             .style("pointer-events", "auto")
             .style("fill", "rgba(0, 0, 0, 0.0)")
-            .on("contextmenu", this.rightClick.bind(this))
-            .on("click", this.hoverBegin.bind(this))
-            .on("mouseout", this.hoverEnd.bind(this));
+            .on("contextmenu", (event) => this.rightClickFunction(event, this))
+            .on("dblclick", (event) => {
+                event.stopPropagation();
+            })
+            .on("click", (event) => {
+                this.leftClickFunction(event, this);
+                this.showBigIcon.bind(this);
+            });
+            // .on("mouseout", this.showSmallIcon.bind(this));
 
         // this.updateMarker();
 
@@ -945,7 +968,7 @@ export class Glyph {
                 enter => enter.append("path")
                     .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
                     .attr("stroke", this.outlineColor)
-                    .attr("stroke-width", 0)
+                    .attr("stroke-width", this.isSmall ? 0 : this.outlineWidth)
                     .attr("d", this.borderArc),
                 update => update
                     .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
@@ -965,14 +988,14 @@ export class Glyph {
                         .attr("transform", d => `translate(0,${-this.innerRadius + this.arrowPointSize + this.outlineWidth + this.circleBorderWidth / 2}) rotate(${d.cons[0] * RADIANS}, 0, ${this.innerRadius - this.arrowPointSize - this.outlineWidth - this.circleBorderWidth / 2})`)
                         .attr("fill", d => this.colorScale(d.rule))
                         .attr("stroke", this.outlineColor)
-                        .attr("stroke-width", 0);
+                        .attr("stroke-width", this.isSmall ? 0 : this.outlineWidth);
 
                     //criação das linhas
                     arrowGroup.append("path")
                         .attr("d", (d) => this.radialLine([d.ante, d.center, d.cons]))
                         .attr("fill", "none")
                         .attr("stroke", d => this.colorScale(d.rule))
-                        .attr("stroke-width", this.arrowWidth * 2);
+                        .attr("stroke-width", this.isSmall ? this.arrowWidth * 2 : this.arrowWidth);
 
                     return arrowGroup;
                 },
@@ -985,7 +1008,7 @@ export class Glyph {
                     update.select("path")
                         .attr("d", (d) => this.radialLine([d.ante, d.center, d.cons]))
                         .attr("stroke", d => this.colorScale(d.rule))
-                        .attr("stroke-width", this.arrowWidth);
+                        .attr("stroke-width", this.isSmall ? this.arrowWidth * 2 : this.arrowWidth);
                 },
                 exit => exit.remove()
             );
@@ -1105,7 +1128,8 @@ export class Glyph {
         return this.marker;
     }
 
-    hoverBegin() {
+    showBigIcon() {
+        this.isSmall = false;
         this.mainText.attr("visibility", "hidden");
         this.countText.attr("visibility", "hidden");
         this.barOutlines.attr("visibility", "");
@@ -1126,7 +1150,8 @@ export class Glyph {
         this.svg.node().parentElement.style.zIndex = 9000;
     }
 
-    hoverEnd() {
+    showSmallIcon() {
+        this.isSmall = true;
         this.mainText.attr("visibility", "");
         this.countText.attr("visibility", "");
         this.barTexts.attr("visibility", "hidden");
@@ -1146,17 +1171,6 @@ export class Glyph {
         this.background.style("opacity", 0);
         if (this.svg.node().parentElement)
             this.svg.node().parentElement.style.zIndex = -9000;
-    }
-
-    rightClick() {
-        const iconClone = this.icon.options.html.cloneNode(true);
-
-        this.compareGlyph = new CompareGlyphControl('#compare-area', {
-            labelText: this.name,
-            icon: iconClone,
-            glyph: this,
-            startHidden: false,
-        });
     }
 
     removeMarker() {

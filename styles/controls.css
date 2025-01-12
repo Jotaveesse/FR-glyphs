@@ -1,5 +1,6 @@
 .control {
-    background-color: light-dark(var(--white), var(--dark-gray));;
+    background-color: light-dark(var(--white), var(--dark-gray));
+    ;
     border-radius: 0px;
     padding: 6px 16px;
     margin-bottom: 0px;
@@ -25,7 +26,8 @@
     border-radius: 4px;
 }
 
-.map-button button, .leaflet-touch .leaflet-control a {
+.map-button button,
+.leaflet-touch .leaflet-control a {
     width: 30px;
     height: 30px;
     font-size: 20px;
@@ -34,23 +36,25 @@
     border-radius: 2px;
 }
 
-.map-button button, .leaflet-touch .leaflet-control>*{
+.map-button button,
+.leaflet-touch .leaflet-control>* {
     background-color: light-dark(var(--white), var(--dark-gray));
     color: light-dark(var(--dark-gray), var(--white));
     border-color: rgba(0, 0, 0, 0.2) !important;
 }
 
-.map-button button:hover, .leaflet-touch .leaflet-bar a:hover{
+.map-button button:hover,
+.leaflet-touch .leaflet-bar a:hover {
     background-color: light-dark(var(--snow), var(--darker-gray));
 }
 
 .button-control button {
     font-size: 16px;
-    border: 1px solid #444;
+    border: 1px solid light-dark(var(--dark-gray), var(--white));
     border-radius: 4px;
     font-weight: 300;
-    background-color: white;
-    color: #222;
+    background-color: light-dark(var(--white), var(--dark-gray));
+    color: light-dark(var(--dark-gray), var(--white));
     padding: 8px 12px;
     cursor: pointer;
     box-shadow: 1px 1px;
@@ -58,7 +62,7 @@
 }
 
 .button-control button:hover {
-    background-color: #f2f2f2;
+    background-color: light-dark(var(--snow), var(--darker-gray));
 }
 
 /* Inputs */
@@ -113,8 +117,8 @@
     -webkit-appearance: none;
     appearance: none;
     height: 12px;
-    background: white;
-    outline: 1px #444 solid;
+    background: light-dark(var(--white), var(--dark-gray));
+    outline: 1px light-dark(var(--dark-gray), var(--white)) solid;
     border-radius: 12px;
     margin: 0px;
     overflow: hidden;
@@ -126,12 +130,12 @@
     appearance: none;
     width: 32px;
     height: 90px;
-    background: #444;
+    background: light-dark(var(--dark-gray), var(--white));
     border: none;
     border-radius: 50% 50% 0 0;
     cursor: pointer;
     position: relative;
-    outline: 1px #444 solid;
+    outline: 1px light-dark(var(--dark-gray), var(--white)) solid;
 }
 
 .slider-container {
@@ -149,9 +153,9 @@
     left: 50%;
     box-sizing: border-box;
     transform: translate(calc(-50% + 16px), calc(50% - 8px));
-    background: #444;
-    color: white;
-    outline: 1px #444 solid;
+    background: light-dark(var(--dark-gray), var(--white));
+    color: light-dark(var(--white), var(--dark-gray));
+    outline: 1px light-dark(var(--dark-gray), var(--white)) solid;
     padding: 2px 5px;
     border-radius: 0px 0px 8px 8px;
     text-align: center;
@@ -191,10 +195,10 @@
 }
 
 .range-slider-container {
-    background-color: white;
+    background-color: light-dark(var(--white), var(--dark-gray));
     width: calc(100% - 32px);
     height: 12px;
-    outline: 1px #444 solid;
+    outline: 1px light-dark(var(--dark-gray), var(--white)) solid;
     margin: auto;
     position: relative;
     border-radius: 12px;
@@ -202,8 +206,8 @@
 
 .range-slider {
     position: absolute;
-    background: #444;
-    outline: 1px #444 solid;
+    background: light-dark(var(--dark-gray), var(--white));
+    outline: 1px light-dark(var(--dark-gray), var(--white)) solid;
     height: 100%;
     width: 58px;
     top: 0px;
@@ -211,29 +215,29 @@
 }
 
 .range-slider:hover {
-    background: #333;
+    background: light-dark(var(--darker-gray), var(--snow));
 }
 
 .range-slider .handle {
     position: absolute;
-    height: 16px;
+    height: 17px;
     width: 16px;
-    top: -2px;
-    background: white;
-    border: 2px solid #444;
+    top: -3px;
+    background: light-dark(var(--white), var(--dark-gray));
+    border: 2px solid light-dark(var(--dark-gray), var(--white));
     box-sizing: border-box;
 }
 
 .range-slider .EE {
     right: -16px;
     cursor: e-resize;
-    border-radius: 0px 100% 100% 0px;
+    border-radius: 0px 4px 4px 0px;
 }
 
 .range-slider .WW {
     left: -16px;
     cursor: w-resize;
-    border-radius: 100% 0 0 100%;
+    border-radius: 4px 0 0 4px;
 }
 
 .data-range-control .EE {
@@ -251,12 +255,12 @@
     width: 100%;
     height: 30px;
     padding: 4px 8px;
-    background: white;
+    background: light-dark(var(--white), var(--dark-gray));
     cursor: pointer;
     border: none;
     border-radius: 4px;
-    outline: 1px #444 solid;
-    color: #222;
+    outline: 1px light-dark(var(--dark-gray), var(--white)) solid;
+    color: light-dark(var(--dark-gray), var(--white));
     text-align: center;
     font-size: 16px;
     font-weight: 400;
@@ -264,12 +268,8 @@
     box-sizing: border-box;
 }
 
-.combobox-container:hover {
-    background-color: #f2f2f2;
-}
-
 select.combobox-container option {
-    background-color: #ffffff;
+    background-color: light-dark(var(--white), var(--dark-gray));
     transform: translate(10px, 0);
 }
 
@@ -281,21 +281,21 @@ select.combobox-container option {
     padding-top: 8px;
     border-bottom: 0px black solid;
     border-radius: 12px;
-    box-shadow: 0px 0px 6px #888;
+    box-shadow: 0px 0px 6px light-dark(var(--dark-gray), var(--white));
 }
 
-.glyph-control-items{
+.glyph-control-items {
     height: calc(100% - 28px);
-    aspect-ratio: 1 / 1 ;
-    margin:auto;
+    aspect-ratio: 1 / 1;
+    margin: auto;
 }
 
-.compare-glyph-control .control-label{
+.compare-glyph-control .control-label {
     font-size: 16px;
-    background-color: #444;
+    background-color: light-dark(var(--dark-gray), var(--white));
     width: fit-content;
     margin: auto;
-    color: white;
+    color: light-dark(var(--white), var(--dark-gray));
     height: 24px;
     text-align: center;
     vertical-align: middle;
@@ -314,36 +314,36 @@ select.combobox-container option {
     height: fit-content;
 }
 
-.compare-glyph-control .glyph-control-button{
-    display:flex;
+.compare-glyph-control .glyph-control-button {
+    display: flex;
     height: 24px;
     width: 24px;
-    background-color: #444;
+    background-color: light-dark(var(--dark-gray), var(--white));
     justify-content: space-evenly;
     align-items: center;
     cursor: pointer;
-    border-radius:4px;
+    border-radius: 4px;
 }
 
 .compare-glyph-control .glyph-control-button:hover {
-    background-color: #333;
+    background-color: light-dark(var(--darker-gray), var(--snow));
 }
 
-.compare-glyph-control .glyph-control-button button{
+.compare-glyph-control .glyph-control-button button {
     height: 16px;
     width: 16px;
-    background-color: white;
+    background-color: light-dark(var(--white), var(--dark-gray));
     cursor: pointer;
 }
 
-.compare-glyph-control .glyph-control-up-button button{
+.compare-glyph-control .glyph-control-up-button button {
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 13l-6-6 1.5-1.5L8 10.5l4.5-4.5L14 7z'/%3E%3C/svg%3E") no-repeat center;
     -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 1 16 16'%3E%3Cpath d='M8 13l-6-6 1.5-1.5L8 10.5l4.5-4.5L14 7z'/%3E%3C/svg%3E") no-repeat center;
     transform: translateY(0%) rotate(90deg) !important;
 
 }
 
-.compare-glyph-control .glyph-control-down-button button{
+.compare-glyph-control .glyph-control-down-button button {
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 13l-6-6 1.5-1.5L8 10.5l4.5-4.5L14 7z'/%3E%3C/svg%3E") no-repeat center;
     -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 1 16 16'%3E%3Cpath d='M8 13l-6-6 1.5-1.5L8 10.5l4.5-4.5L14 7z'/%3E%3C/svg%3E") no-repeat center;
     transform: translateY(0%) rotate(-90deg);

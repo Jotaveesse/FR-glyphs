@@ -34,6 +34,9 @@ export class GlyphGroup {
         this.glyphSize = 150;
         this.glyphHoverSize = 450;
 
+        this.leftClickFunction = null;
+        this.rightClickFunction = null;
+
         this.groupNames = [];
 
         this.clusterMarkers = [];
@@ -46,19 +49,6 @@ export class GlyphGroup {
             iconCreateFunction: this.createClusterIcon.bind(this)
         });
 
-        this.markers.on('clusterclick', function (ev) {
-            const childGlyph = ev.layer.getAllChildMarkers()[0].options.glyph;
-
-            ev.layer.setIcon(ev.layer.glyph.hoverIcon);
-            ev.layer.glyph.svg.node().parentElement.style.zIndex = 9000;
-        });
-
-        this.markers.on('clustermouseout', function (ev) {
-            const childGlyph = ev.layer.getAllChildMarkers()[0].options.glyph;
-
-            ev.layer.setIcon(ev.layer.glyph.icon);
-            ev.layer.glyph.svg.node().parentElement.style.zIndex = -9000;
-        });
     }
 
     remove() {
@@ -117,6 +107,8 @@ export class GlyphGroup {
             glyph.setDateColumn(this.dateColumn);
             glyph.setDateRange(this.startDate, this.endDate);
             glyph.setCoordsColumns(this.latColumn, this.lonColumn);
+            glyph.setRightClickFunction(this.rightClickFunction);
+            glyph.setLeftClickFunction(this.leftClickFunction);
 
             glyph.applyUpdates();
 
@@ -186,10 +178,14 @@ export class GlyphGroup {
         mergedGlyph.setDisplayMethod(this.displayMethod);
         mergedGlyph.setMaxRules(this.maxRules);
         mergedGlyph.setMaxCategories(this.maxCategories);
+        mergedGlyph.setRightClickFunction(this.rightClickFunction);
+        mergedGlyph.setLeftClickFunction(this.leftClickFunction);
 
         mergedGlyph.applyUpdates();
 
+        mergedGlyph.marker = cluster;
         cluster.glyph = mergedGlyph;
+
 
         return mergedGlyph.icon;
     }
@@ -498,6 +494,24 @@ export class GlyphGroup {
         this.getAllGlyphs().forEach(glyph => {
             glyph.deferUpdate();
             glyph.setCoordsColumns(latColumn, lonColumn);
+        });
+    }
+
+    setRightClickFunction(rightClickFunction){
+        this.rightClickFunction = rightClickFunction;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.deferUpdate();
+            glyph.setRightClickFunction(rightClickFunction);
+        });
+    }
+    
+    setLeftClickFunction(leftClickFunction){
+        this.leftClickFunction = leftClickFunction;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.deferUpdate();
+            glyph.setLeftClickFunction(leftClickFunction);
         });
     }
 }
