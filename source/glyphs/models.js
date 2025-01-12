@@ -322,6 +322,24 @@ export function getItemsByFrequencyGrouped(rules) {
     return Object.keys(frequencyMap).sort((a, b) => frequencyMap[b] - frequencyMap[a]);
 }
 
+export function getItemsByInterestingnessGrouped(rules) {
+    const interestingClasses = new Set();
+
+    for (const rule of rules) {
+        // conta os antecedentes
+        for (const antecedent of rule.antecedents) {
+            interestingClasses.add(antecedent);
+        }
+        
+        // conta os consequente
+        for (const consequent of rule.consequents) {
+            interestingClasses.add(consequent);
+        }
+    }
+
+    return interestingClasses;
+}
+
 export function getItemsBySurpriseGrouped(data) {
     let sortedEntries = data.sort((a, b) => b.value - a.value);
 

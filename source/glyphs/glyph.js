@@ -618,6 +618,9 @@ export class Glyph {
                 this.displayItems = models.getItemsByFrequencyGlobal(this.group.getAllFilteredRules());
                 break;
 
+            case 4:
+                this.displayItems = models.getItemsByInterestingnessGrouped(this.filteredRules);
+                break;
             //escolhe qualquer categoria
             default:
                 this.displayItems = this.group.uniqueValues;
@@ -818,12 +821,12 @@ export class Glyph {
         //criação das outlines das setas
         this.arrowOutlines = this.svgGroup.append("g")
             .attr("class", "glyph-arrow-outlines")
-            .attr("visibility", this.isSmall ? "hidden": "visible");
+            .attr("visibility", this.isSmall ? "hidden" : "visible");
 
         //criação das outlines das barras
         this.barOutlines = this.svgGroup.append("g")
             .attr("class", "glyph-bar-outlines")
-            .attr("visibility", this.isSmall ? "hidden": "visible");
+            .attr("visibility", this.isSmall ? "hidden" : "visible");
 
         //criação da borda circular
         this.circleBorder = this.svgGroup.append("g")
@@ -896,7 +899,7 @@ export class Glyph {
                 this.leftClickFunction(event, this);
                 this.showBigIcon.bind(this);
             });
-            // .on("mouseout", this.showSmallIcon.bind(this));
+        // .on("mouseout", this.showSmallIcon.bind(this));
 
         // this.updateMarker();
 

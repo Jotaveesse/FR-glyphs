@@ -61,7 +61,6 @@ window.onload = function () {
 
     loadMap(main.glyphGroups);
     loadMenu();
-    console.log(layoutData);
 }
 
 window.controllers = controllers;
@@ -83,7 +82,7 @@ function addGlyphGroup() {
     glyphGroup.setDateFormat(importData.dateFormat);
     glyphGroup.setChosenColumns([...importData.chosenColumns]);
 
-    glyphGroup.setDisplayMethod([controllers.categRankComboBox.value]);
+    glyphGroup.setDisplayMethod(controllers.categRankComboBox.value);
     glyphGroup.setSupport(controllers.supportRange.range.begin, controllers.supportRange.range.end);
     glyphGroup.setConfidence(controllers.confidenceRange.range.begin, controllers.confidenceRange.range.end);
     glyphGroup.setLift(controllers.liftRange.range.begin, controllers.liftRange.range.end);
@@ -479,6 +478,7 @@ function loadMenu() {
         labelText: 'Escolha das classes',
         initValue: 0,
         optionsList: [
+            { text: 'Regras Mais Interessantes', value: 4 },
             { text: 'Mais Regras No Grupo', value: 2 },
             { text: 'Mais Regras Geral', value: 3 },
             { text: 'Maior Surpresa No Grupo', value: 0 },
@@ -822,6 +822,5 @@ function focusOnGlyph(e, glyph) {
 }
 
 function saveLayout() {
-    console.log(layoutData);
     common.storeObject("layoutData", layoutData);
 }
