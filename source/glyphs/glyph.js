@@ -764,7 +764,7 @@ export class Glyph {
                     const dpConsIndex = this.surprisesIndex[consequent];
                     const dpCons = this.displaySurprises[dpConsIndex];
 
-                    var arrowPos = { center: [0, 0], rule: ruleIndex };
+                    var arrowPos = { center: [0, 0], rule: rule, ruleIndex: ruleIndex };
 
                     //calcula qual o angulo em que a seta vai se originar, levando em conta as outras setas
                     var anteArrowCount = dpAnte.consCount + dpAnte.anteCount;
@@ -821,12 +821,12 @@ export class Glyph {
         //criação das outlines das setas
         this.arrowOutlines = this.svgGroup.append("g")
             .attr("class", "glyph-arrow-outlines")
-            .attr("visibility", this.isSmall ? "hidden" : "visible");
+            .attr("visibility", this.isSmall ? "hidden" : "");
 
         //criação das outlines das barras
         this.barOutlines = this.svgGroup.append("g")
             .attr("class", "glyph-bar-outlines")
-            .attr("visibility", this.isSmall ? "hidden" : "visible");
+            .attr("visibility", this.isSmall ? "hidden" : "");
 
         //criação da borda circular
         this.circleBorder = this.svgGroup.append("g")
@@ -839,6 +839,9 @@ export class Glyph {
         //criação das barras
         this.bars = this.svgGroup.append("g")
             .attr("class", "glyph-bars");
+
+        this.rulesInfo = this.svgGroup.append("g")
+            .attr("class", "glyph-rules-info");
 
         //cria o caminho em que o texto vai curvar sobre
         this.circleTextPath = d3.path();
@@ -979,6 +982,149 @@ export class Glyph {
                 exit => exit.remove()
             );
 
+        const infoTextSize = this.textSize * 0.6;
+        const infoHeight = infoTextSize * 5;
+        const infoWidth = 15 * infoTextSize + 64;
+        const horizontalPadding = 1;
+        const decimalPlaces = 3;
+
+        this.rulesInfo
+            .attr("transform", `translate(0, ${-infoHeight * (parseInt((this.displayRules.length - 1) / 2) / 2)} )`)
+            .attr("visibility", this.isSmall ? "hidden" : "")
+            .selectAll("g")
+            .data(this.displayRules, d => JSON.stringify(d.antecedents) + JSON.stringify(d.consequents))
+            .join(
+                enter => {
+                    const infoGroup = enter.append("g")
+                        .attr("id", d => JSON.stringify(d.antecedents) + JSON.stringify(d.consequents))
+                        .attr("class", "info-group")
+                        .attr("transform", (d, i) => i % 2 == 0
+                            ? `translate(${-infoWidth}, ${i * infoHeight / 2})`
+                            : `translate(${infoWidth}, ${(i - 1) * infoHeight / 2})`);
+
+
+                    infoGroup.append("path")
+                        .attr("d", d => {
+                            const radius = infoTextSize * 2;
+                            return `M ${-radius}, 0 A ${radius},${radius} 0 0,1 ${radius},0`;
+                        })
+                        .attr("transform", (d, i) => `translate(0, ${-infoTextSize / 4}) rotate(${i % 2 == 0 ? -90 : 90}, 0, 0)`)
+                        .attr("fill", (d, i) => this.colorScale(i));
+
+                    // infoGroup.append("rect")
+                    //     .attr("x", -1)
+                    //     .attr("y", -infoTextSize * 2 - infoTextSize / 4)
+                    //     .attr("width", infoWidth - this.width / 2)
+                    //     .attr("height", infoTextSize * 4)
+                    //     .attr("fill", (d, i) => this.colorScale(i))
+                    //     .attr("rx", 0)
+                    //     .attr("ry", 0);
+
+                    const anteSupGroup = infoGroup.append("g").attr("class", "antecedent-info");
+                    const consSupGroup = infoGroup.append("g").attr("class", "consequent-info");
+                    const confGroup = infoGroup.append("g").attr("class", "confidence-info");
+                    const liftGroup = infoGroup.append("g").attr("class", "lift-info");
+
+                    anteSupGroup.append("text")
+                        .call(text => text.append("tspan")
+                            .attr("font-weight", 600)
+                            .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
+                            .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
+                            .attr("y", -infoTextSize * 1.5)
+                            .attr("font-size", infoTextSize)
+                            .text(d => "Suporte Ante.: " + d.antecedentSupport.toFixed(decimalPlaces))
+                        );
+
+                    consSupGroup.append("text")
+                        .call(text => text.append("tspan")
+                            .attr("font-weight", 600)
+                            .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
+                            .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
+                            .attr("y", -infoTextSize * 0.5)
+                            .attr("font-size", infoTextSize)
+                            .text(d => "Suporte Conse.: " + d.consequentSupport.toFixed(decimalPlaces))
+                        );
+
+                    confGroup.append("text")
+                        .call(text => text.append("tspan")
+                            .attr("font-weight", 600)
+                            .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
+                            .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
+                            .attr("y", infoTextSize * 0.5)
+                            .attr("font-size", infoTextSize)
+                            .text(d => "Confiança: " + d.confidence.toFixed(decimalPlaces))
+                        );
+
+                    liftGroup.append("text")
+                        .call(text => text.append("tspan")
+                            .attr("font-weight", 600)
+                            .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
+                            .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
+                            .attr("y", infoTextSize * 1.5)
+                            .attr("font-size", infoTextSize)
+                            .text(d => "Lift: " + d.lift.toFixed(decimalPlaces))
+                        );
+                },
+                update => {
+                    update.attr("transform", (d, i) => i % 2 == 0
+                        ? `translate(${-infoWidth}, ${i * infoHeight / 2})`
+                        : `translate(${infoWidth}, ${(i - 1) * infoHeight / 2})`);
+
+                    const anteSupGroup = update.append("g").attr("class", "antecedent-info");
+                    const consSupGroup = update.append("g").attr("class", "consequent-info");
+                    const confGroup = update.append("g").attr("class", "confidence-info");
+                    const liftGroup = update.append("g").attr("class", "lift-info");
+
+                    update.append("path")
+                        .attr("transform", (d, i) => `translate(0, ${-infoTextSize / 4}) rotate(${i % 2 == 0 ? -90 : 90}, 0, 0)`)
+                        .attr("fill", (d, i) => this.colorScale(i));
+
+
+                    anteSupGroup.append("text")
+                        .call(text => text.append("tspan")
+                            .attr("font-weight", 600)
+                            .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
+                            .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
+                            .attr("y", -infoTextSize * 1.5)
+                            .attr("font-size", infoTextSize)
+                            .text(d => "Suporte Ante.: " + d.antecedentSupport.toFixed(2))
+                        );
+
+                    consSupGroup.append("text")
+                        .call(text => text.append("tspan")
+                            .attr("font-weight", 600)
+                            .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
+                            .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
+                            .attr("y", -infoTextSize * 0.5)
+                            .attr("font-size", infoTextSize)
+                            .text(d => "Suporte Conse.: " + d.consequentSupport.toFixed(2))
+                        );
+
+                    confGroup.append("text")
+                        .call(text => text.append("tspan")
+                            .attr("font-weight", 600)
+                            .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
+                            .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
+                            .attr("y", infoTextSize * 0.5)
+                            .attr("font-size", infoTextSize)
+                            .text(d => "Confiança: " + d.confidence.toFixed(2))
+                        );
+
+                    liftGroup.append("text")
+                        .call(text => text.append("tspan")
+                            .attr("font-weight", 600)
+                            .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
+                            .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
+                            .attr("y", infoTextSize * 1.5)
+                            .attr("font-size", infoTextSize)
+                            .text(d => "Lift: " + d.lift.toFixed(2))
+                        );
+
+                },
+
+            );
+
+
         this.arrows
             .selectAll("g")
             .data(this.arrowData, d => d.id)
@@ -989,7 +1135,7 @@ export class Glyph {
                     arrowGroup.append("polygon")
                         .attr("points", `0,-${this.arrowPointSize} ${this.arrowPointSize},${this.arrowPointSize} -${this.arrowPointSize},${this.arrowPointSize}`)
                         .attr("transform", d => `translate(0,${-this.innerRadius + this.arrowPointSize + this.outlineWidth + this.circleBorderWidth / 2}) rotate(${d.cons[0] * RADIANS}, 0, ${this.innerRadius - this.arrowPointSize - this.outlineWidth - this.circleBorderWidth / 2})`)
-                        .attr("fill", d => this.colorScale(d.rule))
+                        .attr("fill", d => this.colorScale(d.ruleIndex))
                         .attr("stroke", this.outlineColor)
                         .attr("stroke-width", this.isSmall ? 0 : this.outlineWidth);
 
@@ -997,7 +1143,7 @@ export class Glyph {
                     arrowGroup.append("path")
                         .attr("d", (d) => this.radialLine([d.ante, d.center, d.cons]))
                         .attr("fill", "none")
-                        .attr("stroke", d => this.colorScale(d.rule))
+                        .attr("stroke", d => this.colorScale(d.ruleIndex))
                         .attr("stroke-width", this.isSmall ? this.arrowWidth * 2 : this.arrowWidth);
 
                     return arrowGroup;
@@ -1006,11 +1152,11 @@ export class Glyph {
                     //atualização dos triangulos
                     update.select("polygon")
                         .attr("transform", d => `translate(0,${-this.innerRadius + this.arrowPointSize + this.outlineWidth + this.circleBorderWidth / 2}) rotate(${d.cons[0] * RADIANS}, 0, ${this.innerRadius - this.arrowPointSize - this.outlineWidth - this.circleBorderWidth / 2})`)
-                        .attr("fill", d => this.colorScale(d.rule));
+                        .attr("fill", d => this.colorScale(d.ruleIndex));
                     //atualização das linhas
                     update.select("path")
                         .attr("d", (d) => this.radialLine([d.ante, d.center, d.cons]))
-                        .attr("stroke", d => this.colorScale(d.rule))
+                        .attr("stroke", d => this.colorScale(d.ruleIndex))
                         .attr("stroke-width", this.isSmall ? this.arrowWidth * 2 : this.arrowWidth);
                 },
                 exit => exit.remove()
@@ -1138,6 +1284,7 @@ export class Glyph {
         this.barOutlines.attr("visibility", "");
         this.barTexts.attr("visibility", "");
         this.arrowOutlines.attr("visibility", "");
+        this.rulesInfo.attr("visibility", "");
 
         this.circleBorder.selectAll("path")
             .attr("stroke-width", this.outlineWidth);
@@ -1160,6 +1307,7 @@ export class Glyph {
         this.barTexts.attr("visibility", "hidden");
         this.barOutlines.attr("visibility", "hidden");
         this.arrowOutlines.attr("visibility", "hidden");
+        this.rulesInfo.attr("visibility", "hidden");
 
         this.circleBorder.selectAll("path")
             .attr("stroke-width", 0);

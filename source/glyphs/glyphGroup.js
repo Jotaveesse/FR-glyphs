@@ -101,6 +101,7 @@ export class GlyphGroup {
             glyph.setConsequentDisplayedRange(this.minConsequents, this.maxConsequents);
             glyph.setDisplayMethod(this.displayMethod);
             glyph.setMaxCategories(this.maxCategories);
+            glyph.setMaxRules(this.maxRules);
             glyph.setModels(transformedModels[groupKey]);
             glyph.setCategSums(this.categFreq);
             glyph.setDateFormat(this.dateFormat);

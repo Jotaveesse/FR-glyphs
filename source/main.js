@@ -463,7 +463,7 @@ function loadMenu() {
         rangeMin: 1,
         rangeMax: 10,
         rangeStep: 1,
-        initValue: initThreshVal.maxCategs,
+        initValue: initThreshVal.maxRules,
         startHidden: true,
         onChange: function (value) {
             for (const key in main.glyphGroups) {
@@ -652,8 +652,6 @@ function importFile() {
 
     saveLayout();
 
-    addGlyphGroup();
-
     controllers.categRankComboBox.show();
     controllers.categSlider.show();
     controllers.supportRange.show();
@@ -662,9 +660,13 @@ function importFile() {
     controllers.antecedentRange.show();
     controllers.consequentRange.show();
     controllers.maxRulesSlider.show();
-
+    
+    controllers.antecedentsMultiBox.unselectAll();
     controllers.antecedentsMultiBox.show();
+    controllers.consequentsMultiBox.unselectAll();
     controllers.consequentsMultiBox.show();
+    
+    addGlyphGroup();
 
     const uniqueItems = common.getUniqueItems(importData.data, importData.chosenColumns);
 

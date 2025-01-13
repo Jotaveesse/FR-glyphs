@@ -102,7 +102,6 @@ export class MultiBoxControl extends Control {
         d3.select(this.element)
             .selectAll('.multi-select-header-option')
             .remove();
-
     }
 
     toggleSelectSet(optionNames) {
@@ -114,7 +113,7 @@ export class MultiBoxControl extends Control {
     toggleSelect(optionName) {
         let option = Array.from(this.element.querySelectorAll('.multi-select-option'))
             .find(option => optionName == option.dataset.value);
-        
+
 
         let headerElement = this.element.querySelector('.multi-select-header');
         let selected = true;
@@ -172,6 +171,22 @@ export class MultiBoxControl extends Control {
             this.options.onChange(option.dataset.value, option.querySelector('.multi-select-option-text').innerHTML, option);
 
         return selected;
+    }
+
+    unselectAll() {
+        this.chunkSelect = true;
+        this.element.querySelectorAll('.multi-select-option').forEach(option => {
+            let dataItem = this.data.find(data => data.value == option.dataset.value);
+            if (dataItem && dataItem.selected) {
+                option.click();
+            }
+        });
+        this.chunkSelect = false;
+
+        this.options.onUnselectAll(this.value);
+        this.options.onChange(this.value);
+
+        // unselectAllButton.classList.toggle('multi-select-selected');
     }
 
     _template() {
@@ -285,23 +300,7 @@ export class MultiBoxControl extends Control {
 
         if (this.options.unselectAll === true || this.options.unselectAll === 'true') {
             let unselectAllButton = this.element.querySelector('.multi-unselect-all');
-            unselectAllButton.onclick = (() => {
-                // let allUnselected = unselectAllButton.classList.contains('multi-select-selected');
-
-                this.chunkSelect = true;
-                this.element.querySelectorAll('.multi-select-option').forEach(option => {
-                    let dataItem = this.data.find(data => data.value == option.dataset.value);
-                    if (dataItem && dataItem.selected) {
-                        option.click();
-                    }
-                });
-                this.chunkSelect = false;
-
-                this.options.onUnselectAll(this.value);
-                this.options.onChange(this.value);
-
-                // unselectAllButton.classList.toggle('multi-select-selected');
-            }).bind(this);
+            unselectAllButton.onclick = this.unselectAll;
         }
 
         if (this.selectElement.id && document.querySelector('label[for="' + this.selectElement.id + '"]')) {
