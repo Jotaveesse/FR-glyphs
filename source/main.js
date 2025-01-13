@@ -661,9 +661,9 @@ function importFile() {
     controllers.consequentRange.show();
     controllers.maxRulesSlider.show();
     
-    controllers.antecedentsMultiBox.unselectAll();
+    // controllers.antecedentsMultiBox.unselectAll();
     controllers.antecedentsMultiBox.show();
-    controllers.consequentsMultiBox.unselectAll();
+    // controllers.consequentsMultiBox.unselectAll();
     controllers.consequentsMultiBox.show();
     
     addGlyphGroup();
