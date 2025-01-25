@@ -127,3 +127,13 @@ export function retrieveObject(key) {
     }
     return null;
 }
+
+export function getRuleId(rule){
+    const id = rule.antecedents.join("")+","+rule.consequents.join("");
+
+    return id;
+}
+
+export function removeColumnId(text){
+    return text.replace(/_\d+$/, "");
+}

@@ -4,7 +4,13 @@ import * as controls from './controls/index.js';
 
 dayjs.extend(dayjs_plugin_customParseFormat);
 
-const controllers = {};
+const controllers = {
+    importOptions: {},
+    ruleFilters: {},
+    classFilters: {},
+    ruleDisplays: [],
+    buttons: {}
+};
 
 var layoutData = {
     menusOpen: {},
@@ -24,7 +30,9 @@ const initThreshVal = {
     consequentMin: 1,
     consequentMax: 4,
     maxRules: 4,
-    maxCategs: 6
+    maxCategs: 6,
+    maxRulesSampled: Infinity,
+    maxRulesDisplayed: 100
 }
 
 var importData = {
@@ -46,6 +54,10 @@ const THEMES = {
 
 const main = {
     leafletMap: null,
+    importArea: document.getElementById("import-area"),
+    optionsArea: document.getElementById("options-area"),
+    filterArea: document.getElementById("filter-area"),
+    rulesArea: document.getElementById("rules-area"),
     leftMenu: document.getElementById("left-menu"),
     rightMenu: document.getElementById("right-menu"),
     topMenu: document.getElementById("top-menu"),
@@ -82,14 +94,14 @@ function addGlyphGroup() {
     glyphGroup.setDateFormat(importData.dateFormat);
     glyphGroup.setChosenColumns([...importData.chosenColumns]);
 
-    glyphGroup.setDisplayMethod(controllers.categRankComboBox.value);
-    glyphGroup.setSupport(controllers.supportRange.range.begin, controllers.supportRange.range.end);
-    glyphGroup.setConfidence(controllers.confidenceRange.range.begin, controllers.confidenceRange.range.end);
-    glyphGroup.setLift(controllers.liftRange.range.begin, controllers.liftRange.range.end);
-    glyphGroup.setMaxRules(controllers.maxRulesSlider.value);
-    glyphGroup.setAntecedentDisplayedRange(controllers.antecedentRange.range.begin, controllers.antecedentRange.range.end);
-    glyphGroup.setConsequentDisplayedRange(controllers.consequentRange.range.begin, controllers.consequentRange.range.end);
-    glyphGroup.setMaxCategories(controllers.categSlider.value);
+    glyphGroup.setDisplayMethod(controllers.classFilters.categRankComboBox.value);
+    glyphGroup.setSupport(controllers.ruleFilters.supportRange.range.begin, controllers.ruleFilters.supportRange.range.end);
+    glyphGroup.setConfidence(controllers.ruleFilters.confidenceRange.range.begin, controllers.ruleFilters.confidenceRange.range.end);
+    glyphGroup.setLift(controllers.ruleFilters.liftRange.range.begin, controllers.ruleFilters.liftRange.range.end);
+    glyphGroup.setMaxRules(controllers.classFilters.maxRulesSlider.value);
+    glyphGroup.setAntecedentDisplayedRange(controllers.ruleFilters.antecedentRange.range.begin, controllers.ruleFilters.antecedentRange.range.end);
+    glyphGroup.setConsequentDisplayedRange(controllers.ruleFilters.consequentRange.range.begin, controllers.ruleFilters.consequentRange.range.end);
+    glyphGroup.setMaxCategories(controllers.classFilters.categSlider.value);
 
     glyphGroup.setRightClickFunction(openGlyphOption);
     glyphGroup.setLeftClickFunction(focusOnGlyph);
@@ -133,6 +145,7 @@ function toggleMenu(chosenMenu, direction = "width", expand = null) {
         layoutData.menusOpen.rightMenuOpen = false;
         layoutData.menusOpen.topMenuOpen = false;
         layoutData.menusOpen.bottomMenuOpen = false;
+
     }
 
     chosenMenu.classList.remove("expand-" + direction, "retract-" + direction);
@@ -157,7 +170,7 @@ function toggleTheme(theme = null) {
         document.body.style.colorScheme = "light";
         main.currTheme = THEMES.light;
     }
-    else if (theme == THEMES.dark || (theme == null && main.currTheme != THEMES.dark)){
+    else if (theme == THEMES.dark || (theme == null && main.currTheme != THEMES.dark)) {
         L.tileLayer(THEMES.dark).addTo(main.leafletMap);
         document.body.style.colorScheme = "dark";
         main.currTheme = THEMES.dark;
@@ -188,6 +201,19 @@ function loadMenu() {
 
     document.getElementById("compare-button").addEventListener("click", addToCompare);
 
+    main.leftMenu.addEventListener('animationend', () => {
+        main.leafletMap.invalidateSize();
+    });
+    main.topMenu.addEventListener('animationend', () => {
+        main.leafletMap.invalidateSize();
+    });
+    main.bottomMenu.addEventListener('animationend', () => {
+        main.leafletMap.invalidateSize();
+    });
+    main.rightMenu.addEventListener('animationend', () => {
+        main.leafletMap.invalidateSize();
+    });
+
     document.addEventListener('contextmenu', (event) => {
         event.preventDefault();
         contextMenu.style.display = 'none';
@@ -197,26 +223,32 @@ function loadMenu() {
         contextMenu.style.display = 'none';
     });
 
-    toggleMenu(main.leftMenu, 'width', layoutData.menusOpen.leftMenuOpen);
-    toggleMenu(main.rightMenu, 'width', layoutData.menusOpen.rightMenuOpen);
-    toggleMenu(main.topMenu, 'height', layoutData.menusOpen.topMenuOpen);
-    toggleMenu(main.bottomMenu, 'height', layoutData.menusOpen.bottomMenuOpen);
+    toggleMenu(main.leftMenu, 'width', true);
+    toggleMenu(main.rightMenu, 'width', false);
+    toggleMenu(main.topMenu, 'height', false);
+    toggleMenu(main.bottomMenu, 'height', false);
 
-    const menuButton = new L.Control.Button({
+    controllers.buttons.leftMenuButton = new L.Control.Button({
         position: 'topleft',
         text: '≡',
         onChange: function () {
             const expanded = toggleMenu(main.leftMenu, 'width');
 
+            main.optionsArea.appendChild(main.optionsArea.menuAccordionItems);
+
             layoutData.menusOpen.leftMenuOpen = expanded;
+
+            const accordion = d3.select(main.optionsArea.menuAccordionItems);
+            accordion.classed('collapsed', !(accordion.attr("isClosed") == "false"));
+
             saveLayout();
         }
     });
-    menuButton.addTo(main.leafletMap);
+    controllers.buttons.leftMenuButton.addTo(main.leafletMap);
 
-    const compareButton = new L.Control.Button({
+    controllers.buttons.bottomMenuButton = new L.Control.Button({
         position: 'bottomleft',
-        text: '≠',
+        text: '☼',
         onChange: function () {
             const expanded = toggleMenu(main.bottomMenu, 'height');
 
@@ -224,9 +256,9 @@ function loadMenu() {
             saveLayout();
         }
     });
-    compareButton.addTo(main.leafletMap);
+    controllers.buttons.bottomMenuButton.addTo(main.leafletMap);
 
-    const rightMenuButton = new L.Control.Button({
+    controllers.buttons.rightMenuButton = new L.Control.Button({
         position: 'bottomright',
         text: '≠',
         onChange: function () {
@@ -236,34 +268,42 @@ function loadMenu() {
             saveLayout();
         }
     });
-    rightMenuButton.addTo(main.leafletMap);
+    controllers.buttons.rightMenuButton.addTo(main.leafletMap);
 
-    const topMenuButton = new L.Control.Button({
+    controllers.buttons.topMenuButton = new L.Control.Button({
         position: 'topright',
-        text: '≠',
+        text: '≫',
         onChange: function () {
             const expanded = toggleMenu(main.topMenu, 'height');
 
+            main.filterArea.appendChild(main.optionsArea.menuAccordionItems);
+
             layoutData.menusOpen.topMenuOpen = expanded;
+
+            const accordion = d3.select(main.optionsArea.menuAccordionItems);
+            accordion.classed('collapsed', false);
+
             saveLayout();
         }
     });
-    topMenuButton.addTo(main.leafletMap);
+    controllers.buttons.topMenuButton.addTo(main.leafletMap);
 
-    const themeButton = new L.Control.Button({
+    controllers.buttons.themeButton = new L.Control.Button({
         position: 'topright',
-        text: '☼',
+        text: '◐',
         onChange: function () {
             toggleTheme();
         }
     });
-    themeButton.addTo(main.leafletMap);
+    controllers.buttons.themeButton.addTo(main.leafletMap);
 
+    main.importArea.menuAccordionItems = main.importArea.querySelector(".menu-accordion-items");
+    main.optionsArea.menuAccordionItems = main.optionsArea.querySelector(".menu-accordion-items");
+    main.filterArea.menuAccordionItems = main.filterArea.querySelector(".menu-accordion-items");
 
-
-    controllers.importAreaAccordion = new controls.MenuAccordionControl('#import-area', {
+    controllers.importAreaAccordion = new controls.MenuAccordionControl(main.importArea, {
         text: 'Importar',
-        insertBefore: '#import-area .menu-accordion-items',
+        insertBefore: main.importArea.menuAccordionItems,
         onChange: async (self) => {
             if (self.opened) {
                 self.opened = false;
@@ -275,14 +315,14 @@ function loadMenu() {
             const accordionIcon = d3.select('#import-area .menu-accordion-icon');
             accordionIcon.classed('upside-down', self.opened);
 
-            const accordion = d3.select('#import-area .menu-accordion-items');
+            const accordion = d3.select(main.importArea.menuAccordionItems);
             accordion.classed('collapsed', !self.opened);
         },
     });
 
-    controllers.optionsAreaAccordion = new controls.MenuAccordionControl('#options-area', {
+    controllers.optionsAreaAccordion = new controls.MenuAccordionControl(main.optionsArea, {
         text: 'Filtros',
-        insertBefore: '#options-area .menu-accordion-items',
+        insertBefore: main.optionsArea.menuAccordionItems,
         onChange: async (self) => {
             if (self.opened) {
                 self.opened = false;
@@ -293,12 +333,13 @@ function loadMenu() {
 
             const accordionIcon = d3.select('#options-area .menu-accordion-icon');
             accordionIcon.classed('upside-down', self.opened);
-            const accordion = d3.select('#options-area .menu-accordion-items');
+            const accordion = d3.select(main.optionsArea.menuAccordionItems);
             accordion.classed('collapsed', !self.opened);
+            accordion.attr("isClosed", !self.opened);
         },
     });
 
-    controllers.fileInput = new controls.FileInputControl('#import-area .menu-accordion-items', {
+    controllers.importOptions.fileInput = new controls.FileInputControl(main.importArea.menuAccordionItems, {
         labelText: 'Escolha um arquivo CSV para importar',
         type: ".csv",
 
@@ -308,7 +349,7 @@ function loadMenu() {
         },
     });
 
-    controllers.chosenMultiBox = new controls.MultiBoxControl('#import-area .menu-accordion-items', {
+    controllers.importOptions.chosenMultiBox = new controls.MultiBoxControl(main.importArea.menuAccordionItems, {
         data: [],
         labelText: 'Colunas escolhidas',
         placeholder: 'Escolha as colunas',
@@ -328,7 +369,7 @@ function loadMenu() {
         }
     });
 
-    controllers.groupComboBox = new controls.ComboBoxControl('#import-area .menu-accordion-items', {
+    controllers.importOptions.groupComboBox = new controls.ComboBoxControl(main.importArea.menuAccordionItems, {
         labelText: 'Coluna de Agrupamento',
         optionsList: [],
         startHidden: true,
@@ -337,7 +378,7 @@ function loadMenu() {
         },
     });
 
-    controllers.latComboBox = new controls.ComboBoxControl('#import-area .menu-accordion-items', {
+    controllers.importOptions.latComboBox = new controls.ComboBoxControl(main.importArea.menuAccordionItems, {
         labelText: 'Coluna da Latitude',
         optionsList: [],
         startHidden: true,
@@ -346,7 +387,7 @@ function loadMenu() {
         },
     });
 
-    controllers.lonComboBox = new controls.ComboBoxControl('#import-area .menu-accordion-items', {
+    controllers.importOptions.lonComboBox = new controls.ComboBoxControl(main.importArea.menuAccordionItems, {
         labelText: 'Coluna da Longitude',
         optionsList: [],
         startHidden: true,
@@ -355,22 +396,22 @@ function loadMenu() {
         },
     });
 
-    controllers.dateComboBox = new controls.ComboBoxControl('#import-area .menu-accordion-items', {
+    controllers.importOptions.dateComboBox = new controls.ComboBoxControl(main.importArea.menuAccordionItems, {
         labelText: 'Coluna das Datas',
         optionsList: [],
         startHidden: true,
         onChange: (value) => {
             importData.dateColumn = value == "" ? null : value;
             if (importData.dateColumn == null) {
-                controllers.dateInput.hide();
+                controllers.importOptions.dateInput.hide();
             }
             else {
-                controllers.dateInput.show();
+                controllers.importOptions.dateInput.show();
             }
         },
     });
 
-    controllers.dateInput = new controls.TextInputControl('#import-area .menu-accordion-items', {
+    controllers.importOptions.dateInput = new controls.TextInputControl(main.importArea.menuAccordionItems, {
         labelText: 'Formato da Data',
         initText: "DD/MM/YYYY, HH:mm:ss",
         optionsList: [],
@@ -380,7 +421,7 @@ function loadMenu() {
         },
     });
 
-    controllers.importButton = new controls.ButtonControl('#import-area .menu-accordion-items', {
+    controllers.buttons.importButton = new controls.ButtonControl(main.importArea.menuAccordionItems, {
         text: "Importar",
         startHidden: true,
         onChange: () => {
@@ -390,7 +431,7 @@ function loadMenu() {
 
     //-------- menu de filtros ---------
 
-    controllers.supportRange = new controls.RangeControl('#options-area .menu-accordion-items', {
+    controllers.ruleFilters.supportRange = new controls.RangeControl(main.optionsArea.menuAccordionItems, {
         labelText: 'Suporte',
         rangeMin: initThreshVal.supportMin,
         rangeMax: initThreshVal.supportMax,
@@ -404,10 +445,12 @@ function loadMenu() {
                 glyphGroup.setSupport(range.begin, range.end);
                 glyphGroup.update();
             }
+
+            updateDisplayRules();
         }
     });
 
-    controllers.confidenceRange = new controls.RangeControl('#options-area .menu-accordion-items', {
+    controllers.ruleFilters.confidenceRange = new controls.RangeControl(main.optionsArea.menuAccordionItems, {
         labelText: 'Confiança',
         rangeMin: initThreshVal.confidenceMin,
         rangeMax: initThreshVal.confidenceMax,
@@ -421,10 +464,12 @@ function loadMenu() {
                 glyphGroup.setConfidence(range.begin, range.end);
                 glyphGroup.update();
             }
+
+            updateDisplayRules();
         }
     });
 
-    controllers.liftRange = new controls.RangeControl('#options-area .menu-accordion-items', {
+    controllers.ruleFilters.liftRange = new controls.RangeControl(main.optionsArea.menuAccordionItems, {
         labelText: 'Lift',
         rangeMin: initThreshVal.liftMin,
         rangeMax: initThreshVal.liftMax,
@@ -438,11 +483,13 @@ function loadMenu() {
                 glyphGroup.setLift(range.begin, range.end);
                 glyphGroup.update();
             }
+
+            updateDisplayRules();
         }
     });
 
 
-    controllers.categSlider = new controls.SliderControl('#options-area .menu-accordion-items', {
+    controllers.classFilters.categSlider = new controls.SliderControl(main.optionsArea.menuAccordionItems, {
         labelText: 'Número de classes',
         rangeMin: 1,
         rangeMax: 10,
@@ -458,7 +505,7 @@ function loadMenu() {
         }
     });
 
-    controllers.maxRulesSlider = new controls.SliderControl('#options-area .menu-accordion-items', {
+    controllers.classFilters.maxRulesSlider = new controls.SliderControl(main.optionsArea.menuAccordionItems, {
         labelText: 'Quantidade máxima de regras',
         rangeMin: 1,
         rangeMax: 10,
@@ -474,7 +521,7 @@ function loadMenu() {
         }
     });
 
-    controllers.categRankComboBox = new controls.ComboBoxControl('#options-area .menu-accordion-items', {
+    controllers.classFilters.categRankComboBox = new controls.ComboBoxControl(main.optionsArea.menuAccordionItems, {
         labelText: 'Escolha das classes',
         initValue: 0,
         optionsList: [
@@ -491,10 +538,12 @@ function loadMenu() {
                 glyphGroup.setDisplayMethod(parseInt(value));
                 glyphGroup.update();
             }
+
+            updateDisplayRules();
         }
     });
 
-    controllers.antecedentsMultiBox = new controls.MultiBoxControl('#options-area .menu-accordion-items', {
+    controllers.ruleFilters.antecedentsMultiBox = new controls.MultiBoxControl(main.optionsArea.menuAccordionItems, {
         data: [],
         labelText: 'Classes Permitidas nos Antecedentes',
         placeholder: 'Permitir Todas',
@@ -506,13 +555,15 @@ function loadMenu() {
         onChange: function (value, text, element) {
             for (const key in main.glyphGroups) {
                 const glyphGroup = main.glyphGroups[key];
-                glyphGroup.setAntecedentFilter(Array.from(controllers.antecedentsMultiBox.value));
+                glyphGroup.setAntecedentFilter(Array.from(controllers.ruleFilters.antecedentsMultiBox.value));
                 glyphGroup.update();
             }
+
+            updateDisplayRules();
         }
     });
 
-    controllers.consequentsMultiBox = new controls.MultiBoxControl('#options-area .menu-accordion-items', {
+    controllers.ruleFilters.consequentsMultiBox = new controls.MultiBoxControl(main.optionsArea.menuAccordionItems, {
         data: [],
         labelText: 'Classes Permitidas nos Consequentes',
         placeholder: 'Permitir Todas',
@@ -524,14 +575,16 @@ function loadMenu() {
         onChange: function (value, text, element) {
             for (const key in main.glyphGroups) {
                 const glyphGroup = main.glyphGroups[key];
-                glyphGroup.setConsequentFilter(Array.from(controllers.consequentsMultiBox.value));
+                glyphGroup.setConsequentFilter(Array.from(controllers.ruleFilters.consequentsMultiBox.value));
                 glyphGroup.update();
             }
+
+            updateDisplayRules();
         }
     });
 
 
-    controllers.antecedentRange = new controls.RangeControl('#options-area .menu-accordion-items', {
+    controllers.ruleFilters.antecedentRange = new controls.RangeControl(main.optionsArea.menuAccordionItems, {
         labelText: 'Quantidade de antecedentes nas regras',
         rangeMin: initThreshVal.antecedentMin,
         rangeMax: initThreshVal.antecedentMax,
@@ -545,10 +598,12 @@ function loadMenu() {
                 glyphGroup.setAntecedentDisplayedRange(range.begin, range.end);
                 glyphGroup.update();
             }
+
+            updateDisplayRules();
         }
     });
 
-    controllers.consequentRange = new controls.RangeControl('#options-area .menu-accordion-items', {
+    controllers.ruleFilters.consequentRange = new controls.RangeControl(main.optionsArea.menuAccordionItems, {
         labelText: 'Quantidade de consequentes nas regras',
         rangeMin: initThreshVal.consequentMin,
         rangeMax: initThreshVal.consequentMax,
@@ -562,10 +617,12 @@ function loadMenu() {
                 glyphGroup.setConsequentDisplayedRange(range.begin, range.end);
                 glyphGroup.update();
             }
+
+            updateDisplayRules();
         }
     });
 
-    controllers.dateRange = new controls.DateRangeControl('#options-area .menu-accordion-items', {
+    controllers.ruleFilters.dateRange = new controls.DateRangeControl(main.optionsArea.menuAccordionItems, {
         labelText: 'Data',
         rangeMin: new Date("1/1/2000"),
         rangeMax: new Date(),
@@ -577,12 +634,61 @@ function loadMenu() {
         onChange: function (range) {
             for (const key in main.glyphGroups) {
                 const glyphGroup = main.glyphGroups[key];
-                glyphGroup.setDateRange(range.begin, range.end);
+                glyphGroup.setruleFilters.dateRange(range.begin, range.end);
                 glyphGroup.update();
             }
+
+            updateDisplayRules();
         }
     });
+}
 
+function updateDisplayRules() {
+    controllers.ruleDisplays.forEach(display => {
+        display.remove();
+    });
+    controllers.ruleDisplays = [];
+
+    var groupedRules = {};
+
+    for (const key in main.glyphGroups) {
+        const glyphGroup = main.glyphGroups[key];
+
+        const topRules = glyphGroup.getTopRulesFromGroups(initThreshVal.maxRulesSampled);
+
+
+        topRules.forEach(rule => {
+            const ruleId = common.getRuleId(rule);
+            if (groupedRules[ruleId] == undefined) {
+                groupedRules[ruleId] = {};
+            }
+
+            groupedRules[ruleId][rule.group.name] = rule;
+        });
+
+
+    }
+    for (const ruleName in groupedRules) {
+        const rule = groupedRules[ruleName];
+
+        addRuleDisplay(rule);
+
+        if (controllers.ruleDisplays.length >= initThreshVal.maxRulesDisplayed)
+            break;
+    }
+}
+
+function addRuleDisplay(ruleGroup) {
+    if (controllers.ruleDisplays.length < initThreshVal.maxRulesDisplayed) {
+        controllers.ruleDisplays.push(new controls.RuleDisplayControl(main.rulesArea, {
+            ruleGroup: ruleGroup,
+            startHidden: false,
+            onChange: function (rule) {
+                main.leafletMap.setView(new L.LatLng(rule.group.lat, rule.group.lon), 13);
+            }
+        })
+        );
+    }
 }
 
 function validateImportData() {
@@ -652,20 +758,20 @@ function importFile() {
 
     saveLayout();
 
-    controllers.categRankComboBox.show();
-    controllers.categSlider.show();
-    controllers.supportRange.show();
-    controllers.confidenceRange.show();
-    controllers.liftRange.show();
-    controllers.antecedentRange.show();
-    controllers.consequentRange.show();
-    controllers.maxRulesSlider.show();
-    
-    // controllers.antecedentsMultiBox.unselectAll();
-    controllers.antecedentsMultiBox.show();
-    // controllers.consequentsMultiBox.unselectAll();
-    controllers.consequentsMultiBox.show();
-    
+    controllers.classFilters.categRankComboBox.show();
+    controllers.classFilters.categSlider.show();
+    controllers.ruleFilters.supportRange.show();
+    controllers.ruleFilters.confidenceRange.show();
+    controllers.ruleFilters.liftRange.show();
+    controllers.ruleFilters.antecedentRange.show();
+    controllers.ruleFilters.consequentRange.show();
+    controllers.classFilters.maxRulesSlider.show();
+
+    // controllers.ruleFilters.antecedentsMultiBox.unselectAll();
+    controllers.ruleFilters.antecedentsMultiBox.show();
+    // controllers.ruleFilters.consequentsMultiBox.unselectAll();
+    controllers.ruleFilters.consequentsMultiBox.show();
+
     addGlyphGroup();
 
     const uniqueItems = common.getUniqueItems(importData.data, importData.chosenColumns);
@@ -686,8 +792,8 @@ function importFile() {
 
         columnIndex++;
     }
-    controllers.antecedentsMultiBox.addOptions(classOptions);
-    controllers.consequentsMultiBox.addOptions(classOptions);
+    controllers.ruleFilters.antecedentsMultiBox.addOptions(classOptions);
+    controllers.ruleFilters.consequentsMultiBox.addOptions(classOptions);
 
 
     if (importData.dateColumn != null) {
@@ -707,17 +813,18 @@ function importFile() {
         minDate = minDate.toDate();
         maxDate = maxDate.toDate();
 
-        controllers.dateRange.options.rangeInitMin = minDate;
-        controllers.dateRange.options.rangeInitMax = maxDate;
-        controllers.dateRange.options.rangeMin = minDate;
-        controllers.dateRange.options.rangeMax = maxDate;
-        controllers.dateRange.show();
-        controllers.dateRange.reload();
+        controllers.ruleFilters.dateRange.options.rangeInitMin = minDate;
+        controllers.ruleFilters.dateRange.options.rangeInitMax = maxDate;
+        controllers.ruleFilters.dateRange.options.rangeMin = minDate;
+        controllers.ruleFilters.dateRange.options.rangeMax = maxDate;
+        controllers.ruleFilters.dateRange.show();
+        controllers.ruleFilters.dateRange.reload();
     }
     else {
-        controllers.dateRange.hide();
+        controllers.ruleFilters.dateRange.hide();
     }
 
+    updateDisplayRules();
 }
 
 function loadOptions(file, data) {
@@ -743,41 +850,41 @@ function loadOptions(file, data) {
     columnsImported.sort((a, b) => a.text.localeCompare(b.text));
     importData.columnsImported.sort((a, b) => a.localeCompare(b));
 
-    controllers.chosenMultiBox.show();
-    controllers.groupComboBox.show();
-    controllers.latComboBox.show();
-    controllers.lonComboBox.show();
-    controllers.dateComboBox.show();
-    controllers.importButton.show();
+    controllers.importOptions.chosenMultiBox.show();
+    controllers.importOptions.groupComboBox.show();
+    controllers.importOptions.latComboBox.show();
+    controllers.importOptions.lonComboBox.show();
+    controllers.importOptions.dateComboBox.show();
+    controllers.buttons.importButton.show();
 
-    controllers.groupComboBox.removeOptions();
-    controllers.latComboBox.removeOptions();
-    controllers.lonComboBox.removeOptions();
-    controllers.dateComboBox.removeOptions();
+    controllers.importOptions.groupComboBox.removeOptions();
+    controllers.importOptions.latComboBox.removeOptions();
+    controllers.importOptions.lonComboBox.removeOptions();
+    controllers.importOptions.dateComboBox.removeOptions();
 
-    controllers.chosenMultiBox.addOptions(columnsImported);
-    controllers.groupComboBox.addOptions(columnsImported);
-    controllers.latComboBox.addOptions(columnsImported);
-    controllers.lonComboBox.addOptions(columnsImported);
+    controllers.importOptions.chosenMultiBox.addOptions(columnsImported);
+    controllers.importOptions.groupComboBox.addOptions(columnsImported);
+    controllers.importOptions.latComboBox.addOptions(columnsImported);
+    controllers.importOptions.lonComboBox.addOptions(columnsImported);
 
     columnsImported.unshift({ value: "", text: "Sem data" })
-    controllers.dateComboBox.addOptions(columnsImported);
+    controllers.importOptions.dateComboBox.addOptions(columnsImported);
 
     if (layoutData.importData.name == file.name) {
-        controllers.chosenMultiBox.toggleSelectSet(layoutData.importData.chosenColumns);
-        controllers.groupComboBox.setValue(layoutData.importData.groupColumn);
-        controllers.latComboBox.setValue(layoutData.importData.latColumn);
-        controllers.lonComboBox.setValue(layoutData.importData.lonColumn);
-        controllers.dateComboBox.setValue(layoutData.importData.dateColumn);
-        controllers.dateInput.setValue(layoutData.importData.dateFormat);
+        controllers.importOptions.chosenMultiBox.toggleSelectSet(layoutData.importData.chosenColumns);
+        controllers.importOptions.groupComboBox.setValue(layoutData.importData.groupColumn);
+        controllers.importOptions.latComboBox.setValue(layoutData.importData.latColumn);
+        controllers.importOptions.lonComboBox.setValue(layoutData.importData.lonColumn);
+        controllers.importOptions.dateComboBox.setValue(layoutData.importData.dateColumn);
+        controllers.importOptions.dateInput.setValue(layoutData.importData.dateFormat);
     }
     else {
-        const latColumn = common.findMostSimilar("latitude", controllers.latComboBox.optionsList);
-        controllers.latComboBox.setValue(latColumn);
-        const lonColumn = common.findMostSimilar("longitude", controllers.lonComboBox.optionsList);
-        controllers.lonComboBox.setValue(lonColumn);
+        const latColumn = common.findMostSimilar("latitude", controllers.importOptions.latComboBox.optionsList);
+        controllers.importOptions.latComboBox.setValue(latColumn);
+        const lonColumn = common.findMostSimilar("longitude", controllers.importOptions.lonComboBox.optionsList);
+        controllers.importOptions.lonComboBox.setValue(lonColumn);
 
-        controllers.dateComboBox.setValue("");
+        controllers.importOptions.dateComboBox.setValue("");
     }
 }
 

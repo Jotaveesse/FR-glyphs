@@ -119,15 +119,7 @@ export class FPGrowth extends Association {
             sigmoid = (sigmoid - 0.5) * 2;
             return sigmoid;
         }
-        var a = confidence +
-        anteSupport / 2 +
-        consSupport / 2 +
-        liftClamp(lift) * 2 -
-        (anteLength + consLength - 2) / 4;
-
-        if(a<-30)
-            console.log("wow")
-
+        
         return confidence +
             anteSupport / 2 +
             consSupport / 2 +

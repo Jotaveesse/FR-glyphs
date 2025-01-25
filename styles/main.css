@@ -10,6 +10,8 @@
 @keyframes expand-width {
     from {
         width: 0;
+                padding: 0px;
+
     }
 
     to {
@@ -24,12 +26,15 @@
 
     to {
         width: 0;
+                padding: 0px;
+
     }
 }
 
 @keyframes expand-height {
     from {
         height: 0;
+                padding: 0px;
     }
 
     to {
@@ -44,7 +49,27 @@
 
     to {
         height: 0;
+        padding: 0px;
     }
+}
+
+@keyframes scrollText {
+  0% {
+    transform: translateX(0%);
+    left: 0%;
+  }
+  30% {
+    transform: translateX(0%);
+    left: 0%;
+  }
+  70% {
+    transform: translateX(-100%);
+    left: 100%;
+  }
+  100% {
+    transform: translateX(-100%);
+    left: 100%;
+  }
 }
 
 .expand-width {
@@ -90,6 +115,12 @@ body {
     grid-row: 1;
     grid-column: 2;
     height: 0px;
+    display: grid;
+    width: 100%;
+    grid-template-columns: 400px calc(100% - 400px);
+    position: relative;
+    padding: 12px 0px;
+    box-sizing: border-box;
 }
 
 #left-menu {
@@ -114,6 +145,18 @@ body {
     height: 100%;
 }
 
+#map:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    pointer-events: none;
+    box-shadow: inset 0px 0px 10px 4px light-dark(#0004, #000f);
+}
+
 #right-menu {
     grid-row: 2;
     grid-column: 3;
@@ -133,6 +176,30 @@ body {
     overflow: scroll;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    padding: 12px 0px;
+    box-sizing: border-box;
+}
+
+#filter-area{
+    width: 400px;
+    height:100%;
+    overflow-y: auto;
+}
+
+
+#rules-area{
+    display:flex;
+    min-width:100%;
+    height:100%;
+    flex-wrap:wrap;
+    flex-direction: column;
+    align-content:flex-start;
+    justify-content: center;
+    column-gap: 12px;
+    row-gap: 8px;
+    padding: 0px 12px;
+    width: fit-content;
+    background-color: light-dark(var(--white), var(--dark-gray));
 }
 
 #left-menu::-webkit-scrollbar {
@@ -161,7 +228,6 @@ body {
     height: calc-size(auto, size);
 }
 
-/* Accordion Styles */
 .menu-accordion {
     position: relative;
     height: 44px;
@@ -257,4 +323,25 @@ body {
 
 .custom-context-menu li:hover {
     background-color: light-dark(var(--snow), var(--darker-gray));
+}
+
+.rules-area-wrapper{
+    position:relative;
+    display: block;
+    overflow-x: auto;
+}
+
+.text-slide{
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
+}
+
+.text-slide span{
+    min-width: 100%;
+    position: relative;
+    box-sizing: border-box;
+    display: inline-block;
+    vertical-align: center;
+    animation: 5s linear 0s infinite alternate scrollText;
 }

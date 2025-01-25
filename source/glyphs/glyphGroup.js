@@ -366,6 +366,26 @@ export class GlyphGroup {
         return allRules;
     }
 
+    getTopRulesFromGroups(amount) {
+        var topRules = [];
+
+        for (const groupName of this.groupNames) {
+
+            const sortedRules = this.glyphs[groupName].filteredRules.slice(0, amount);
+
+            sortedRules.forEach(rule => {
+                rule.group = this.glyphs[groupName];
+            });
+
+
+            topRules = topRules.concat(sortedRules);
+            topRules = topRules.sort((a, b) => b.interestingness - a.interestingness).slice(0, amount);
+        }
+
+        return topRules;
+    }
+
+
     setDisplayMethod(method) {
         this.displayMethod = method;
 
@@ -498,7 +518,7 @@ export class GlyphGroup {
         });
     }
 
-    setRightClickFunction(rightClickFunction){
+    setRightClickFunction(rightClickFunction) {
         this.rightClickFunction = rightClickFunction;
 
         this.getAllGlyphs().forEach(glyph => {
@@ -506,8 +526,8 @@ export class GlyphGroup {
             glyph.setRightClickFunction(rightClickFunction);
         });
     }
-    
-    setLeftClickFunction(leftClickFunction){
+
+    setLeftClickFunction(leftClickFunction) {
         this.leftClickFunction = leftClickFunction;
 
         this.getAllGlyphs().forEach(glyph => {

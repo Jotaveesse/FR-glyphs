@@ -987,6 +987,8 @@ export class Glyph {
         const infoWidth = 15 * infoTextSize + 64;
         const horizontalPadding = 1;
         const decimalPlaces = 3;
+        
+        this.rulesInfo.selectAll('*').remove();
 
         this.rulesInfo
             .attr("transform", `translate(0, ${-infoHeight * (parseInt((this.displayRules.length - 1) / 2) / 2)} )`)
@@ -996,7 +998,7 @@ export class Glyph {
             .join(
                 enter => {
                     const infoGroup = enter.append("g")
-                        .attr("id", d => JSON.stringify(d.antecedents) + JSON.stringify(d.consequents))
+                        .attr("id", (d,i) => JSON.stringify(d.antecedents) + JSON.stringify(d.consequents)+i)
                         .attr("class", "info-group")
                         .attr("transform", (d, i) => i % 2 == 0
                             ? `translate(${-infoWidth}, ${i * infoHeight / 2})`
