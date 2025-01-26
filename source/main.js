@@ -179,9 +179,27 @@ function toggleTheme(theme = null) {
     saveLayout();
 }
 
+function addControlPlaceholders(map) {
+    var corners = map._controlCorners,
+        l = 'leaflet-',
+        container = map._controlContainer;
+
+    function createCorner(vSide, hSide) {
+        var className = l + vSide + ' ' + l + hSide;
+
+        corners[vSide + hSide] = L.DomUtil.create('div', className, container);
+    }
+
+    createCorner('verticalcenter', 'left');
+    createCorner('verticalcenter', 'right');
+    createCorner('horizontalcenter', 'top');
+    createCorner('horizontalcenter', 'bottom');
+}
+
 export function loadMap() {
     main.leafletMap = L.map('map', { attributionControl: false }).setView([-15.793889, -47.882778], 4); // brasilia
-
+    
+    addControlPlaceholders(main.leafletMap);
     toggleTheme(layoutData.theme);
 
     //coloca todos os glifos no tamanho normal,
@@ -228,7 +246,7 @@ function loadMenu() {
     toggleMenu(main.bottomMenu, 'height', false);
 
     controllers.buttons.leftMenuButton = new L.Control.Button({
-        position: 'topleft',
+        position: 'verticalcenterleft',
         text: '≡',
         onChange: function () {
             const expanded = toggleMenu(main.leftMenu, 'width');
@@ -256,7 +274,7 @@ function loadMenu() {
     controllers.buttons.leftMenuButton.addTo(main.leafletMap);
 
     controllers.buttons.bottomMenuButton = new L.Control.Button({
-        position: 'bottomleft',
+        position: 'horizontalcenterbottom',
         text: '☼',
         onChange: function () {
             const expanded = toggleMenu(main.bottomMenu, 'height');
@@ -280,7 +298,7 @@ function loadMenu() {
     controllers.buttons.rightMenuButton.addTo(main.leafletMap);
 
     controllers.buttons.topMenuButton = new L.Control.Button({
-        position: 'topright',
+        position: 'horizontalcentertop',
         text: '≫',
         onChange: function () {
             const expanded = toggleMenu(main.topMenu, 'height');
@@ -308,7 +326,7 @@ function loadMenu() {
     controllers.buttons.topMenuButton.addTo(main.leafletMap);
 
     controllers.buttons.themeButton = new L.Control.Button({
-        position: 'topright',
+        position: 'verticalcenterright',
         text: '◐',
         onChange: function () {
             toggleTheme();

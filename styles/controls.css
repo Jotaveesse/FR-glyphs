@@ -427,7 +427,7 @@ select.combobox-container option {
     text-overflow: ellipsis;
     text-wrap: nowrap;
     overflow: clip;
-    width: 75%;
+    width: 70%;
 }
 
 .rule-value-value {
@@ -473,4 +473,30 @@ select.combobox-container option {
 .rule-group-changer button:hover{
     color: light-dark(var(--darker-gray), var(--snow));
     background-color: light-dark(var(--snow), var(--darker-gray));
+}
+
+.leaflet-verticalcenter {
+    position: absolute;
+    z-index: 1000;
+    pointer-events: none;
+    top: 50%; /* possible because the placeholder's parent is the map */
+    transform: translateY(-50%); /* using the CSS3 Transform technique */
+    padding-top: 10px;
+}
+
+.leaflet-verticalcenter .leaflet-control {
+    margin-bottom: 10px;
+}
+
+.leaflet-horizontalcenter {
+    position: absolute;
+    z-index: 1000;
+    pointer-events: none;
+    left: 50%; /* possible because the placeholder's parent is the map */
+    transform: translateX(-50%); /* using the CSS3 Transform technique */
+    padding-left: 10px;
+}
+
+.leaflet-horizontalcenter .leaflet-control {
+    margin-right: 10px;
 }

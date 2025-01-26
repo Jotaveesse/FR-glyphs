@@ -69,7 +69,7 @@ export class RuleDisplayControl extends Control {
             ruleValue.append("span")
                 .attr("class", "rule-value-label").text(label);
             ruleValue.append("span")
-                .attr("class", "rule-value-value").text(value.toFixed(2));
+                .attr("class", "rule-value-value").text(value.toFixed(3));
         });
 
         const infoArea = this.container.append("div")
