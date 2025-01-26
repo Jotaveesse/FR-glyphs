@@ -366,10 +366,15 @@ export class GlyphGroup {
         return allRules;
     }
 
-    getTopRulesFromGroups(amount) {
+    getTopRulesFromGroups(groups, amount) {
         var topRules = [];
 
-        for (const groupName of this.groupNames) {
+        if(groups.length == 0)
+            groups = this.groupNames;
+
+        for (const groupName of groups) {
+            if(this.glyphs[groupName] == undefined)
+                continue;
 
             const sortedRules = this.glyphs[groupName].filteredRules.slice(0, amount);
 
@@ -505,7 +510,7 @@ export class GlyphGroup {
             glyph.setDateRange(startDate, endDate);
         };
 
-        this.markers.refreshClusters();
+        // this.markers.refreshClusters();
     }
 
     setCoordsColumns(latColumn, lonColumn) {

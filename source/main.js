@@ -8,6 +8,7 @@ const controllers = {
     importOptions: {},
     ruleFilters: {},
     classFilters: {},
+    displayRuleFilters: {},
     ruleDisplays: [],
     buttons: {}
 };
@@ -63,7 +64,7 @@ const main = {
     topMenu: document.getElementById("top-menu"),
     bottomMenu: document.getElementById("bottom-menu"),
     currTheme: null,
-    glyphGroups: {},
+    glyphGroups: null,
 };
 
 window.onload = function () {
@@ -71,7 +72,7 @@ window.onload = function () {
     if (loadedLayoutData != null)
         layoutData = loadedLayoutData;
 
-    loadMap(main.glyphGroups);
+    loadMap();
     loadMenu();
 }
 
@@ -80,11 +81,9 @@ window.importData = importData;
 window.main = main;
 
 function addGlyphGroup() {
-    for (const groupKey in main.glyphGroups) {
-        const group = main.glyphGroups[groupKey];
-
-        group.remove();
-    }
+    
+    if(main.glyphGroups != null)
+        main.glyphGroups.remove();    
 
     var glyphGroup = new GlyphGroup(importData.data, main.leafletMap);
 
@@ -110,7 +109,7 @@ function addGlyphGroup() {
 
     console.log("glyph group", glyphGroup)
 
-    main.glyphGroups[importData.name] = glyphGroup;
+    main.glyphGroups = glyphGroup;
     const firstKey = Object.keys(glyphGroup.glyphs)[0];
     const firstGlyph = glyphGroup.glyphs[firstKey];
     main.leafletMap.panTo([firstGlyph.lat, firstGlyph.lon]);
@@ -236,6 +235,16 @@ function loadMenu() {
 
             main.optionsArea.appendChild(main.optionsArea.menuAccordionItems);
 
+            for (const controlKey in controllers.classFilters) {
+                const control = controllers.classFilters[controlKey];
+                control.show();
+            }
+
+            for (const controlKey in controllers.displayRuleFilters) {
+                const control = controllers.displayRuleFilters[controlKey];
+                control.hide();
+            }
+
             layoutData.menusOpen.leftMenuOpen = expanded;
 
             const accordion = d3.select(main.optionsArea.menuAccordionItems);
@@ -277,6 +286,16 @@ function loadMenu() {
             const expanded = toggleMenu(main.topMenu, 'height');
 
             main.filterArea.appendChild(main.optionsArea.menuAccordionItems);
+
+            for (const controlKey in controllers.classFilters) {
+                const control = controllers.classFilters[controlKey];
+                control.hide();
+            }
+
+            for (const controlKey in controllers.displayRuleFilters) {
+                const control = controllers.displayRuleFilters[controlKey];
+                control.show();
+            }
 
             layoutData.menusOpen.topMenuOpen = expanded;
 
@@ -431,6 +450,20 @@ function loadMenu() {
 
     //-------- menu de filtros ---------
 
+    controllers.displayRuleFilters.groupsMultiBox = new controls.MultiBoxControl(main.optionsArea.menuAccordionItems, {
+        data: [],
+        labelText: 'Grupos Permitidos',
+        placeholder: 'Permitir Todos',
+        search: true,
+        selectAll: true,
+        unselectAll: false,
+        listAll: true,
+        startHidden: true,
+        onChange: function (value, text, element) {
+            updateDisplayRules();
+        }
+    });
+
     controllers.ruleFilters.supportRange = new controls.RangeControl(main.optionsArea.menuAccordionItems, {
         labelText: 'Suporte',
         rangeMin: initThreshVal.supportMin,
@@ -440,11 +473,11 @@ function loadMenu() {
         rangeInitMax: initThreshVal.supportMax,
         startHidden: true,
         onChange: function (range) {
-            for (const key in main.glyphGroups) {
-                const glyphGroup = main.glyphGroups[key];
-                glyphGroup.setSupport(range.begin, range.end);
-                glyphGroup.update();
-            }
+            if(main.glyphGroups == null)
+                return;
+
+            main.glyphGroups.setSupport(range.begin, range.end);
+            main.glyphGroups.update();
 
             updateDisplayRules();
         }
@@ -459,11 +492,11 @@ function loadMenu() {
         rangeInitMax: initThreshVal.confidenceMax,
         startHidden: true,
         onChange: function (range) {
-            for (const key in main.glyphGroups) {
-                const glyphGroup = main.glyphGroups[key];
-                glyphGroup.setConfidence(range.begin, range.end);
-                glyphGroup.update();
-            }
+            if(main.glyphGroups == null)
+                return;
+            
+            main.glyphGroups.setConfidence(range.begin, range.end);
+            main.glyphGroups.update();
 
             updateDisplayRules();
         }
@@ -478,11 +511,11 @@ function loadMenu() {
         rangeInitMax: initThreshVal.liftMax,
         startHidden: true,
         onChange: function (range) {
-            for (const key in main.glyphGroups) {
-                const glyphGroup = main.glyphGroups[key];
-                glyphGroup.setLift(range.begin, range.end);
-                glyphGroup.update();
-            }
+            if(main.glyphGroups == null)
+                return;
+            
+            main.glyphGroups.setLift(range.begin, range.end);
+            main.glyphGroups.update();
 
             updateDisplayRules();
         }
@@ -497,11 +530,11 @@ function loadMenu() {
         initValue: initThreshVal.maxCategs,
         startHidden: true,
         onChange: function (value) {
-            for (const key in main.glyphGroups) {
-                const glyph = main.glyphGroups[key];
-                glyph.setMaxCategories(value);
-                glyph.update();
-            }
+            if(main.glyphGroups == null)
+                return;
+            
+            main.glyphGroups.setMaxCategories(value);
+            main.glyphGroups.update();
         }
     });
 
@@ -513,11 +546,11 @@ function loadMenu() {
         initValue: initThreshVal.maxRules,
         startHidden: true,
         onChange: function (value) {
-            for (const key in main.glyphGroups) {
-                const glyph = main.glyphGroups[key];
-                glyph.setMaxRules(value);
-                glyph.update();
-            }
+            if(main.glyphGroups == null)
+                return;
+            
+            main.glyphGroups.setMaxRules(value);
+            main.glyphGroups.update();
         }
     });
 
@@ -533,11 +566,11 @@ function loadMenu() {
         ],
         startHidden: true,
         onChange: function (value) {
-            for (const key in main.glyphGroups) {
-                const glyphGroup = main.glyphGroups[key];
-                glyphGroup.setDisplayMethod(parseInt(value));
-                glyphGroup.update();
-            }
+            if(main.glyphGroups == null)
+                return;
+            
+            main.glyphGroups.setDisplayMethod(parseInt(value));
+            main.glyphGroups.update();
 
             updateDisplayRules();
         }
@@ -553,11 +586,11 @@ function loadMenu() {
         listAll: true,
         startHidden: true,
         onChange: function (value, text, element) {
-            for (const key in main.glyphGroups) {
-                const glyphGroup = main.glyphGroups[key];
-                glyphGroup.setAntecedentFilter(Array.from(controllers.ruleFilters.antecedentsMultiBox.value));
-                glyphGroup.update();
-            }
+            if(main.glyphGroups == null)
+                return;
+            
+            main.glyphGroups.setAntecedentFilter(Array.from(controllers.ruleFilters.antecedentsMultiBox.value));
+            main.glyphGroups.update();
 
             updateDisplayRules();
         }
@@ -573,11 +606,11 @@ function loadMenu() {
         listAll: true,
         startHidden: true,
         onChange: function (value, text, element) {
-            for (const key in main.glyphGroups) {
-                const glyphGroup = main.glyphGroups[key];
-                glyphGroup.setConsequentFilter(Array.from(controllers.ruleFilters.consequentsMultiBox.value));
-                glyphGroup.update();
-            }
+            if(main.glyphGroups == null)
+                return;
+            
+            main.glyphGroups.setConsequentFilter(Array.from(controllers.ruleFilters.consequentsMultiBox.value));
+            main.glyphGroups.update();
 
             updateDisplayRules();
         }
@@ -593,11 +626,11 @@ function loadMenu() {
         rangeInitMax: initThreshVal.antecedentMax,
         startHidden: true,
         onChange: function (range) {
-            for (const key in main.glyphGroups) {
-                const glyphGroup = main.glyphGroups[key];
-                glyphGroup.setAntecedentDisplayedRange(range.begin, range.end);
-                glyphGroup.update();
-            }
+            if(main.glyphGroups == null)
+                return;
+            
+            main.glyphGroups.setAntecedentDisplayedRange(range.begin, range.end);
+            main.glyphGroups.update();
 
             updateDisplayRules();
         }
@@ -612,11 +645,11 @@ function loadMenu() {
         rangeInitMax: initThreshVal.consequentMax,
         startHidden: true,
         onChange: function (range) {
-            for (const key in main.glyphGroups) {
-                const glyphGroup = main.glyphGroups[key];
-                glyphGroup.setConsequentDisplayedRange(range.begin, range.end);
-                glyphGroup.update();
-            }
+            if(main.glyphGroups == null)
+                return;
+            
+            main.glyphGroups.setConsequentDisplayedRange(range.begin, range.end);
+            main.glyphGroups.update();
 
             updateDisplayRules();
         }
@@ -632,11 +665,11 @@ function loadMenu() {
         rangeInitMax: new Date(),
         startHidden: true,
         onChange: function (range) {
-            for (const key in main.glyphGroups) {
-                const glyphGroup = main.glyphGroups[key];
-                glyphGroup.setruleFilters.dateRange(range.begin, range.end);
-                glyphGroup.update();
-            }
+            if(main.glyphGroups == null)
+                return;
+            
+            main.glyphGroups.setDateRange(range.begin, range.end);
+            main.glyphGroups.update();
 
             updateDisplayRules();
         }
@@ -647,27 +680,23 @@ function updateDisplayRules() {
     controllers.ruleDisplays.forEach(display => {
         display.remove();
     });
+
     controllers.ruleDisplays = [];
 
-    var groupedRules = {};
+    const groupedRules = {};
+    const groups = Array.from(controllers.displayRuleFilters.groupsMultiBox.value);
 
-    for (const key in main.glyphGroups) {
-        const glyphGroup = main.glyphGroups[key];
+    const topRules = main.glyphGroups.getTopRulesFromGroups(groups, initThreshVal.maxRulesSampled);
 
-        const topRules = glyphGroup.getTopRulesFromGroups(initThreshVal.maxRulesSampled);
+    topRules.forEach(rule => {
+        const ruleId = common.getRuleId(rule);
+        if (groupedRules[ruleId] == undefined) {
+            groupedRules[ruleId] = {};
+        }
 
+        groupedRules[ruleId][rule.group.name] = rule;
+    });
 
-        topRules.forEach(rule => {
-            const ruleId = common.getRuleId(rule);
-            if (groupedRules[ruleId] == undefined) {
-                groupedRules[ruleId] = {};
-            }
-
-            groupedRules[ruleId][rule.group.name] = rule;
-        });
-
-
-    }
     for (const ruleName in groupedRules) {
         const rule = groupedRules[ruleName];
 
@@ -794,6 +823,12 @@ function importFile() {
     }
     controllers.ruleFilters.antecedentsMultiBox.addOptions(classOptions);
     controllers.ruleFilters.consequentsMultiBox.addOptions(classOptions);
+
+    const groupOptions = [];
+    for (const groupName of main.glyphGroups.groupNames) {
+        groupOptions.push({ value: groupName, text: groupName });
+    }
+    controllers.displayRuleFilters.groupsMultiBox.addOptions(groupOptions);
 
 
     if (importData.dateColumn != null) {
