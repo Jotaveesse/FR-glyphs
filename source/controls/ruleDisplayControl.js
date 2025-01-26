@@ -56,8 +56,10 @@ export class RuleDisplayControl extends Control {
         this.ruleValues = {
             "Suporte Antecedente": this.currRule.antecedentSupport,
             "Suporte Consequente": this.currRule.consequentSupport,
+            "Suporte": this.currRule.support,
             "Confiança": this.currRule.confidence,
             "Lift": this.currRule.lift,
+            "Interesse": this.currRule.interestingness,
         }
 
         Object.entries(this.ruleValues).forEach(([label, value]) => {

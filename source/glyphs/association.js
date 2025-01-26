@@ -68,17 +68,17 @@ export class FPGrowth extends Association {
 
                 antecedents.forEach((ante, i) => {
                     const anteKey = ante.join();
-                    
+
                     const cons = consequents[i];
-                    
+
                     if (!supportCache[anteKey])
                         supportCache[anteKey] = this.tree.getItemsetCount(ante) / this.transactionCount;
 
                     const antecedentSupport = supportCache[anteKey];
 
                     const confidence = itemsetSupport / antecedentSupport;
-                    
-                    
+
+
                     if (confidence >= minConfidence) {
                         const consKey = cons.join();
 
@@ -91,13 +91,14 @@ export class FPGrowth extends Association {
 
                         if (lift >= minLift) {
                             const interestingness = FPGrowth.getInterestingness(
-                                antecedentSupport, consequentSupport, confidence, lift,
+                                antecedentSupport, consequentSupport, itemsetSupport, confidence, lift,
                                 ante.length, cons.length
                             );
 
                             this.rules.push({
                                 antecedents: ante,
                                 consequents: cons,
+                                support: itemsetSupport,
                                 confidence: confidence,
                                 lift: lift,
                                 antecedentSupport: antecedentSupport,
@@ -113,19 +114,32 @@ export class FPGrowth extends Association {
         return this.rules;
     }
 
-    static getInterestingness(anteSupport, consSupport, confidence, lift, anteLength, consLength) {
-        function liftClamp(lift) {
-            let sigmoid = 1 / (1 + Math.exp(-4 * (lift - 1)));
-            sigmoid = (sigmoid - 0.5) * 2;
-            return sigmoid;
-        }
-        
-        return confidence +
-            anteSupport / 2 +
-            consSupport / 2 +
-            liftClamp(lift) * 2 -
-            (anteLength + consLength - 2) / 4;
+    static getInterestingness(anteSupport, consSupport, support, confidence, lift, anteLength, consLength) {
+        const weights = {
+            anteSupport: 0.8,
+            consSupport: 0.8,
+            support: 0.8,
+            confidence: 0.8,
+            lift: 3,
+            anteLength: -0.1,
+            consLength: -0.1
+        };
+
+        const linearCombination =
+            weights.anteSupport * anteSupport +
+            weights.consSupport * consSupport +
+            weights.support * support +
+            weights.confidence * confidence +
+            weights.lift * (1 - 1 / lift) +
+            weights.anteLength * anteLength +
+            weights.consLength * consLength;
+
+        // sigmoid pra deixar entre 0 e 1
+        const interestingness = 2 / (1 + Math.exp(-linearCombination)) - 1;
+
+        return interestingness; // Returns a value between 0 and 1
     }
+
 
     // gera todos os subconjuntos de um conjunto de itens
     static getSubsets(array) {
@@ -203,7 +217,7 @@ class FPTree {
             }
         });
 
-        this.sortedKeys =  Object.keys(this.header).sort(
+        this.sortedKeys = Object.keys(this.header).sort(
             (a, b) => this.header[a].count - this.header[b].count
         );
     }
@@ -411,8 +425,8 @@ class FPNode {
         var itemsLeft = itemsToFind.length;
 
         while (currentNode !== null && currentNode !== undefined && itemsLeft > 0) {
-            if (itemsToFind[itemsLeft-1]==currentNode.item) {
-                itemsLeft-=1;
+            if (itemsToFind[itemsLeft - 1] == currentNode.item) {
+                itemsLeft -= 1;
             }
             currentNode = currentNode.parent;
         }
