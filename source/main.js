@@ -286,7 +286,7 @@ function loadMenu() {
     controllers.buttons.bottomMenuButton.addTo(main.leafletMap);
 
     controllers.buttons.rightMenuButton = new L.Control.Button({
-        position: 'bottomright',
+        position: 'verticalcenterright',
         text: '≠',
         onChange: function () {
             const expanded = toggleMenu(main.rightMenu, 'width');
@@ -326,7 +326,7 @@ function loadMenu() {
     controllers.buttons.topMenuButton.addTo(main.leafletMap);
 
     controllers.buttons.themeButton = new L.Control.Button({
-        position: 'verticalcenterright',
+        position: 'topright',
         text: '◐',
         onChange: function () {
             toggleTheme();

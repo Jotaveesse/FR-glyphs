@@ -87,7 +87,7 @@ export function getUniqueItems(data, columns = []) {
         else {
             for (const key of columns) {
                 if (row[key] == undefined || row[key] == "")
-                    return;
+                    continue;
 
                 const cell = row[key];
 
