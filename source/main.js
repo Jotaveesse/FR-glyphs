@@ -729,6 +729,7 @@ function addRuleDisplay(ruleGroup) {
     if (controllers.ruleDisplays.length < initThreshVal.maxRulesDisplayed) {
         controllers.ruleDisplays.push(new controls.RuleDisplayControl(main.rulesArea, {
             ruleGroup: ruleGroup,
+            columnNames: importData.columnsImported,
             startHidden: false,
             onChange: function (rule) {
                 main.leafletMap.setView(new L.LatLng(rule.group.lat, rule.group.lon), 13);
@@ -827,8 +828,14 @@ function importFile() {
     let columnIndex = 0;
     //cria os nomes para os filtros de ante e consequentes
     for (const column of importData.columnsImported) {
+        console.log(column)
         if (importData.chosenColumns.has(column)) {
-            const uniqueItemsInColumn = Array.from(uniqueItems[column]);
+            const items = uniqueItems[column];
+            
+            if(items == undefined)
+                continue;
+            
+            const uniqueItemsInColumn = Array.from(items);
 
             for (let index = 0; index < uniqueItemsInColumn.length; index++) {
                 const value = uniqueItemsInColumn[index] + "_" + columnIndex;
@@ -900,8 +907,8 @@ function loadOptions(file, data) {
     }
 
     //ordena alfabeticamente
-    columnsImported.sort((a, b) => a.text.localeCompare(b.text));
-    importData.columnsImported.sort((a, b) => a.localeCompare(b));
+    columnsImported.sort();
+    importData.columnsImported.sort();
 
     controllers.importOptions.chosenMultiBox.show();
     controllers.importOptions.groupComboBox.show();

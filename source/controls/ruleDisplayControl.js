@@ -1,4 +1,4 @@
-import { removeColumnId } from "../common.js";
+import { removeColumnId, extractColumnId } from "../common.js";
 import { Control } from "./control.js"
 
 export class RuleDisplayControl extends Control {
@@ -26,10 +26,22 @@ export class RuleDisplayControl extends Control {
             .attr("class", "rule-antecedent-area");
 
         this.currRule.antecedents.forEach(text => {
-            const areaClass = removeColumnId(text).length > 18 ? "rule-antecedent text-slide" : "rule-antecedent";
-            antecedentArea.append("div")
+            const columnId = extractColumnId(text);
+            const column = this.options.columnNames[columnId];
+            const areaClass = text.length > 18 ? "rule-antecedent text-slide" : "rule-antecedent";
+
+            const consequentDiv = antecedentArea.append("div")
                 .attr("class", areaClass)
-                .append("span")
+                .on("mouseover", function() {
+                    d3.select(this).select("span").text(column)
+                    .style("font-weight",900);
+                })
+                .on("mouseout", function() {
+                    d3.select(this).select("span").text(removeColumnId(text))
+                    .style("font-weight","");
+                });
+        
+            consequentDiv.append("span")
                 .text(removeColumnId(text));
         });
 
@@ -42,13 +54,25 @@ export class RuleDisplayControl extends Control {
         const consequentArea = ruleClasses.append("div")
             .attr("class", "rule-consequent-area");
 
-        this.currRule.consequents.forEach(text => {
-            const areaClass = text.length > 18 ? "rule-antecedent text-slide" : "rule-antecedent";
-            consequentArea.append("div")
-                .attr("class", areaClass)
-                .append("span")
-                .text(removeColumnId(text));
-        });
+            this.currRule.consequents.forEach(text => {
+                const columnId = extractColumnId(text);
+                const column = this.options.columnNames[columnId];
+                const areaClass = text.length > 18 ? "rule-consequent text-slide" : "rule-consequent";
+
+                const consequentDiv = consequentArea.append("div")
+                    .attr("class", areaClass)
+                    .on("mouseover", function() {
+                        d3.select(this).select("span").text(column)
+                        .style("font-weight",900);
+                    })
+                    .on("mouseout", function() {
+                        d3.select(this).select("span").text(removeColumnId(text))
+                        .style("font-weight","");
+                    });
+            
+                consequentDiv.append("span")
+                    .text(removeColumnId(text));
+            });
 
         const valueArea = this.container.append("div")
             .attr("class", "rule-value-area");

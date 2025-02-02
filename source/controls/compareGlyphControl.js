@@ -55,6 +55,7 @@ export class CompareGlyphControl extends Control {
         this.icon.select(".glyph-bar-outlines").attr("visibility", "");
         this.icon.select(".glyph-arrow-outlines").attr("visibility", "");
         this.icon.select(".glyph-count").attr("visibility", "hidden");
+        this.icon.select(".glyph-rules-info").attr("visibility", "hidden");
         this.icon.select(".glyph-hitbox").attr("visibility", "hidden");
         this.icon.select(".glyph-background").style("opacity", 0);
 

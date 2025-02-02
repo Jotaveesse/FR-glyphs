@@ -474,6 +474,10 @@ export class Glyph {
             const entry = this.rawData[i];
             let lat, lon;
             [lat, lon] = [parseFloat(entry[this.latColumn]), parseFloat(entry[this.lonColumn])];
+            if (isNaN(lat))
+                lat = 0;
+            if (isNaN(lon))
+                lon = 0;
             this.latitudes.push(lat);
             this.longitudes.push(lon);
         }

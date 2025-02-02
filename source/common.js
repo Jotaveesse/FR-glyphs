@@ -137,3 +137,8 @@ export function getRuleId(rule){
 export function removeColumnId(text){
     return text.replace(/_\d+$/, "");
 }
+
+export function extractColumnId(text) {
+    const match = text.match(/_(\d+)$/);
+    return match ? parseInt(match[1], 10) : null;
+}
