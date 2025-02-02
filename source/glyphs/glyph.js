@@ -1,7 +1,7 @@
 import { Surprise } from './surprise.js';
 import { FPGrowth } from './association.js';
 import * as models from './models.js';
-import { isSubset } from '../common.js';
+import { getRuleId, isSubset, removeColumnId, extractColumnId } from '../common.js';
 
 const RADIANS = 180 / Math.PI;
 
@@ -392,7 +392,7 @@ export class Glyph {
         this.markForUpdate();
     }
 
-    setIsCluster(isCluster){
+    setIsCluster(isCluster) {
         this.isCluster = isCluster;
     }
 
@@ -436,6 +436,7 @@ export class Glyph {
         mergedGlyph.setSurprise(newSurp);
         mergedGlyph.setPosition(avrgLat, avrgLon);
         mergedGlyph.setIsCluster(true);
+        mergedGlyph.columnOrder = glyphs[0].columnOrder;
 
         return mergedGlyph;
     }
@@ -682,10 +683,12 @@ export class Glyph {
         this.textSize = this.width / 25;
 
         this.barWidth = this.width / 20;
-        this.maxBarLength = this.width / 5;
+        this.maxBarLength = this.width / 6;
 
         this.height = this.width;
-        this.innerRadius = (this.width - this.maxBarLength * 2 - this.textSize * 6) / 2;
+        const textAmount = 3;
+        const textPadding = (textAmount + (textAmount - 1) / 2) * 2;
+        this.innerRadius = (this.width - this.maxBarLength * 2 - this.textSize * textPadding) / 2;
 
         this.circleBorderWidth = this.width / 120;
 
@@ -695,7 +698,7 @@ export class Glyph {
         this.outlineWidth = this.width / 320;
         this.outlineColor = "black";
 
-        this.textRadius = this.innerRadius + this.maxBarLength + this.textSize * 1.5;
+        this.textRadius = this.innerRadius + this.maxBarLength + this.textSize * 2;
         this.textColor = "black";
     }
 
@@ -1246,60 +1249,68 @@ export class Glyph {
             .selectAll("text")
             .data(this.pieData)
             .join(
-                enter => enter.append("text").append("textPath")
-                    .attr('side', d => {
+                enter => enter.append("text") // Enter: Append new text elements
+                    .call(text => text.append("textPath") // Append textPath to each text element
+                        .attr("side", d => {
+                            const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
+                            return isUpsideDown ? "right" : "left";
+                        })
+                        .attr("startOffset", d => {
+                            const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
+                            const startOffset = isUpsideDown ? 1 - d.middleAngle / (Math.PI * 2) : d.middleAngle / (Math.PI * 2);
+                            return `${100 / 3 + startOffset * 100 / 3}%`; // Position text in the second loop to avoid cuts
+                        })
+                        .attr("xlink:href", `#${this.textPath.node().id}`)
+                        .call(textPath => {
+                            // Append tspans to textPath
+                            textPath.selectAll("tspan")
+                                .data(d => [
+                                    this.columnOrder[extractColumnId(d.data.name)].slice(0, parseInt(128 / this.maxCategories)), // First tspan data
+                                    removeColumnId(d.data.name).slice(0, parseInt(128 / this.maxCategories)), // Second tspan data
+                                    d.data.value.toLocaleString("pt-BR") // Third tspan data
+                                ])
+                                .join("tspan")
+                                .attr("x", 0)
+                                .attr("y", (d, i) => [-this.textSize, 0, this.textSize][i]) // Position based on index
+                                .attr("font-weight", (d, i) => [100, 900, 200][i]) // Font weight based on index
+                                .text(d => d); // Set text content
+                        })
+                    ),
+                update => update // Update: Modify existing text elements
+                    .select("textPath")
+                    .attr("side", d => {
                         const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
-                        return isUpsideDown ? 'right' : 'left';
+                        return isUpsideDown ? "right" : "left";
                     })
-                    .attr("startOffset", (d, i) => {
+                    .attr("startOffset", d => {
                         const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
-                        var startOffset;
-
-                        if (isUpsideDown)
-                            startOffset = (1 - d.middleAngle / (Math.PI * 2));
-                        else
-                            startOffset = d.middleAngle / (Math.PI * 2);
-
-                        return `${100 / 3 + startOffset * 100 / 3}%`;   //texto é colocado na 2° volta pra evitar cortes
+                        const startOffset = isUpsideDown ? 1 - d.middleAngle / (Math.PI * 2) : d.middleAngle / (Math.PI * 2);
+                        return `${100 / 3 + startOffset * 100 / 3}%`; // Position text in the second loop to avoid cuts
                     })
                     .attr("xlink:href", `#${this.textPath.node().id}`)
-                    .call(text => text.append("tspan")
-                        .attr("y", -this.textSize / 2)
-                        .attr("font-weight", 900)
-                        .text(d => d.data.name.replace(/_\d+$/, "").slice(0, parseInt(128 / this.maxCategories))))
-                    .call(text => text.append("tspan")
-                        .attr("x", 0)
-                        .attr("y", this.textSize / 2)
-                        .attr("font-weight", 200)
-                        .text(d => d.data.value.toLocaleString("pt-BR"))),
-                update => update
-                    .select("textPath").attr("xlink:href", (d, i) => `#${this.textPath.node().id}`)
-                    .attr('side', d => {
-                        const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
-                        return isUpsideDown ? 'right' : 'left';
-                    })
-                    .attr("startOffset", (d, i) => {
-                        const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
-                        var startOffset;
-
-                        if (isUpsideDown)
-                            startOffset = (1 - d.middleAngle / (Math.PI * 2));
-                        else
-                            startOffset = d.middleAngle / (Math.PI * 2);
-
-                        return `${100 / 3 + startOffset * 100 / 3}%`;   //texto é colocado na 2° volta pra evitar cortes
-                    })
-                    .call(text => text.selectAll("tspan")
-                        .data(d => [d.data.name.replace(/_\d+$/, "").slice(0, parseInt(128 / this.maxCategories))])
-                        .join("tspan")
-                        .attr("y", (d, i) => i === 0 ? -this.textSize / 2 : this.textSize / 2)
-                        .text(d => d))
-                    .call(text => text.append("tspan")
-                        .attr("x", 0)
-                        .attr("y", this.textSize / 2)
-                        .attr("font-weight", 200)
-                        .text(d => d.data.value.toLocaleString("pt-BR"))),
-                exit => exit.remove()
+                    .call(textPath => {
+                        // Update tspans within textPath
+                        textPath.selectAll("tspan")
+                            .data(d => [
+                                this.columnOrder[extractColumnId(d.data.name)].slice(0, parseInt(128 / this.maxCategories)), // First tspan data
+                                removeColumnId(d.data.name).slice(0, parseInt(128 / this.maxCategories)), // Second tspan data
+                                d.data.value.toLocaleString("pt-BR") // Third tspan data
+                            ])
+                            .join(
+                                enter => enter.append("tspan") // Enter: Append new tspans
+                                    .attr("x", 0)
+                                    .attr("y", (d, i) => [-this.textSize, 0, this.textSize][i])
+                                    .attr("font-weight", (d, i) => [900, 200, 200][i])
+                                    .text(d => d),
+                                update => update // Update: Modify existing tspans
+                                    .attr("x", 0)
+                                    .attr("y", (d, i) => [-this.textSize, 0, this.textSize][i])
+                                    .attr("font-weight", (d, i) => [900, 200, 200][i])
+                                    .text(d => d),
+                                exit => exit.remove() // Exit: Remove unused tspans
+                            );
+                    }),
+                exit => exit.remove() // Exit: Remove unused text elements
             );
 
         this.mainText

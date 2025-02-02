@@ -32,7 +32,7 @@ export class GlyphGroup {
         this.allowedAntecedents = [];
         this.glyphs = [];
         this.glyphSize = 150;
-        this.glyphHoverSize = 450;
+        this.glyphHoverSize = 400;
 
         this.leftClickFunction = null;
         this.rightClickFunction = null;
