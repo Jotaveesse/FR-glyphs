@@ -828,7 +828,6 @@ function importFile() {
     let columnIndex = 0;
     //cria os nomes para os filtros de ante e consequentes
     for (const column of importData.columnsImported) {
-        console.log(column)
         if (importData.chosenColumns.has(column)) {
             const items = uniqueItems[column];
             
@@ -907,7 +906,8 @@ function loadOptions(file, data) {
     }
 
     //ordena alfabeticamente
-    columnsImported.sort();
+    columnsImported.sort((a, b) => a.text.localeCompare(b.text));
+
     importData.columnsImported.sort();
 
     controllers.importOptions.chosenMultiBox.show();

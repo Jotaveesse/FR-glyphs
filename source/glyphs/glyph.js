@@ -589,6 +589,11 @@ export class Glyph {
             this.displaySurprises = this.surprise.surprises.filter(surp =>
                 slicedCategs.includes(surp.name));
 
+        //arredonda pra 3 casas decimais
+        this.displaySurprises.forEach((val) => {
+            val.value = Math.round((val.value + Number.EPSILON) * 1000) / 1000;
+        });
+
         //filtra somente as regras que possuem todos os seus antecessores
         //e consequentes nas categorias escolhidas
         this.displayRules = this.filteredRules.filter(rule => {
@@ -978,12 +983,12 @@ export class Glyph {
             .data(this.pieData)
             .join(
                 enter => enter.append("path")
-                    .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
+                    .attr("fill", d => d.data.value == 0 ? "#888" : (d.data.value < 0 ? "#2c4" : "#c24"))
                     .attr("stroke", this.outlineColor)
                     .attr("stroke-width", this.isSmall ? 0 : this.outlineWidth)
                     .attr("d", this.borderArc),
                 update => update
-                    .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
+                    .attr("fill", d => d.data.value == 0 ? "#888" : (d.data.value < 0 ? "#2c4" : "#c24"))
                     .attr("d", this.borderArc),
                 exit => exit.remove()
             );
@@ -1221,11 +1226,11 @@ export class Glyph {
                     .attr("y", d => this.innerRadius)
                     .attr("width", this.barWidth)
                     .attr("height", d => this.linScale(Math.abs(d.data.value)))
-                    .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
+                    .attr("fill", d => d.data.value == 0 ? "#888" : (d.data.value < 0 ? "#2c4" : "#c24"))
                     .attr("transform", (d, i) => `rotate(${d.middleAngle * RADIANS + 180}, 0, 0)`),
                 update => update
                     .attr("height", d => this.linScale(Math.abs(d.data.value)))
-                    .attr("fill", d => d.data.value < 0 ? "#2c4" : "#c24")
+                    .attr("fill", d => d.data.value == 0 ? "#888" : (d.data.value < 0 ? "#2c4" : "#c24"))
                     .attr("transform", (d, i) => `rotate(${d.middleAngle * RADIANS + 180}, 0, 0)`),
                 exit => exit.remove()
             );

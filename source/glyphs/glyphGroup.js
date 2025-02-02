@@ -80,7 +80,7 @@ export class GlyphGroup {
         this.addSurpriseModel(models.getAverageModel);
 
         this.setTotals(this.freqData);
-        var transformedModels = this.transformModels(this.surpriseModels);
+        const transformedModels = this.transformModels(this.surpriseModels);
 
         const tGlyphsStart = performance.now();
         //cria os glifos
