@@ -81,9 +81,9 @@ window.importData = importData;
 window.main = main;
 
 function addGlyphGroup() {
-    
-    if(main.glyphGroups != null)
-        main.glyphGroups.remove();    
+
+    if (main.glyphGroups != null)
+        main.glyphGroups.remove();
 
     var glyphGroup = new GlyphGroup(importData.data, main.leafletMap);
 
@@ -198,7 +198,7 @@ function addControlPlaceholders(map) {
 
 export function loadMap() {
     main.leafletMap = L.map('map', { attributionControl: false }).setView([-15.793889, -47.882778], 4); // brasilia
-    
+
     addControlPlaceholders(main.leafletMap);
     toggleTheme(layoutData.theme);
 
@@ -217,6 +217,7 @@ function loadMenu() {
     L.control.scale({ position: 'bottomleft', }).addTo(main.leafletMap);
 
     document.getElementById("compare-button").addEventListener("click", addToCompare);
+    document.getElementById("rules-button").addEventListener("click", showRules);
 
     main.leftMenu.addEventListener('animationend', () => {
         main.leafletMap.invalidateSize();
@@ -491,7 +492,7 @@ function loadMenu() {
         rangeInitMax: initThreshVal.supportMax,
         startHidden: true,
         onChange: function (range) {
-            if(main.glyphGroups == null)
+            if (main.glyphGroups == null)
                 return;
 
             main.glyphGroups.setSupport(range.begin, range.end);
@@ -510,9 +511,9 @@ function loadMenu() {
         rangeInitMax: initThreshVal.confidenceMax,
         startHidden: true,
         onChange: function (range) {
-            if(main.glyphGroups == null)
+            if (main.glyphGroups == null)
                 return;
-            
+
             main.glyphGroups.setConfidence(range.begin, range.end);
             main.glyphGroups.update();
 
@@ -529,9 +530,9 @@ function loadMenu() {
         rangeInitMax: initThreshVal.liftMax,
         startHidden: true,
         onChange: function (range) {
-            if(main.glyphGroups == null)
+            if (main.glyphGroups == null)
                 return;
-            
+
             main.glyphGroups.setLift(range.begin, range.end);
             main.glyphGroups.update();
 
@@ -548,9 +549,9 @@ function loadMenu() {
         initValue: initThreshVal.maxCategs,
         startHidden: true,
         onChange: function (value) {
-            if(main.glyphGroups == null)
+            if (main.glyphGroups == null)
                 return;
-            
+
             main.glyphGroups.setMaxCategories(value);
             main.glyphGroups.update();
         }
@@ -564,9 +565,9 @@ function loadMenu() {
         initValue: initThreshVal.maxRules,
         startHidden: true,
         onChange: function (value) {
-            if(main.glyphGroups == null)
+            if (main.glyphGroups == null)
                 return;
-            
+
             main.glyphGroups.setMaxRules(value);
             main.glyphGroups.update();
         }
@@ -584,9 +585,9 @@ function loadMenu() {
         ],
         startHidden: true,
         onChange: function (value) {
-            if(main.glyphGroups == null)
+            if (main.glyphGroups == null)
                 return;
-            
+
             main.glyphGroups.setDisplayMethod(parseInt(value));
             main.glyphGroups.update();
 
@@ -604,9 +605,9 @@ function loadMenu() {
         listAll: true,
         startHidden: true,
         onChange: function (value, text, element) {
-            if(main.glyphGroups == null)
+            if (main.glyphGroups == null)
                 return;
-            
+
             main.glyphGroups.setAntecedentFilter(Array.from(controllers.ruleFilters.antecedentsMultiBox.value));
             main.glyphGroups.update();
 
@@ -624,9 +625,9 @@ function loadMenu() {
         listAll: true,
         startHidden: true,
         onChange: function (value, text, element) {
-            if(main.glyphGroups == null)
+            if (main.glyphGroups == null)
                 return;
-            
+
             main.glyphGroups.setConsequentFilter(Array.from(controllers.ruleFilters.consequentsMultiBox.value));
             main.glyphGroups.update();
 
@@ -644,9 +645,9 @@ function loadMenu() {
         rangeInitMax: initThreshVal.antecedentMax,
         startHidden: true,
         onChange: function (range) {
-            if(main.glyphGroups == null)
+            if (main.glyphGroups == null)
                 return;
-            
+
             main.glyphGroups.setAntecedentDisplayedRange(range.begin, range.end);
             main.glyphGroups.update();
 
@@ -663,9 +664,9 @@ function loadMenu() {
         rangeInitMax: initThreshVal.consequentMax,
         startHidden: true,
         onChange: function (range) {
-            if(main.glyphGroups == null)
+            if (main.glyphGroups == null)
                 return;
-            
+
             main.glyphGroups.setConsequentDisplayedRange(range.begin, range.end);
             main.glyphGroups.update();
 
@@ -683,9 +684,9 @@ function loadMenu() {
         rangeInitMax: new Date(),
         startHidden: true,
         onChange: function (range) {
-            if(main.glyphGroups == null)
+            if (main.glyphGroups == null)
                 return;
-            
+
             main.glyphGroups.setDateRange(range.begin, range.end);
             main.glyphGroups.update();
 
@@ -830,10 +831,10 @@ function importFile() {
     for (const column of importData.columnsImported) {
         if (importData.chosenColumns.has(column)) {
             const items = uniqueItems[column];
-            
-            if(items == undefined)
+
+            if (items == undefined)
                 continue;
-            
+
             const uniqueItemsInColumn = Array.from(items);
 
             for (let index = 0; index < uniqueItemsInColumn.length; index++) {
@@ -962,15 +963,30 @@ function addToCompare(e) {
     });
 }
 
+function showRules(e) {
+    const glyph = contextMenu.glyph;
+    controllers.displayRuleFilters.groupsMultiBox.unselectAll();
+    controllers.displayRuleFilters.groupsMultiBox.toggleSelect(glyph.name);
+
+    const topExpanded = main.topMenu.classList.contains("expand-height");
+
+    if (!topExpanded)
+        controllers.buttons.topMenuButton.update();
+
+}
+
 function openGlyphOption(e, glyph) {
     e.preventDefault();
     e.stopImmediatePropagation();
     const { clientX: mouseX, clientY: mouseY } = e;
 
     contextMenu.glyph = glyph;
+
     contextMenu.style.top = `${mouseY}px`;
     contextMenu.style.left = `${mouseX}px`;
     contextMenu.style.display = 'block';
+
+    document.getElementById("rules-button").style.display = glyph.isCluster ? "none" : "";
 }
 
 var focusedGlyph = null;

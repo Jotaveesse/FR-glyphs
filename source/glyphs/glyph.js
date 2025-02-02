@@ -13,6 +13,8 @@ export class Glyph {
         this.itemCount = this.rawData.length;
         this.displayedCount = 0;
 
+        this.isCluster = false;
+
         this.size = 400;
         this.hoverSize = 400;
         this.displaySize = this.size;
@@ -390,6 +392,10 @@ export class Glyph {
         this.markForUpdate();
     }
 
+    setIsCluster(isCluster){
+        this.isCluster = isCluster;
+    }
+
     static merge(glyphs) {
         const name = `${glyphs.length}`;
         var mergedDisplayedCount = 0;
@@ -429,6 +435,7 @@ export class Glyph {
         mergedGlyph.setRuleTree(newRuleData);
         mergedGlyph.setSurprise(newSurp);
         mergedGlyph.setPosition(avrgLat, avrgLon);
+        mergedGlyph.setIsCluster(true);
 
         return mergedGlyph;
     }
