@@ -475,7 +475,7 @@ function loadMenu() {
         placeholder: 'Permitir Todos',
         search: true,
         selectAll: true,
-        unselectAll: false,
+        unselectAll: true,
         listAll: true,
         startHidden: true,
         onChange: function (value, text, element) {
@@ -601,7 +601,7 @@ function loadMenu() {
         placeholder: 'Permitir Todas',
         search: true,
         selectAll: true,
-        unselectAll: false,
+        unselectAll: true,
         listAll: true,
         startHidden: true,
         onChange: function (value, text, element) {
@@ -621,10 +621,11 @@ function loadMenu() {
         placeholder: 'Permitir Todas',
         search: true,
         selectAll: true,
-        unselectAll: false,
+        unselectAll: true,
         listAll: true,
         startHidden: true,
         onChange: function (value, text, element) {
+            console.log("udpate")
             if (main.glyphGroups == null)
                 return;
 
@@ -816,9 +817,9 @@ function importFile() {
     controllers.ruleFilters.consequentRange.show();
     controllers.classFilters.maxRulesSlider.show();
 
-    // controllers.ruleFilters.antecedentsMultiBox.unselectAll();
+    controllers.ruleFilters.antecedentsMultiBox.unselectAll();
     controllers.ruleFilters.antecedentsMultiBox.show();
-    // controllers.ruleFilters.consequentsMultiBox.unselectAll();
+    controllers.ruleFilters.consequentsMultiBox.unselectAll();
     controllers.ruleFilters.consequentsMultiBox.show();
 
     addGlyphGroup();

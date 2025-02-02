@@ -25,7 +25,7 @@ export class MultiBoxControl extends Control {
         };
         this.options = Object.assign(defaults, options);
         this.wrapper.classed('multibox-control', true);
-        this.value = options.initValue || new Set();;
+        this.value = options.initValue || new Set();
 
     }
 
@@ -114,7 +114,6 @@ export class MultiBoxControl extends Control {
         let option = Array.from(this.element.querySelectorAll('.multi-select-option'))
             .find(option => optionName == option.dataset.value);
 
-
         let headerElement = this.element.querySelector('.multi-select-header');
         let selected = true;
         if (!option.classList.contains('multi-select-selected')) {
@@ -154,18 +153,21 @@ export class MultiBoxControl extends Control {
             this.element.querySelector('.multi-select-header-max').innerHTML = this.selectedValues.length + '/' + this.options.max;
         }
         if (this.options.search === true || this.options.search === 'true') {
-            this.element.querySelector('.multi-select-search').value = '';
+            // this.element.querySelector('.multi-select-search').value = '';
         }
-        this.element.querySelectorAll('.multi-select-option').forEach(option => option.style.display = 'flex');
+        // this.element.querySelectorAll('.multi-select-option').forEach(option => option.style.display = 'flex');
         if (this.options.closeListOnItemSelect === true || this.options.closeListOnItemSelect === 'true') {
             headerElement.classList.remove('multi-select-header-active');
         }
+
         if (selected) {
             this.value.add(option.dataset.value);
-            this.options.onSelect(option.dataset.value, option.querySelector('.multi-select-option-text').innerHTML, option);
+            if (!this.chunkSelect)
+                this.options.onSelect(option.dataset.value, option.querySelector('.multi-select-option-text').innerHTML, option);
         } else {
             this.value.delete(option.dataset.value);
-            this.options.onUnselect(option.dataset.value, option.querySelector('.multi-select-option-text').innerHTML, option);
+            if (!this.chunkSelect)
+                this.options.onUnselect(option.dataset.value, option.querySelector('.multi-select-option-text').innerHTML, option);
         }
         if (!this.chunkSelect)
             this.options.onChange(option.dataset.value, option.querySelector('.multi-select-option-text').innerHTML, option);
@@ -175,18 +177,38 @@ export class MultiBoxControl extends Control {
 
     unselectAll() {
         this.chunkSelect = true;
-        this.element.querySelectorAll('.multi-select-option').forEach(option => {
+
+        const options = this.element.querySelectorAll('.multi-select-option');
+        options.forEach((option, index) => {
             let dataItem = this.data.find(data => data.value == option.dataset.value);
+
             if (dataItem && dataItem.selected) {
                 option.click();
             }
+
         });
         this.chunkSelect = false;
 
         this.options.onUnselectAll(this.value);
         this.options.onChange(this.value);
+    }
 
-        // unselectAllButton.classList.toggle('multi-select-selected');
+    selectAll() {
+        this.chunkSelect = true;
+
+        const options = this.element.querySelectorAll('.multi-select-option');
+        options.forEach((option, index) => {
+            let dataItem = this.data.find(data => data.value == option.dataset.value);
+
+            if (dataItem && !dataItem.selected) {
+                option.click();
+            }
+
+        });
+        this.chunkSelect = false;
+
+        this.options.onUnselectAll(this.value);
+        this.options.onChange(this.value);
     }
 
     _template() {
@@ -206,8 +228,13 @@ export class MultiBoxControl extends Control {
                 .attr('value', value);
         });
 
+        const headerWrapper = template.append('div')
+            .attr('class', 'multi-select-header-wrapper')
+            .style('width', this.width ? this.width : null)
+            .style('height', this.height ? this.height : null);
+
         // Add the header
-        const header = template.append('div')
+        const header = headerWrapper.append('div')
             .attr('class', 'multi-select-header')
             .style('width', this.width ? this.width : null)
             .style('height', this.height ? this.height : null);
@@ -234,20 +261,20 @@ export class MultiBoxControl extends Control {
                 .attr('placeholder', 'Pesquisar...');
         }
 
+        const selectAllButtons = this.optionsContainer.append('div')
+                .attr('class', 'multi-select-all-area');
+
         if (this.options.selectAll === true || this.options.selectAll === 'true') {
-            const selectAll = this.optionsContainer.append('div')
+            const selectAll = selectAllButtons.append('div')
                 .attr('class', 'multi-select-all');
 
             selectAll.append('span')
-                .attr('class', 'multi-select-option-radio');
-
-            selectAll.append('span')
                 .attr('class', 'multi-select-option-text')
-                .text('Selecionar Todos');
+                .text('Marcar Todos');
         }
 
         if (this.options.unselectAll === true || this.options.unselectAll === 'true') {
-            const unselectAll = this.optionsContainer.append('div')
+            const unselectAll = selectAllButtons.append('div')
                 .attr('class', 'multi-unselect-all');
 
             unselectAll.append('span')
@@ -267,7 +294,10 @@ export class MultiBoxControl extends Control {
                 this.toggleSelect(option.dataset.value);
             };
         });
-        headerElement.onclick = () => headerElement.classList.toggle('multi-select-header-active');
+        headerElement.onclick = () => {
+            headerElement.classList.toggle('multi-select-header-active');
+            this.element.querySelector('.multi-select-options').classList.toggle('multi-select-options-active');
+        }
         if (this.options.search === true || this.options.search === 'true') {
             let search = this.element.querySelector('.multi-select-search');
             search.oninput = () => {
@@ -279,28 +309,12 @@ export class MultiBoxControl extends Control {
 
         if (this.options.selectAll === true || this.options.selectAll === 'true') {
             let selectAllButton = this.element.querySelector('.multi-select-all');
-            selectAllButton.onclick = () => {
-                let allSelected = selectAllButton.classList.contains('multi-select-selected');
-
-                this.chunkSelect = true;
-                this.element.querySelectorAll('.multi-select-option').forEach(option => {
-                    let dataItem = this.data.find(data => data.value == option.dataset.value);
-                    if (dataItem && ((allSelected && dataItem.selected) || (!allSelected && !dataItem.selected))) {
-                        option.click();
-                    }
-                });
-                this.chunkSelect = false;
-
-                this.options.onSelectAll(this.value);
-                this.options.onChange(this.value);
-
-                selectAllButton.classList.toggle('multi-select-selected');
-            };
+            selectAllButton.onclick = this.selectAll.bind(this);
         }
 
         if (this.options.unselectAll === true || this.options.unselectAll === 'true') {
             let unselectAllButton = this.element.querySelector('.multi-unselect-all');
-            unselectAllButton.onclick = this.unselectAll;
+            unselectAllButton.onclick = this.unselectAll.bind(this);
         }
 
         if (this.selectElement.id && document.querySelector('label[for="' + this.selectElement.id + '"]')) {
