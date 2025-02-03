@@ -158,6 +158,7 @@ export class MultiBoxControl extends Control {
         // this.element.querySelectorAll('.multi-select-option').forEach(option => option.style.display = 'flex');
         if (this.options.closeListOnItemSelect === true || this.options.closeListOnItemSelect === 'true') {
             headerElement.classList.remove('multi-select-header-active');
+            this.element.querySelector('.multi-select-options').classList.remove('multi-select-options-active');
         }
 
         if (selected) {
@@ -320,11 +321,13 @@ export class MultiBoxControl extends Control {
         if (this.selectElement.id && document.querySelector('label[for="' + this.selectElement.id + '"]')) {
             document.querySelector('label[for="' + this.selectElement.id + '"]').onclick = () => {
                 headerElement.classList.toggle('multi-select-header-active');
+                this.element.querySelector('.multi-select-options').classList.toggle('multi-select-options-active');
             };
         }
         document.addEventListener('click', event => {
             if (!event.target.closest('.' + this.name) && !event.target.closest('label[for="' + this.selectElement.id + '"]')) {
                 headerElement.classList.remove('multi-select-header-active');
+                this.element.querySelector('.multi-select-options').classList.toggle('multi-select-options-active');
             }
         });
     }

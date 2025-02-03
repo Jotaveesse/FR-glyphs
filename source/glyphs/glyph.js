@@ -1249,8 +1249,8 @@ export class Glyph {
             .selectAll("text")
             .data(this.pieData)
             .join(
-                enter => enter.append("text") // Enter: Append new text elements
-                    .call(text => text.append("textPath") // Append textPath to each text element
+                enter => enter.append("text")
+                    .call(text => text.append("textPath")
                         .attr("side", d => {
                             const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
                             return isUpsideDown ? "right" : "left";
@@ -1258,11 +1258,11 @@ export class Glyph {
                         .attr("startOffset", d => {
                             const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
                             const startOffset = isUpsideDown ? 1 - d.middleAngle / (Math.PI * 2) : d.middleAngle / (Math.PI * 2);
-                            return `${100 / 3 + startOffset * 100 / 3}%`; // Position text in the second loop to avoid cuts
+                            return `${100 / 3 + startOffset * 100 / 3}%`;
                         })
                         .attr("xlink:href", `#${this.textPath.node().id}`)
                         .call(textPath => {
-                            // Append tspans to textPath
+
                             textPath.selectAll("tspan")
                                 .data(d => [
                                     this.columnOrder[extractColumnId(d.data.name)].slice(0, parseInt(128 / this.maxCategories)), // First tspan data
@@ -1271,12 +1271,13 @@ export class Glyph {
                                 ])
                                 .join("tspan")
                                 .attr("x", 0)
-                                .attr("y", (d, i) => [-this.textSize, 0, this.textSize][i]) // Position based on index
-                                .attr("font-weight", (d, i) => [100, 900, 200][i]) // Font weight based on index
-                                .text(d => d); // Set text content
+                                .attr("y", (d, i) => [-this.textSize, 0, this.textSize][i])
+                                .attr("font-weight", (d, i) => [900, 200, 200][i])
+                                .attr("font-size", (d, i) => [this.textSize*0.8, this.textSize, this.textSize][i])
+                                .text(d => d);
                         })
                     ),
-                update => update // Update: Modify existing text elements
+                update => update 
                     .select("textPath")
                     .attr("side", d => {
                         const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
@@ -1285,32 +1286,34 @@ export class Glyph {
                     .attr("startOffset", d => {
                         const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
                         const startOffset = isUpsideDown ? 1 - d.middleAngle / (Math.PI * 2) : d.middleAngle / (Math.PI * 2);
-                        return `${100 / 3 + startOffset * 100 / 3}%`; // Position text in the second loop to avoid cuts
+                        return `${100 / 3 + startOffset * 100 / 3}%`;
                     })
                     .attr("xlink:href", `#${this.textPath.node().id}`)
                     .call(textPath => {
-                        // Update tspans within textPath
+
                         textPath.selectAll("tspan")
                             .data(d => [
-                                this.columnOrder[extractColumnId(d.data.name)].slice(0, parseInt(128 / this.maxCategories)), // First tspan data
+                                this.columnOrder[extractColumnId(d.data.name)].slice(0, parseInt(160 / this.maxCategories)), // First tspan data
                                 removeColumnId(d.data.name).slice(0, parseInt(128 / this.maxCategories)), // Second tspan data
                                 d.data.value.toLocaleString("pt-BR") // Third tspan data
                             ])
                             .join(
-                                enter => enter.append("tspan") // Enter: Append new tspans
+                                enter => enter.append("tspan")
                                     .attr("x", 0)
                                     .attr("y", (d, i) => [-this.textSize, 0, this.textSize][i])
                                     .attr("font-weight", (d, i) => [900, 200, 200][i])
+                                    .attr("font-size", (d, i) => [this.textSize*0.8, this.textSize, this.textSize][i])
                                     .text(d => d),
-                                update => update // Update: Modify existing tspans
+                                update => update
                                     .attr("x", 0)
                                     .attr("y", (d, i) => [-this.textSize, 0, this.textSize][i])
                                     .attr("font-weight", (d, i) => [900, 200, 200][i])
+                                    .attr("font-size", (d, i) => [this.textSize*0.8, this.textSize, this.textSize][i])
                                     .text(d => d),
-                                exit => exit.remove() // Exit: Remove unused tspans
+                                exit => exit.remove()
                             );
                     }),
-                exit => exit.remove() // Exit: Remove unused text elements
+                exit => exit.remove()
             );
 
         this.mainText
