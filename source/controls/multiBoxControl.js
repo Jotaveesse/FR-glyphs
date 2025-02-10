@@ -263,7 +263,7 @@ export class MultiBoxControl extends Control {
         }
 
         const selectAllButtons = this.optionsContainer.append('div')
-                .attr('class', 'multi-select-all-area');
+            .attr('class', 'multi-select-all-area');
 
         if (this.options.selectAll === true || this.options.selectAll === 'true') {
             const selectAll = selectAllButtons.append('div')
@@ -295,10 +295,7 @@ export class MultiBoxControl extends Control {
                 this.toggleSelect(option.dataset.value);
             };
         });
-        headerElement.onclick = () => {
-            headerElement.classList.toggle('multi-select-header-active');
-            this.element.querySelector('.multi-select-options').classList.toggle('multi-select-options-active');
-        }
+
         if (this.options.search === true || this.options.search === 'true') {
             let search = this.element.querySelector('.multi-select-search');
             search.oninput = () => {
@@ -318,18 +315,28 @@ export class MultiBoxControl extends Control {
             unselectAllButton.onclick = this.unselectAll.bind(this);
         }
 
-        if (this.selectElement.id && document.querySelector('label[for="' + this.selectElement.id + '"]')) {
-            document.querySelector('label[for="' + this.selectElement.id + '"]').onclick = () => {
+        if (!this.initialized) {
+            headerElement.onclick = () => {
                 headerElement.classList.toggle('multi-select-header-active');
                 this.element.querySelector('.multi-select-options').classList.toggle('multi-select-options-active');
-            };
-        }
-        document.addEventListener('click', event => {
-            if (!event.target.closest('.' + this.name) && !event.target.closest('label[for="' + this.selectElement.id + '"]')) {
-                headerElement.classList.remove('multi-select-header-active');
-                this.element.querySelector('.multi-select-options').classList.toggle('multi-select-options-active');
             }
-        });
+
+            if (this.selectElement.id && document.querySelector('label[for="' + this.selectElement.id + '"]')) {
+                document.querySelector('label[for="' + this.selectElement.id + '"]').onclick = () => {
+                    headerElement.classList.toggle('multi-select-header-active');
+                    this.element.querySelector('.multi-select-options').classList.toggle('multi-select-options-active');
+                };
+            }
+
+            document.addEventListener('click', event => {
+                if (!event.target.closest('.' + this.name) && !event.target.closest('label[for="' + this.selectElement.id + '"]')) {
+                    headerElement.classList.remove('multi-select-header-active');
+                    this.element.querySelector('.multi-select-options').classList.remove('multi-select-options-active');
+                }
+            });
+
+            this.initialized = true;
+        }
     }
 
     _updateSelected() {

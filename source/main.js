@@ -25,7 +25,7 @@ const initThreshVal = {
     confidenceMin: 0,
     confidenceMax: 1,
     liftMin: 1,
-    liftMax: 2.5,
+    liftMax: 4,
     antecedentMin: 1,
     antecedentMax: 4,
     consequentMin: 1,

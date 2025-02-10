@@ -482,10 +482,10 @@ export class Glyph {
             const entry = this.rawData[i];
             let lat, lon;
             [lat, lon] = [parseFloat(entry[this.latColumn]), parseFloat(entry[this.lonColumn])];
-            if (isNaN(lat))
-                lat = 0;
-            if (isNaN(lon))
-                lon = 0;
+            if (isNaN(lat) || Math.abs(lat) > 90)
+                lat = null;
+            if (isNaN(lon) || Math.abs(lon) > 180)
+                lon = null;
             this.latitudes.push(lat);
             this.longitudes.push(lon);
         }
@@ -653,13 +653,20 @@ export class Glyph {
         if (this.rawData != null && this.rawData.length > 0) {
             var avrgLat = 0;
             var avrgLon = 0;
+            var length = 0;
 
             for (let index = 0; index < this.rawData.length; index++) {
-                avrgLat += this.latitudes[index];
-                avrgLon += this.longitudes[index];
+                if (this.latitudes[index] != null && this.longitudes[index] !== null) {
+                    avrgLat += this.latitudes[index];
+                    avrgLon += this.longitudes[index];
+                    length++;
+                }
             }
-            avrgLat /= this.rawData.length;
-            avrgLon /= this.rawData.length;
+
+            if (length > 0) {
+                avrgLat /= length;
+                avrgLon /= length;
+            }
 
             this.lat = avrgLat;
             this.lon = avrgLon;
@@ -1273,11 +1280,11 @@ export class Glyph {
                                 .attr("x", 0)
                                 .attr("y", (d, i) => [-this.textSize, 0, this.textSize][i])
                                 .attr("font-weight", (d, i) => [900, 200, 200][i])
-                                .attr("font-size", (d, i) => [this.textSize*0.8, this.textSize, this.textSize][i])
+                                .attr("font-size", (d, i) => [this.textSize * 0.8, this.textSize, this.textSize][i])
                                 .text(d => d);
                         })
                     ),
-                update => update 
+                update => update
                     .select("textPath")
                     .attr("side", d => {
                         const isUpsideDown = Math.PI / 2 < d.middleAngle && d.middleAngle < 3 * Math.PI / 2;
@@ -1302,13 +1309,13 @@ export class Glyph {
                                     .attr("x", 0)
                                     .attr("y", (d, i) => [-this.textSize, 0, this.textSize][i])
                                     .attr("font-weight", (d, i) => [900, 200, 200][i])
-                                    .attr("font-size", (d, i) => [this.textSize*0.8, this.textSize, this.textSize][i])
+                                    .attr("font-size", (d, i) => [this.textSize * 0.8, this.textSize, this.textSize][i])
                                     .text(d => d),
                                 update => update
                                     .attr("x", 0)
                                     .attr("y", (d, i) => [-this.textSize, 0, this.textSize][i])
                                     .attr("font-weight", (d, i) => [900, 200, 200][i])
-                                    .attr("font-size", (d, i) => [this.textSize*0.8, this.textSize, this.textSize][i])
+                                    .attr("font-size", (d, i) => [this.textSize * 0.8, this.textSize, this.textSize][i])
                                     .text(d => d),
                                 exit => exit.remove()
                             );

@@ -59,12 +59,12 @@
         left: 0%;
     }
 
-    30% {
+    25% {
         transform: translateX(0%);
         left: 0%;
     }
 
-    70% {
+    75% {
         transform: translateX(-100%);
         left: 100%;
     }
@@ -346,5 +346,9 @@ body {
     box-sizing: border-box;
     display: inline-block;
     vertical-align: center;
-    animation: 5s linear 0s infinite alternate scrollText;
+}
+
+.rule-display-control:hover .text-slide span{
+    animation: 4s linear 0s infinite alternate scrollText;
+    animation-delay: -1s;
 }
