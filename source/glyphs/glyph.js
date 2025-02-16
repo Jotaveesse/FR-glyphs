@@ -25,6 +25,8 @@ export class Glyph {
         this.maxConfidence = 1;
         this.minLift = 0;
         this.maxLift = 3;
+        this.minInterestingness = 0;
+        this.maxInterestingness = 1;
 
         this.minAntecedents = 0;
         this.maxAntecedents = 4;
@@ -246,6 +248,14 @@ export class Glyph {
     setLift(minLift, maxLift = Infinity) {
         this.minLift = minLift;
         this.maxLift = maxLift;
+
+        this.needsFilterUpdate = true
+        this.markForUpdate();
+    }
+
+    setInterestingness(minInterestingness, maxInterestingness = Infinity) {
+        this.minInterestingness = minInterestingness;
+        this.maxInterestingness = maxInterestingness;
 
         this.needsFilterUpdate = true
         this.markForUpdate();
@@ -574,13 +584,17 @@ export class Glyph {
                 rule.consequents.length >= this.minConsequents &&
                 rule.consequents.length <= this.maxConsequents &&
                 rule.antecedentSupport >= this.minSupport &&
-                rule.consequentSupport >= this.minSupport &&
                 rule.antecedentSupport <= this.maxSupport &&
+                rule.consequentSupport >= this.minSupport &&
                 rule.consequentSupport <= this.maxSupport &&
+                rule.support >= this.minSupport &&
+                rule.support <= this.maxSupport &&
                 rule.confidence >= this.minConfidence &&
                 rule.confidence <= this.maxConfidence &&
                 rule.lift >= this.minLift &&
                 rule.lift <= this.maxLift &&
+                rule.interestingness >= this.minInterestingness &&
+                rule.interestingness <= this.maxInterestingness &&
                 (this.allowedAntecedents.length == 0 || isSubset(rule.antecedents, this.allowedAntecedents)) &&
                 (this.allowedConsequents.length == 0 || isSubset(rule.consequents, this.allowedConsequents))
             ) {
@@ -1009,9 +1023,10 @@ export class Glyph {
                     .attr("d", this.borderArc),
                 exit => exit.remove()
             );
-
+            
+        const lineCount= 6;
         const infoTextSize = this.textSize * 0.6;
-        const infoHeight = infoTextSize * 6;
+        const infoHeight = infoTextSize * (lineCount + 1);
         const infoWidth = 15 * infoTextSize + 64;
         const horizontalPadding = 1;
         const decimalPlaces = 3;
@@ -1034,9 +1049,9 @@ export class Glyph {
 
                     infoGroup.append("rect")
                         .attr("x", (d, i) => i % 2 == 0 ? - infoTextSize * 2.5 : -infoWidth + infoTextSize * 2.5)
-                        .attr("y", -infoTextSize * 2.5 - infoTextSize / 5 - 1)
+                        .attr("y", -infoTextSize * lineCount/2 - infoTextSize / lineCount - 1)
                         .attr("width", infoWidth)
-                        .attr("height", infoTextSize * 5 + 1)
+                        .attr("height", infoTextSize * lineCount + 1)
                         .attr("fill", "#fff")
                         .attr("rx", 0)
                         .attr("ry", 0)
@@ -1045,7 +1060,7 @@ export class Glyph {
 
                     infoGroup.append("path")
                         .attr("d", d => {
-                            const width = infoTextSize * 5 + 1;
+                            const width = infoTextSize * lineCount + 1;
                             const height = infoTextSize * 2;
                             const thickness = infoTextSize * 2.5;
                             return `
@@ -1058,22 +1073,24 @@ export class Glyph {
                                 Z
                             `;
                         })
-                        .attr("transform", (d, i) => `translate(${i % 2 == 0 ? 0 : -0}, ${-infoTextSize / 5 - 0.5}) rotate(${i % 2 == 0 ? -90 : 90}, 0, 0)`)
+                        .attr("transform", (d, i) => `translate(${i % 2 == 0 ? 0 : -0}, ${-infoTextSize / lineCount - 0.5}) rotate(${i % 2 == 0 ? -90 : 90}, 0, 0)`)
                         .attr("fill", (d, i) => this.colorScale(i))
                         .attr("stroke", "black")
                         .attr("stroke-width", "1px");
 
                     const anteSupGroup = infoGroup.append("g").attr("class", "antecedent-info");
                     const consSupGroup = infoGroup.append("g").attr("class", "consequent-info");
+                    const supGroup = infoGroup.append("g").attr("class", "support-info");
                     const confGroup = infoGroup.append("g").attr("class", "confidence-info");
                     const liftGroup = infoGroup.append("g").attr("class", "lift-info");
+                    const interestGroup = infoGroup.append("g").attr("class", "interestingness-info");
 
                     anteSupGroup.append("text")
                         .call(text => text.append("tspan")
                             .attr("font-weight", 600)
                             .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
                             .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
-                            .attr("y", -infoTextSize * 2)
+                            .attr("y", -infoTextSize * 2.5)
                             .attr("font-size", infoTextSize)
                             .attr("stroke", "#fffc")
                             .attr("stroke-width", 0.75)
@@ -1086,7 +1103,7 @@ export class Glyph {
                             .attr("font-weight", 600)
                             .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
                             .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
-                            .attr("y", -infoTextSize * 1)
+                            .attr("y", -infoTextSize * 1.5)
                             .attr("font-size", infoTextSize)
                             .attr("stroke", "#fffc")
                             .attr("stroke-width", 0.75)
@@ -1095,12 +1112,12 @@ export class Glyph {
                             .text(d => "Suporte Conse.: " + d.consequentSupport.toFixed(decimalPlaces))
                         );
 
-                    confGroup.append("text")
+                    supGroup.append("text")
                         .call(text => text.append("tspan")
                             .attr("font-weight", 600)
                             .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
                             .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
-                            .attr("y", infoTextSize * 0)
+                            .attr("y", -infoTextSize * 0.5)
                             .attr("font-size", infoTextSize)
                             .attr("stroke", "#fffc")
                             .attr("stroke-width", 0.75)
@@ -1114,7 +1131,7 @@ export class Glyph {
                             .attr("font-weight", 600)
                             .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
                             .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
-                            .attr("y", infoTextSize * 1)
+                            .attr("y", infoTextSize * 0.5)
                             .attr("font-size", infoTextSize)
                             .attr("stroke", "#fffc")
                             .attr("stroke-width", 0.75)
@@ -1128,13 +1145,27 @@ export class Glyph {
                             .attr("font-weight", 600)
                             .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
                             .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
-                            .attr("y", infoTextSize * 2)
+                            .attr("y", infoTextSize * 1.5)
                             .attr("font-size", infoTextSize)
                             .attr("stroke", "#fffc")
                             .attr("stroke-width", 0.75)
                             .attr("paint-order", "stroke")
                             .attr("font-size", infoTextSize)
                             .text(d => "Lift: " + d.lift.toFixed(decimalPlaces))
+                        );
+
+                    interestGroup.append("text")
+                        .call(text => text.append("tspan")
+                            .attr("font-weight", 600)
+                            .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
+                            .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
+                            .attr("y", infoTextSize * 2.5)
+                            .attr("font-size", infoTextSize)
+                            .attr("stroke", "#fffc")
+                            .attr("stroke-width", 0.75)
+                            .attr("paint-order", "stroke")
+                            .attr("font-size", infoTextSize)
+                            .text(d => "Interesse: " + d.interestingness.toFixed(decimalPlaces))
                         );
                 },
                 update => {
@@ -1144,8 +1175,10 @@ export class Glyph {
 
                     const anteSupGroup = update.append("g").attr("class", "antecedent-info");
                     const consSupGroup = update.append("g").attr("class", "consequent-info");
+                    const supGroup = update.append("g").attr("class", "support-info");
                     const confGroup = update.append("g").attr("class", "confidence-info");
                     const liftGroup = update.append("g").attr("class", "lift-info");
+                    const interestGroup = update.append("g").attr("class", "interestingness-info");
 
                     update.append("path")
                         .attr("transform", (d, i) => `translate(0, ${-infoTextSize / 4}) rotate(${i % 2 == 0 ? -90 : 90}, 0, 0)`)
@@ -1157,12 +1190,22 @@ export class Glyph {
                             .attr("font-weight", 600)
                             .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
                             .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
-                            .attr("y", -infoTextSize * 1.5)
+                            .attr("y", -infoTextSize * 2.5)
                             .attr("font-size", infoTextSize)
                             .text(d => "Suporte Ante.: " + d.antecedentSupport.toFixed(2))
                         );
 
                     consSupGroup.append("text")
+                        .call(text => text.append("tspan")
+                            .attr("font-weight", 600)
+                            .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
+                            .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
+                            .attr("y", -infoTextSize * 1.5)
+                            .attr("font-size", infoTextSize)
+                            .text(d => "Suporte Conse.: " + d.consequentSupport.toFixed(2))
+                        );
+
+                    supGroup.append("text")
                         .call(text => text.append("tspan")
                             .attr("font-weight", 600)
                             .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
@@ -1190,6 +1233,16 @@ export class Glyph {
                             .attr("y", infoTextSize * 1.5)
                             .attr("font-size", infoTextSize)
                             .text(d => "Lift: " + d.lift.toFixed(2))
+                        );
+
+                        interestGroup.append("text")
+                        .call(text => text.append("tspan")
+                            .attr("font-weight", 600)
+                            .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
+                            .attr("x", (d, i) => i % 2 == 0 ? horizontalPadding : -horizontalPadding)
+                            .attr("y", infoTextSize * 2.5)
+                            .attr("font-size", infoTextSize)
+                            .text(d => "Interesse: " + d.interestingness.toFixed(2))
                         );
 
                 },

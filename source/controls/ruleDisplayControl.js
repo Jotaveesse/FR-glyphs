@@ -32,15 +32,15 @@ export class RuleDisplayControl extends Control {
 
             const consequentDiv = antecedentArea.append("div")
                 .attr("class", areaClass)
-                .on("mouseover", function() {
+                .on("mouseover", function () {
                     d3.select(this).select("span").text(column)
-                    .style("font-weight",900);
+                        .style("font-weight", 900);
                 })
-                .on("mouseout", function() {
+                .on("mouseout", function () {
                     d3.select(this).select("span").text(removeColumnId(text))
-                    .style("font-weight","");
+                        .style("font-weight", "");
                 });
-        
+
             consequentDiv.append("span")
                 .text(removeColumnId(text));
         });
@@ -54,25 +54,25 @@ export class RuleDisplayControl extends Control {
         const consequentArea = ruleClasses.append("div")
             .attr("class", "rule-consequent-area");
 
-            this.currRule.consequents.forEach(text => {
-                const columnId = extractColumnId(text);
-                const column = this.options.columnNames[columnId];
-                const areaClass = text.length > 18 ? "rule-consequent text-slide" : "rule-consequent";
+        this.currRule.consequents.forEach(text => {
+            const columnId = extractColumnId(text);
+            const column = this.options.columnNames[columnId];
+            const areaClass = text.length > 18 ? "rule-consequent text-slide" : "rule-consequent";
 
-                const consequentDiv = consequentArea.append("div")
-                    .attr("class", areaClass)
-                    .on("mouseover", function() {
-                        d3.select(this).select("span").text(column)
-                        .style("font-weight",900);
-                    })
-                    .on("mouseout", function() {
-                        d3.select(this).select("span").text(removeColumnId(text))
-                        .style("font-weight","");
-                    });
-            
-                consequentDiv.append("span")
-                    .text(removeColumnId(text));
-            });
+            const consequentDiv = consequentArea.append("div")
+                .attr("class", areaClass)
+                .on("mouseover", function () {
+                    d3.select(this).select("span").text(column)
+                        .style("font-weight", 900);
+                })
+                .on("mouseout", function () {
+                    d3.select(this).select("span").text(removeColumnId(text))
+                        .style("font-weight", "");
+                });
+
+            consequentDiv.append("span")
+                .text(removeColumnId(text));
+        });
 
         const valueArea = this.container.append("div")
             .attr("class", "rule-value-area");
@@ -80,6 +80,7 @@ export class RuleDisplayControl extends Control {
         this.ruleValues = {
             "Suporte Antecedente": this.currRule.antecedentSupport,
             "Suporte Consequente": this.currRule.consequentSupport,
+            "Contagem": this.currRule.count,
             "Suporte": this.currRule.support,
             "Confiança": this.currRule.confidence,
             "Lift": this.currRule.lift,
@@ -93,7 +94,7 @@ export class RuleDisplayControl extends Control {
             ruleValue.append("span")
                 .attr("class", "rule-value-label").text(label);
             ruleValue.append("span")
-                .attr("class", "rule-value-value").text(value.toFixed(3));
+                .attr("class", "rule-value-value").text(Number.isInteger(value) ? value : value.toFixed(3));
         });
 
         const infoArea = this.container.append("div")

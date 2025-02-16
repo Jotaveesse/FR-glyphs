@@ -26,6 +26,8 @@ const initThreshVal = {
     confidenceMax: 1,
     liftMin: 1,
     liftMax: 4,
+    interestingnessMin: 0,
+    interestingnessMax: 1,
     antecedentMin: 1,
     antecedentMax: 4,
     consequentMin: 1,
@@ -97,6 +99,7 @@ function addGlyphGroup() {
     glyphGroup.setSupport(controllers.ruleFilters.supportRange.range.begin, controllers.ruleFilters.supportRange.range.end);
     glyphGroup.setConfidence(controllers.ruleFilters.confidenceRange.range.begin, controllers.ruleFilters.confidenceRange.range.end);
     glyphGroup.setLift(controllers.ruleFilters.liftRange.range.begin, controllers.ruleFilters.liftRange.range.end);
+    glyphGroup.setInterestingness(controllers.ruleFilters.interestingnessRange.range.begin, controllers.ruleFilters.interestingnessRange.range.end);
     glyphGroup.setMaxRules(controllers.classFilters.maxRulesSlider.value);
     glyphGroup.setAntecedentDisplayedRange(controllers.ruleFilters.antecedentRange.range.begin, controllers.ruleFilters.antecedentRange.range.end);
     glyphGroup.setConsequentDisplayedRange(controllers.ruleFilters.consequentRange.range.begin, controllers.ruleFilters.consequentRange.range.end);
@@ -540,6 +543,25 @@ function loadMenu() {
         }
     });
 
+    controllers.ruleFilters.interestingnessRange = new controls.RangeControl(main.optionsArea.menuAccordionItems, {
+        labelText: 'Interesse',
+        rangeMin: initThreshVal.interestingnessMin,
+        rangeMax: initThreshVal.interestingnessMax,
+        rangeStep: 0.05,
+        rangeInitMin: initThreshVal.interestingnessMin,
+        rangeInitMax: initThreshVal.interestingnessMax,
+        startHidden: true,
+        onChange: function (range) {
+            if (main.glyphGroups == null)
+                return;
+
+            main.glyphGroups.setInterestingness(range.begin, range.end);
+            main.glyphGroups.update();
+
+            updateDisplayRules();
+        }
+    });
+
 
     controllers.classFilters.categSlider = new controls.SliderControl(main.optionsArea.menuAccordionItems, {
         labelText: 'Número de classes',
@@ -813,6 +835,7 @@ function importFile() {
     controllers.ruleFilters.supportRange.show();
     controllers.ruleFilters.confidenceRange.show();
     controllers.ruleFilters.liftRange.show();
+    controllers.ruleFilters.interestingnessRange.show();
     controllers.ruleFilters.antecedentRange.show();
     controllers.ruleFilters.consequentRange.show();
     controllers.classFilters.maxRulesSlider.show();

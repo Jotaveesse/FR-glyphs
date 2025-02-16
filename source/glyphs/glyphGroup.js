@@ -24,7 +24,9 @@ export class GlyphGroup {
         this.maxConfidence = 0;
         this.displayMethod = 0;
         this.minLift = 0;
-        this.maxLift = 3;
+        this.maxLift = 4;
+        this.minInterestingness = 0;
+        this.maxInterestingness= 1;
         this.startDate = new Date(0);
         this.endDate = new Date(864000000000000);
         this.dateFormat = "DD/MM/YYYY, HH:mm:ss";
@@ -95,6 +97,7 @@ export class GlyphGroup {
             glyph.setSupport(this.minSupport, this.maxSupport);
             glyph.setConfidence(this.minConfidence, this.maxConfidence);
             glyph.setLift(this.minLift, this.maxLift);
+            glyph.setInterestingness(this.minInterestingness, this.maxInterestingness);
             glyph.setAntecedentFilter(this.allowedAntecedents);
             glyph.setConsequentFilter(this.allowedConsequents);
             glyph.setAntecedentDisplayedRange(this.minAntecedents, this.maxAntecedents);
@@ -172,6 +175,7 @@ export class GlyphGroup {
         mergedGlyph.setSupport(this.minSupport, this.maxSupport);
         mergedGlyph.setConfidence(this.minConfidence, this.maxConfidence);
         mergedGlyph.setLift(this.minLift, this.maxLift);
+        mergedGlyph.setInterestingness(this.minInterestingness, this.maxInterestingness);
         mergedGlyph.setAntecedentFilter(this.allowedAntecedents);
         mergedGlyph.setConsequentFilter(this.allowedConsequents);
         mergedGlyph.setAntecedentDisplayedRange(this.minAntecedents, this.maxAntecedents);
@@ -474,6 +478,15 @@ export class GlyphGroup {
 
         this.getAllGlyphs().forEach(glyph => {
             glyph.setLift(minLift, maxLift);
+        });
+    }
+
+    setInterestingness(minInterestingness, maxInterestingness = Infinity) {
+        this.minInterestingness = minInterestingness;
+        this.maxInterestingness = maxInterestingness;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.setInterestingness(minInterestingness, maxInterestingness);
         });
     }
 

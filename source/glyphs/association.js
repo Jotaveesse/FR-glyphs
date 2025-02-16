@@ -60,9 +60,9 @@ export class FPGrowth extends Association {
 
                 //checa se o valor ja esta na cache
                 if (!supportCache[itemsetKey])
-                    supportCache[itemsetKey] = this.tree.getItemsetCount(itemset) / this.transactionCount;
+                    supportCache[itemsetKey] = this.tree.getItemsetCount(itemset) ;
 
-                const itemsetSupport = supportCache[itemsetKey];
+                const itemsetSupport = supportCache[itemsetKey]/ this.transactionCount;
 
                 const { subsets: antecedents, remainings: consequents } = FPGrowth.getSubsets(itemset);
 
@@ -72,9 +72,9 @@ export class FPGrowth extends Association {
                     const cons = consequents[i];
 
                     if (!supportCache[anteKey])
-                        supportCache[anteKey] = this.tree.getItemsetCount(ante) / this.transactionCount;
+                        supportCache[anteKey] = this.tree.getItemsetCount(ante) ;
 
-                    const antecedentSupport = supportCache[anteKey];
+                    const antecedentSupport = supportCache[anteKey]/ this.transactionCount;
 
                     const confidence = itemsetSupport / antecedentSupport;
 
@@ -83,9 +83,9 @@ export class FPGrowth extends Association {
                         const consKey = cons.join();
 
                         if (!supportCache[consKey])
-                            supportCache[consKey] = this.tree.getItemsetCount(cons) / this.transactionCount;
+                            supportCache[consKey] = this.tree.getItemsetCount(cons);
 
-                        const consequentSupport = supportCache[consKey];
+                        const consequentSupport = supportCache[consKey]/ this.transactionCount;
 
                         const lift = confidence / consequentSupport;
 
@@ -98,6 +98,7 @@ export class FPGrowth extends Association {
                             this.rules.push({
                                 antecedents: ante,
                                 consequents: cons,
+                                count: supportCache[itemsetKey],
                                 support: itemsetSupport,
                                 confidence: confidence,
                                 lift: lift,
@@ -137,7 +138,7 @@ export class FPGrowth extends Association {
         // sigmoid pra deixar entre 0 e 1
         const interestingness = 2 / (1 + Math.exp(-linearCombination)) - 1;
 
-        return interestingness; // Returns a value between 0 and 1
+        return interestingness; 
     }
 
 
