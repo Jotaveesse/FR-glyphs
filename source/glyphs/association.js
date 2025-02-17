@@ -121,7 +121,7 @@ export class FPGrowth extends Association {
             consSupport: 0.8,
             support: 0.8,
             confidence: 0.8,
-            lift: 3,
+            lift: 0.8,
             anteLength: -0.1,
             consLength: -0.1
         };

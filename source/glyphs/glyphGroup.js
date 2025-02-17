@@ -23,6 +23,7 @@ export class GlyphGroup {
         this.minConfidence = 0;
         this.maxConfidence = 0;
         this.displayMethod = 0;
+        this.ruleRank = 'interestingness';
         this.minLift = 0;
         this.maxLift = 4;
         this.minInterestingness = 0;
@@ -103,6 +104,7 @@ export class GlyphGroup {
             glyph.setAntecedentDisplayedRange(this.minAntecedents, this.maxAntecedents);
             glyph.setConsequentDisplayedRange(this.minConsequents, this.maxConsequents);
             glyph.setDisplayMethod(this.displayMethod);
+            glyph.setRuleRank(this.ruleRank);
             glyph.setMaxCategories(this.maxCategories);
             glyph.setMaxRules(this.maxRules);
             glyph.setModels(transformedModels[groupKey]);
@@ -181,6 +183,7 @@ export class GlyphGroup {
         mergedGlyph.setAntecedentDisplayedRange(this.minAntecedents, this.maxAntecedents);
         mergedGlyph.setConsequentDisplayedRange(this.minConsequents, this.maxConsequents);
         mergedGlyph.setDisplayMethod(this.displayMethod);
+        mergedGlyph.setRuleRank(this.ruleRank);
         mergedGlyph.setMaxRules(this.maxRules);
         mergedGlyph.setMaxCategories(this.maxCategories);
         mergedGlyph.setRightClickFunction(this.rightClickFunction);
@@ -388,12 +391,20 @@ export class GlyphGroup {
 
 
             topRules = topRules.concat(sortedRules);
-            topRules = topRules.sort((a, b) => b.interestingness - a.interestingness).slice(0, amount);
+            topRules = topRules.sort((a, b) => b[this.ruleRank] - a[this.ruleRank]).slice(0, amount);
         }
 
         return topRules;
     }
 
+    setRuleRank(method) {
+        this.ruleRank = method;
+
+        this.getAllGlyphs().forEach(glyph => {
+            glyph.setRuleRank(method);
+        });
+
+    }
 
     setDisplayMethod(method) {
         this.displayMethod = method;

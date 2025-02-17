@@ -96,6 +96,7 @@ function addGlyphGroup() {
     glyphGroup.setChosenColumns([...importData.chosenColumns]);
 
     glyphGroup.setDisplayMethod(controllers.classFilters.categRankComboBox.value);
+    glyphGroup.setRuleRank(controllers.ruleFilters.ruleRankComboBox.value);
     glyphGroup.setSupport(controllers.ruleFilters.supportRange.range.begin, controllers.ruleFilters.supportRange.range.end);
     glyphGroup.setConfidence(controllers.ruleFilters.confidenceRange.range.begin, controllers.ruleFilters.confidenceRange.range.end);
     glyphGroup.setLift(controllers.ruleFilters.liftRange.range.begin, controllers.ruleFilters.liftRange.range.end);
@@ -595,6 +596,29 @@ function loadMenu() {
         }
     });
 
+    controllers.ruleFilters.ruleRankComboBox = new controls.ComboBoxControl(main.optionsArea.menuAccordionItems, {
+        labelText: 'Ordenação das regras',
+        initValue: 0,
+        optionsList: [
+            { text: 'Interesse', value: 'interestingness' },
+            { text: 'Suporte Antecedente', value: 'antecedentSupport' },
+            { text: 'Suporte Consequente', value: 'consequentSupport' },
+            { text: 'Suporte', value: 'support' },
+            { text: 'Confiança', value: 'confidence' },
+            { text: 'Lift', value: 'lift' },
+        ],
+        startHidden: true,
+        onChange: function (value) {
+            if (main.glyphGroups == null)
+                return;
+
+            main.glyphGroups.setRuleRank(value);
+            main.glyphGroups.update();
+
+            updateDisplayRules();
+        }
+    });
+
     controllers.classFilters.categRankComboBox = new controls.ComboBoxControl(main.optionsArea.menuAccordionItems, {
         labelText: 'Escolha das classes',
         initValue: 0,
@@ -830,6 +854,7 @@ function importFile() {
 
     saveLayout();
 
+    controllers.ruleFilters.ruleRankComboBox.show();
     controllers.classFilters.categRankComboBox.show();
     controllers.classFilters.categSlider.show();
     controllers.ruleFilters.supportRange.show();

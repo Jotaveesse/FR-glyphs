@@ -34,6 +34,7 @@ export class Glyph {
         this.maxConsequents = 4;
         this.maxRules = 4;
 
+        this.ruleRank = 'interestingness';
         this.displayMethod = 0;
 
         this.maxCategories = 4;
@@ -103,6 +104,7 @@ export class Glyph {
     }
 
     applyFilterChanges() {
+        this.updateRuleOrder();
         this.updateFilteredRules();
         this.updateDisplayItems();
         this.updateDisplayRules();
@@ -126,12 +128,14 @@ export class Glyph {
         this.updateFreqItems();
         this.updateRules();
 
+
         this.updateCoordinates();
         this.updateDefaultPosition();
         this.updatePosition();
         this.updateProportions();
         this.updateIconSize();
 
+        this.updateRuleOrder();
         this.updateFilteredRules();
         this.updateDisplayItems();
         this.updateDisplayRules();
@@ -279,6 +283,13 @@ export class Glyph {
 
     setMaxRules(maxRules) {
         this.maxRules = maxRules;
+
+        this.needsFilterUpdate = true
+        this.markForUpdate();
+    }
+
+    setRuleRank(method) {
+        this.ruleRank = method;
 
         this.needsFilterUpdate = true
         this.markForUpdate();
@@ -462,6 +473,7 @@ export class Glyph {
         newGlyph.setData(this.rawData);
         newGlyph.setDateRange(dateStart, dateEnd);
         newGlyph.setDisplayMethod(-1);
+        newGlyph.setRuleRank(this.ruleRank);
 
         newGlyph.setDateColumn(this.dateColumn)
         newGlyph.setDates(this.dates);
@@ -470,6 +482,7 @@ export class Glyph {
         newGlyph.updateTransTable();
         newGlyph.updateFreqItems();
         newGlyph.updateRules();
+        newGlyph.updateRuleOrder();
 
         return newGlyph.associations;
     }
@@ -567,10 +580,14 @@ export class Glyph {
         this.associations.generateRules();
 
         this.filteredRules = this.associations.rules;
-        //ordena as regras por maior score
+
+    }
+
+    updateRuleOrder() {
         this.associations.rules = this.associations.rules.sort((a, b) => {
-            return b.interestingness - a.interestingness;
+            return b[this.ruleRank] - a[this.ruleRank];
         });
+       
     }
 
     updateFilteredRules() {    //filtra as regras que estao dentro dos limites dos limiares
@@ -592,7 +609,7 @@ export class Glyph {
                 rule.confidence >= this.minConfidence &&
                 rule.confidence <= this.maxConfidence &&
                 rule.lift >= this.minLift &&
-                rule.lift <= this.maxLift &&
+                Math.min(rule.lift, 4) <= this.maxLift &&
                 rule.interestingness >= this.minInterestingness &&
                 rule.interestingness <= this.maxInterestingness &&
                 (this.allowedAntecedents.length == 0 || isSubset(rule.antecedents, this.allowedAntecedents)) &&
@@ -1023,8 +1040,8 @@ export class Glyph {
                     .attr("d", this.borderArc),
                 exit => exit.remove()
             );
-            
-        const lineCount= 6;
+
+        const lineCount = 6;
         const infoTextSize = this.textSize * 0.6;
         const infoHeight = infoTextSize * (lineCount + 1);
         const infoWidth = 15 * infoTextSize + 64;
@@ -1049,7 +1066,7 @@ export class Glyph {
 
                     infoGroup.append("rect")
                         .attr("x", (d, i) => i % 2 == 0 ? - infoTextSize * 2.5 : -infoWidth + infoTextSize * 2.5)
-                        .attr("y", -infoTextSize * lineCount/2 - infoTextSize / lineCount - 1)
+                        .attr("y", -infoTextSize * lineCount / 2 - infoTextSize / lineCount - 1)
                         .attr("width", infoWidth)
                         .attr("height", infoTextSize * lineCount + 1)
                         .attr("fill", "#fff")
@@ -1235,7 +1252,7 @@ export class Glyph {
                             .text(d => "Lift: " + d.lift.toFixed(2))
                         );
 
-                        interestGroup.append("text")
+                    interestGroup.append("text")
                         .call(text => text.append("tspan")
                             .attr("font-weight", 600)
                             .attr("text-anchor", (d, i) => i % 2 == 0 ? "start" : "end")
